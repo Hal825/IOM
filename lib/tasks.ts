@@ -12,7 +12,7 @@ export async function jobToSummary(job: Job<TaskData>): Promise<TaskSummary> {
     id: String(job.id),
     status: state,
     progress: typeof job.progress === 'number' ? job.progress : 0,
-    text: job.data.text.slice(0, 80),
+    text: (job.data.text || job.data.script?.map((s) => s.text).join('') || '').slice(0, 80),
     createdAt: job.timestamp,
     result: (job.returnvalue as TaskResult | undefined) ?? undefined,
     failedReason: job.failedReason || undefined,

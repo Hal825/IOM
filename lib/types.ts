@@ -10,13 +10,23 @@ export const QUEUE_NAME = 'video-generation';
 export interface TaskData {
   /** 用户输入的原始文本 */
   text: string;
+  /**
+   * LangGraph 模式下预计算好的字幕脚本（含帧区间）。
+   * 如果存在，Worker 可跳过脚本生成阶段直接渲染。
+   */
+  script?: ScriptScene[];
+  /**
+   * LangGraph 模式下预合成的 TTS 音频绝对路径。
+   * 如果存在，Worker 可跳过 TTS 阶段直接渲染。
+   */
+  audioPath?: string;
 }
 
 /** 脚本场景：一条字幕及其在视频中的帧区间 */
 export interface ScriptScene {
-  text: string;
-  startFrame: number;
-  endFrame: number;
+  text: string;//字幕文本
+  startFrame: number;//字幕开始帧
+  endFrame: number;//字幕结束帧
 }
 
 /** 任务完成后的返回值（存于 BullMQ job.returnvalue） */

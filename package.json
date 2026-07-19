@@ -16,6 +16,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@langchain/core": "^1.2.3",
+    "@langchain/langgraph": "^1.4.8",
     "@remotion/bundler": "4.0.487",
     "@remotion/cli": "4.0.487",
     "@remotion/renderer": "4.0.487",

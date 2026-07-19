@@ -12,7 +12,8 @@ import { VIDEO_FPS, type TaskData, type TaskResult } from './types';
 export async function executeTask(
   job: Job<TaskData>,
   storageDir: string
-): Promise<TaskResult> {
+): Promise<TaskResult>
+{
   const jobId = String(job.id);
   const text = job.data.text?.trim();
   if (!text) {
@@ -20,8 +21,8 @@ export async function executeTask(
   }
 
   // 阶段 1: 脚本生成
-  await job.updateProgress(10);
-  await job.log('阶段 1/3: 生成脚本');
+  await job.updateProgress(10);//更新任务进度为 10%，表示脚本生成阶段开始
+  await job.log('阶段 1/3: 生成脚本');//记录日志，说明当前阶段是脚本生成
   const scenes = generateScript(text);
   if (scenes.length === 0) {
     throw new Error('脚本生成结果为空');

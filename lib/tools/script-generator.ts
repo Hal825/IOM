@@ -23,9 +23,9 @@ export function generateScript(text: string): ScriptScene[] {
   if (!trimmed) return [];
 
   const rawParts = trimmed
-    .split(SENTENCE_DELIMITER)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+    .split(SENTENCE_DELIMITER)// Step 1: 按标点切分（可能含空白和空串）
+    .map((s) => s.trim())// Step 2: 去除每段首尾空白（"  。" → "。"）
+    .filter((s) => s.length > 0);// Step 3: 剔除纯空白/空串
 
   // 过长的句子按逗号/顿号再切
   const parts: string[] = [];
@@ -34,7 +34,7 @@ export function generateScript(text: string): ScriptScene[] {
       parts.push(part);
       continue;
     }
-    const subParts = part.split(/(?<=[，、,])/).map((s) => s.trim()).filter(Boolean);
+    const subParts = part.split(/(?<=[，、,])/).map((s) => s.trim()).filter(Boolean);// Step 4: 按逗号/顿号切分，去除空串(细切)
     let buffer = '';
     for (const sub of subParts) {
       if (buffer && buffer.length + sub.length > MAX_SCENE_LENGTH) {

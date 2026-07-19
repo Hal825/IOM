@@ -25,25 +25,27 @@ export default function HomePage() {
   (
     async () => {
     try {
-      const res = await fetch('/api/tasks', { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      setTasks(data.tasks);
+      const res = await fetch('/api/tasks', { cache: 'no-store' });//不缓存，确保每次都能获取最新任务列表(GET->getqueue->bullmq.getJobs->jobToSummary->promise.all->sort)
+      const data = await res.json();//解析 JSON 响应
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);//如果响应状态不是 OK，抛出错误
+      // 当 HTTP 状态码在 200 ~ 299 之间时，res.ok === true（表示请求成功）。
+      // 当 HTTP 状态码是 400、500 等其他值时，res.ok === false（表示请求失败）。
+      setTasks(data.tasks);//更新任务列表状态
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取任务列表失败');
     }
   }, 
-  []);
+  []);//useCallback 用于缓存 fetchTasks 函数，避免在每次渲染时都创建新的函数实例，从而优化性能。
 
   // 轮询任务列表
   useEffect(() => {
     fetchTasks();
-    const timer = setInterval(fetchTasks, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
+    const timer = setInterval(fetchTasks, POLL_INTERVAL_MS);//每隔 POLL_INTERVAL_MS 毫秒调用 fetchTasks 函数，获取最新任务列表
+    return () => clearInterval(timer);//这是 useEffect 的专属语法糖。React 规定：如果你返回了一个函数，React 就会把这个函数当作 “清理函数”
   }, [fetchTasks]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async () => {//提交文本生成视频任务
     if (!text.trim() || submitting) return;
     setSubmitting(true);
     setError(null);
@@ -52,15 +54,17 @@ export default function HomePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
+        // value={text}                        // 👈 读取：将 state 作为输入框的唯一数据源
+        // onChange={(e) => setText(e.target.value)} // 👈 写入：用户每次按键都同步更新 state
       });
-      const data = await res.json();
+      const data = await res.json();//解析 JSON 响应(ID+状态码)
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      setText('');
-      await fetchTasks();
+      setText('');//清空输入框
+      await fetchTasks();//立即刷新任务列表，显示新提交的任务
     } catch (err) {
       setError(err instanceof Error ? err.message : '提交失败');
     } finally {
-      setSubmitting(false);
+      setSubmitting(false);//无论成功或失败，都将 submitting 状态重置为 false，允许用户再次提交任务
     }
   };
 
