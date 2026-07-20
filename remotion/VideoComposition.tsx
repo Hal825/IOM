@@ -1,7 +1,8 @@
 import React from 'react';
 import {
   AbsoluteFill,
-  Audio,
+  Html5Audio as AudioPlayer,
+  Img,
   interpolate,
   staticFile,
   useCurrentFrame,
@@ -25,11 +26,14 @@ export const calculateVideoMetadata: CalculateMetadataFunction<
 };
 
 /**
- * 视频画面：深色背景 + 居中字幕逐条淡入淡出 + 底部进度条 + 音轨
+ * 视频画面：背景画面（图片/纯色）+ 居中字幕 + 底部进度条 + 音轨。
+ *
+ * Phase 2 新增：每个场景支持独立的背景画面素材（来自 Unsplash/Pexels/纯色兜底）。
  */
 export const VideoComposition: React.FC<VideoCompositionProps> = ({
   script,
   audioUrl,
+  visuals,
 }) => {
   const frame = useCurrentFrame();
   const totalFrames = script.length
@@ -40,11 +44,12 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
     (s) => frame >= s.startFrame && frame < s.endFrame
   );
 
-  let opacity = 0;
+  // 字幕透明度（淡入淡出）
+  let textOpacity = 0;
   if (currentScene) {
     const sceneLength = currentScene.endFrame - currentScene.startFrame;
     const fade = Math.min(FADE_FRAMES, Math.floor(sceneLength / 3));
-    opacity = interpolate(
+    textOpacity = interpolate(
       frame,
       [
         currentScene.startFrame,
@@ -57,6 +62,13 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
     );
   }
 
+  // 当前场景的画面素材
+  const currentVisual = (() => {
+    if (!visuals || !currentScene) return null;
+    const idx = script.indexOf(currentScene);
+    return visuals.find((v) => v.sceneIndex === idx) ?? null;
+  })();
+
   const progress = Math.min(1, frame / totalFrames);
 
   return (
@@ -67,12 +79,46 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
         alignItems: 'center',
       }}
     >
-      {audioUrl ? <Audio src={staticFile(audioUrl)} /> : null}
+      {/* 背景画面 */}
+      {currentVisual && (() => {
+        if (currentVisual.type === 'image') {
+          return (
+            <AbsoluteFill>
+              <Img
+                src={currentVisual.url}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+              {/* 暗色遮罩提升字幕可读性 */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                }}
+              />
+            </AbsoluteFill>
+          );
+        }
+        // solid 纯色
+        return (
+          <AbsoluteFill
+            style={{ backgroundColor: currentVisual.url }}
+          />
+        );
+      })()}
 
+      {/* 音轨 */}
+      {audioUrl ? <AudioPlayer src={staticFile(audioUrl)} /> : null}
+
+      {/* 字幕 */}
       {currentScene ? (
         <div
           style={{
-            opacity,
+            opacity: textOpacity,
             color: '#f8fafc',
             fontSize: 56,
             fontWeight: 700,
@@ -81,7 +127,8 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
             textAlign: 'center',
             maxWidth: '85%',
             lineHeight: 1.5,
-            textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+            textShadow: '0 4px 24px rgba(0,0,0,0.6)',
+            zIndex: 1,
           }}
         >
           {currentScene.text}
@@ -97,6 +144,7 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
           height: 8,
           width: `${progress * 100}%`,
           backgroundColor: '#38bdf8',
+          zIndex: 2,
         }}
       />
 
@@ -110,6 +158,7 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
           fontSize: 24,
           fontFamily: 'sans-serif',
           letterSpacing: 2,
+          zIndex: 2,
         }}
       >
         OpenMontage

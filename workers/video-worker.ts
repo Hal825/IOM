@@ -40,6 +40,7 @@ async function main() {
           audioPath: job.data.audioPath,
           outputDir: path.join(STORAGE_DIR, 'output'),
           jobId,
+          visuals: job.data.visuals,
           onProgress: (p) => {
             void job.updateProgress(50 + Math.round(p * 45));
           },

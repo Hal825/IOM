@@ -20,6 +20,10 @@ export interface TaskData {
    * 如果存在，Worker 可跳过 TTS 阶段直接渲染。
    */
   audioPath?: string;
+  /** Phase 2: 画面素材列表（与脚本场景一一对应） */
+  visuals?: VisualAsset[];
+  /** Phase 2: 使用的 AI 模型名称（可观测性） */
+  aiModel?: string;
 }
 
 /** 脚本场景：一条字幕及其在视频中的帧区间 */
@@ -62,7 +66,29 @@ export interface TaskSummary {
   failedReason?: string;
 }
 
-/** 视频渲染参数 */
+// ── Phase 2: 画面素材 ──────────────────────────────
+
+/** 画面素材类型 */
+export type VisualType = 'image' | 'solid';
+
+/** 画面素材：为每个场景匹配的视觉资源 */
+export interface VisualAsset {
+  /** 对应的场景索引（从 0 开始） */
+  sceneIndex: number;
+  /** 素材类型 */
+  type: VisualType;
+  /** 图片 URL（type === 'image' 时有效） */
+  url: string;
+  /** 图片来源（用于署名，如 'unsplash', 'pexels', 'solid'） */
+  source: string;
+  /** 摄影师/作者名（用于署名，可选） */
+  photographer?: string;
+  /** 该画面展示时长（秒），等于对应场景的时长 */
+  duration: number;
+}
+
+// ── 视频渲染参数 ────────────────────────────────────
+
 export const VIDEO_FPS = 30;
 export const VIDEO_WIDTH = 1280;
 export const VIDEO_HEIGHT = 720;
@@ -72,5 +98,7 @@ export interface VideoCompositionProps {
   script: ScriptScene[];
   /** 音频文件的可访问 URL 或绝对路径 */
   audioUrl: string;
+  /** Phase 2: 每个场景的背景画面素材（与 script 一一对应） */
+  visuals?: VisualAsset[];
   [key: string]: unknown;
 }

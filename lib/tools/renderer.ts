@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
   type ScriptScene,
+  type VisualAsset,
   type VideoCompositionProps,
   VIDEO_FPS,
 } from '../types';
@@ -42,6 +43,8 @@ export interface RenderOptions {
   outputDir: string;
   /** 任务 ID，用于文件命名 */
   jobId: string;
+  /** Phase 2: 画面素材（可选） */
+  visuals?: VisualAsset[];
   /** 渲染进度回调 (0-1) */
   onProgress?: (progress: number) => void;
 }
@@ -50,7 +53,7 @@ export interface RenderOptions {
  * 渲染视频，返回 MP4 绝对路径。
  */
 export async function renderVideo(options: RenderOptions): Promise<string> {
-  const { script, audioPath, outputDir, jobId, onProgress } = options;
+  const { script, audioPath, outputDir, jobId, visuals, onProgress } = options;
   const bundleLocation = await getBundle();
 
   // 把音频复制进 bundle 的 public/，供 staticFile('audio/<jobId>.mp3') 引用
@@ -62,6 +65,7 @@ export async function renderVideo(options: RenderOptions): Promise<string> {
   const inputProps: VideoCompositionProps = {
     script,
     audioUrl: `audio/${audioFileName}`,
+    visuals,
   };
 
   const composition = await selectComposition({
