@@ -1,4 +1,5 @@
 import type { VisualAsset } from '@/lib/types';
+import { extractKeywords } from './keyword-extractor';
 
 /**
  * 画面匹配工具 — Unsplash + Pexels 双路故障转移。
@@ -33,23 +34,6 @@ interface PexelsPhoto {
 
 interface PexelsResponse {
   photos: PexelsPhoto[];
-}
-
-// ── 关键词提取 ──────────────────────────────────────
-
-/**
- * 从场景文本中提取搜索关键词（纯规则，不依赖 LLM）。
- * - 移除标点符号
- * - 保留有意义的词语
- * - 最多返回前 30 个字符
- */
-function extractKeyword(text: string): string {
-  // 去掉标点符号和空白
-  const cleaned = text.replace(
-    /[，。！？；、""''《》（）【】…—\s,.!?;:'"()\[\]{}<>@#$%^&*+=~`|\\/\-]/g,
-    ''
-  );
-  return cleaned.slice(0, 30) || text.slice(0, 30);
 }
 
 // ── Unsplash API ────────────────────────────────────
@@ -147,7 +131,7 @@ async function matchOneVisual(
   text: string,
   sceneIndex: number
 ): Promise<VisualAsset> {
-  const keyword = extractKeyword(text);
+  const keyword = await extractKeywords(text);
   console.log(`[visual] 场景 ${sceneIndex} 关键词: "${keyword}"`);
 
   // 1. Unsplash

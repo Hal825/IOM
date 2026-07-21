@@ -89,6 +89,11 @@ export async function ttsNode(
     duration,
     VIDEO_FPS
   );
+  // [
+  // { "text": "清晨，阳光洒在湖面上。", "startFrame": 0, "endFrame": 130 },    // 0秒 ~ 5.2秒
+  // { "text": "一只白鹭掠过水面。", "startFrame": 130, "endFrame": 262 },   // 5.2秒 ~ 10.48秒
+  // { "text": "远处传来鸟鸣。", "startFrame": 262, "endFrame": 375 }        // 10.48秒 ~ 15秒
+  // ]
 
   console.log(
     `[agent] tts → ${duration.toFixed(1)}s 音频 → ${audioPath}`

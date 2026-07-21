@@ -40,6 +40,9 @@ storage/output/*
 !storage/audio/.gitkeep
 !storage/output/.gitkeep
 
+# downloaded/generated images for rendering
+app/images/*
+
 # vercel
 .vercel
 

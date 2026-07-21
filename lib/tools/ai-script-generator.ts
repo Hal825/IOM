@@ -3,19 +3,22 @@ import { SCRIPT_GENERATION_SYSTEM } from '@/lib/prompts/script-generation';
 import type { ScriptScene } from '@/lib/types';
 
 /**
- * AI 脚本生成器 — 调用 DeepSeek（兼容 OpenAI 格式）生成字幕脚本。
+ * AI 脚本生成器 — 调用 AI 模型（兼容 OpenAI 格式）生成字幕脚本。
  *
  * 策略：
- * 1. 调用 DeepSeek API，要求返回结构化 JSON
+ * 1. 调用 AI API，要求返回结构化 JSON
  * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
  * 3. 全部失败时回退到规则切句（generateScript）
+ *
+ * 支持任意兼容 OpenAI 接口的模型服务（DeepSeek / 火山引擎 Ark / GLM 等）。
+ * 通过 AI_SCRIPT_MODEL 指定模型，AI_SCRIPT_API_KEY / AI_SCRIPT_BASE_URL 配置连接。
  */
 
 // ── 配置（全部来自环境变量）─────────────────────────
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL;
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL;
+const AI_SCRIPT_API_KEY = process.env.AI_SCRIPT_API_KEY;
+const AI_SCRIPT_BASE_URL = process.env.AI_SCRIPT_BASE_URL;
+const AI_SCRIPT_MODEL = process.env.AI_SCRIPT_MODEL;
 
 const MAX_RETRIES = 3;
 const MAX_TOKENS = 2000;
@@ -91,20 +94,20 @@ function parseAndValidate(raw: string): ParsedScriptOutput {
 // ── DeepSeek API 调用 ───────────────────────────────
 
 async function callDeepSeek(userPrompt: string): Promise<string> {
-  if (!DEEPSEEK_API_KEY || !DEEPSEEK_BASE_URL || !DEEPSEEK_MODEL) {
+  if (!AI_SCRIPT_API_KEY || !AI_SCRIPT_BASE_URL || !AI_SCRIPT_MODEL) {
     throw new Error(
-      'DeepSeek 环境变量未配置（DEEPSEEK_API_KEY / DEEPSEEK_BASE_URL / DEEPSEEK_MODEL）'
+      'AI 脚本生成环境变量未配置（AI_SCRIPT_API_KEY / AI_SCRIPT_BASE_URL / AI_SCRIPT_MODEL）'
     );
   }
-
-  const resp = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+//1. 请求方法与 URL,2. 请求头（Headers）,3. 请求体（Body）
+  const resp = await fetch(`${AI_SCRIPT_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+      Authorization: `Bearer ${AI_SCRIPT_API_KEY}`,
     },
     body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
+      model: AI_SCRIPT_MODEL,
       messages: [
         { role: 'system', content: SCRIPT_GENERATION_SYSTEM },
         { role: 'user', content: userPrompt },
@@ -121,8 +124,8 @@ async function callDeepSeek(userPrompt: string): Promise<string> {
     );
   }
 
-  const data = (await resp.json()) as DeepSeekResponse;
-  const content = data.choices?.[0]?.message?.content;
+  const data = (await resp.json()) as DeepSeekResponse;//4. 解析响应 JSON
+  const content = data.choices?.[0]?.message?.content;//5. 提取内容
   if (!content?.trim()) {
     throw new Error('DeepSeek 返回空内容');
   }
@@ -169,10 +172,10 @@ export async function generateScriptWithAI(
   userPrompt: string
 ): Promise<AiScriptResult> {
   // 未配置 API Key → 静默回退
-  if (!DEEPSEEK_API_KEY) {
-    console.log('[ai-script] 未配置 DEEPSEEK_API_KEY，使用规则切句');
+  if (!AI_SCRIPT_API_KEY) {
+    console.log('[ai-script] 未配置 AI_SCRIPT_API_KEY，使用规则切句');
     return {
-      scenes: generateScript(userPrompt),
+      scenes: generateScript(userPrompt),//回退到规则切句
       model: 'rule-based',
       retries: 0,
     };
@@ -191,18 +194,18 @@ export async function generateScriptWithAI(
     }));
 
     console.log(
-      `[ai-script] ${DEEPSEEK_MODEL} 生成 ${scenes.length} 个场景` +
+      `[ai-script] ${AI_SCRIPT_MODEL} 生成 ${scenes.length} 个场景` +
         (retries > 0 ? `（重试 ${retries} 次）` : '')
     );
 
-    return { scenes, model: DEEPSEEK_MODEL!, retries };
+    return { scenes, model: AI_SCRIPT_MODEL!, retries };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[ai-script] 失败，回退规则切句: ${message}`);
 
     return {
       scenes: generateScript(userPrompt),
-      model: `fallback(${DEEPSEEK_MODEL ?? 'unknown'})`,
+      model: `fallback(${AI_SCRIPT_MODEL ?? 'unknown'})`,
       retries: MAX_RETRIES,
     };
   }

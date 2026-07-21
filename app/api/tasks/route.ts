@@ -7,14 +7,14 @@ export const dynamic = 'force-dynamic';
 
 /** 创建任务：{ text: string } → 经 LangGraph 流水线（脚本→TTS→入队）→ { id } */
 export async function POST(request: Request) {
-  let body: { text?: unknown };
+  let body: { text?: unknown };//请求体
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: '请求体不是合法 JSON' }, { status: 400 });
   }
 
-  const text = typeof body.text === 'string' ? body.text.trim() : '';
+  const text = typeof body.text === 'string' ? body.text.trim() : '';//提取 text 字段并去除首尾空白
   if (!text) {
     return NextResponse.json({ error: '文本不能为空' }, { status: 400 });
   }
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
   try {
     // LangGraph 状态机：脚本切分 → TTS → 入队（TTS 约 1-2 秒，入队毫秒级）
-    const result = await videoGraph.invoke({ userPrompt: text });
+    const result = await videoGraph.invoke({ userPrompt: text });//返回 { jobId, script, audioPath }
 
     return NextResponse.json(
       { id: result.jobId, status: 'waiting' },

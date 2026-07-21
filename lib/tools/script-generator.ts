@@ -66,23 +66,23 @@ export function generateScript(text: string): ScriptScene[] {
  * 每个场景按其文字长度占比分配时长（比均分更贴近语音节奏）。
  */
 export function assignFrames(
-  scenes: ScriptScene[],
-  audioDurationSec: number,
-  fps: number
+  scenes: ScriptScene[],//字幕场景列表
+  audioDurationSec: number,//音频总时长（秒）
+  fps: number//视频帧率（帧/秒）
 ): ScriptScene[] {
   if (scenes.length === 0) return [];
-  const totalFrames = Math.max(1, Math.round(audioDurationSec * fps));
-  const totalChars = scenes.reduce((sum, s) => sum + s.text.length, 0);
+  const totalFrames = Math.max(1, Math.round(audioDurationSec * fps));//计算总帧数，至少为 1 帧
+  const totalChars = scenes.reduce((sum, s) => sum + s.text.length, 0);//计算总字符数
 
-  let cursor = 0;
-  return scenes.map((scene, i) => {
-    const isLast = i === scenes.length - 1;
+  let cursor = 0;//初始化帧游标，从第 0 帧开始
+  return scenes.map((scene, i) => {//遍历每个字幕场景，分配帧区间
+    const isLast = i === scenes.length - 1;//判断是否为最后一个场景
     const frames = isLast
       ? totalFrames - cursor // 最后一段吃掉剩余帧，保证总和精确
-      : Math.round((scene.text.length / totalChars) * totalFrames);
-    const startFrame = cursor;
-    const endFrame = cursor + Math.max(1, frames);
-    cursor = endFrame;
-    return { ...scene, startFrame, endFrame };
+      : Math.round((scene.text.length / totalChars) * totalFrames);//按字符占比分配帧数，四舍五入
+    const startFrame = cursor;//记录当前帧游标为开始帧
+    const endFrame = cursor + Math.max(1, frames);//计算结束帧，至少为开始帧 + 1
+    cursor = endFrame;//更新帧游标到下一段的开始帧
+    return { ...scene, startFrame, endFrame };//返回新的字幕场景对象，包含分配好的帧区间
   });
 }
