@@ -3,11 +3,16 @@ import crypto from 'node:crypto';
 import { type VideoGenStateType, type VideoGenStateUpdate } from './state';
 import { generateScript, assignFrames } from '@/lib/tools/script-generator';
 import { generateScriptWithAI } from '@/lib/tools/ai-script-generator';
-import { matchVisuals } from '@/lib/tools/image-matcher';
+import { matchVisualsWithDetail } from '@/lib/tools/image-matcher';
 import { synthesizeSpeech } from '@/lib/tools/tts';
 import { getQueue } from '@/lib/queue';
 import { STORAGE_DIR } from '@/lib/tasks';
 import { VIDEO_FPS } from '@/lib/types';
+import {
+  type ProcedureLog,
+  createProcedureLog,
+  saveProcedureLog,
+} from '@/lib/log/procedure';
 
 // ── 工具函数 ────────────────────────────────────────
 
@@ -24,27 +29,50 @@ function makeTaskId(): string {
 export async function scriptAiNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
   const prompt = state.userPrompt;
   if (!prompt?.trim()) {
     throw new Error('用户输入为空');
   }
 
-  const result = await generateScriptWithAI(prompt);
+  // 初始化日志（若尚未创建）
+  const log: ProcedureLog =
+    (state._procedureLog as ProcedureLog | null) ??
+    createProcedureLog(state.jobId || 'unknown');
+  log.stages.script_ai.input.userPrompt = prompt;
 
-  if (result.scenes.length === 0) {
-    throw new Error('AI 脚本生成结果为空');
+  try {
+    const result = await generateScriptWithAI(prompt);
+
+    if (result.scenes.length === 0) {
+      throw new Error('AI 脚本生成结果为空');
+    }
+
+    log.stages.script_ai.output = {
+      scenes: result.scenes,
+      model: result.model,
+      retries: result.retries,
+      tokenUsage: result.tokenUsage,
+    };
+
+    console.log(
+      `[agent] script_ai → ${result.scenes.length} 个场景 ` +
+        `(model: ${result.model}, retries: ${result.retries})`
+    );
+
+    return {
+      scriptSegments: result.scenes,
+      aiModel: result.model,
+      retryCount: result.retries,
+      _procedureLog: log,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.stages.script_ai.error = message;
+    throw err;
+  } finally {
+    log.stages.script_ai.durationMs = Date.now() - start;
   }
-
-  console.log(
-    `[agent] script_ai → ${result.scenes.length} 个场景 ` +
-      `(model: ${result.model}, retries: ${result.retries})`
-  );
-
-  return {
-    scriptSegments: result.scenes,
-    aiModel: result.model,
-    retryCount: result.retries,
-  };
 }
 
 // ── 节点 1b（保留）：规则脚本生成 ────────────────────
@@ -73,37 +101,55 @@ export async function scriptNode(
 export async function ttsNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
   if (!state.scriptSegments?.length) {
     throw new Error('缺少脚本分段，请先执行脚本生成');
   }
 
-  const taskId = makeTaskId();
-  const audioDir = path.join(STORAGE_DIR, 'audio', taskId);
+  const log = state._procedureLog as ProcedureLog | null;
+  if (log) {
+    log.stages.tts.input.scriptSegments = state.scriptSegments.map((s) => ({
+      text: s.text,
+    }));
+  }
 
-  const fullText = state.scriptSegments.map((s) => s.text).join('');
-  const { audioPath, duration } = await synthesizeSpeech(fullText, audioDir);
+  try {
+    const taskId = makeTaskId();
+    const audioDir = path.join(STORAGE_DIR, 'audio', taskId);
 
-  // 用实际音频时长回填帧区间
-  const scriptWithFrames = assignFrames(
-    state.scriptSegments,
-    duration,
-    VIDEO_FPS
-  );
-  // [
-  // { "text": "清晨，阳光洒在湖面上。", "startFrame": 0, "endFrame": 130 },    // 0秒 ~ 5.2秒
-  // { "text": "一只白鹭掠过水面。", "startFrame": 130, "endFrame": 262 },   // 5.2秒 ~ 10.48秒
-  // { "text": "远处传来鸟鸣。", "startFrame": 262, "endFrame": 375 }        // 10.48秒 ~ 15秒
-  // ]
+    const fullText = state.scriptSegments.map((s) => s.text).join('');
+    const { audioPath, duration } = await synthesizeSpeech(fullText, audioDir);
 
-  console.log(
-    `[agent] tts → ${duration.toFixed(1)}s 音频 → ${audioPath}`
-  );
+    const scriptWithFrames = assignFrames(
+      state.scriptSegments,
+      duration,
+      VIDEO_FPS
+    );
 
-  return {
-    scriptSegments: scriptWithFrames,
-    audioPath,
-    duration,
-  };
+    if (log) {
+      log.stages.tts.output = {
+        audioPath,
+        durationSec: duration,
+      };
+    }
+
+    console.log(
+      `[agent] tts → ${duration.toFixed(1)}s 音频 → ${audioPath}`
+    );
+
+    return {
+      scriptSegments: scriptWithFrames,
+      audioPath,
+      duration,
+      _procedureLog: log,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) log.stages.tts.error = message;
+    throw err;
+  } finally {
+    if (log) log.stages.tts.durationMs = Date.now() - start;
+  }
 }
 
 // ── 节点 3：画面匹配（Unsplash → Pexels → 纯色）─────
@@ -116,13 +162,51 @@ export async function ttsNode(
 export async function matchVisualNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
   if (!state.scriptSegments?.length) {
     throw new Error('缺少脚本分段，请先执行脚本生成');
   }
 
-  const visuals = await matchVisuals(state.scriptSegments);
+  const log = state._procedureLog as ProcedureLog | null;
+  if (log) {
+    log.stages.match_visual.input.scenes = state.scriptSegments.map((s) => ({
+      text: s.text,
+    }));
+  }
 
-  return { visuals };
+  try {
+    const { visuals, tokenUsage, keywordDetails } =
+      await matchVisualsWithDetail(state.scriptSegments);
+
+    if (log) {
+      log.stages.match_visual.output = {
+        visuals: visuals.map((v) => ({
+          sceneIndex: v.sceneIndex,
+          type: v.type,
+          source: v.source,
+          url: v.url,
+          photographer: v.photographer,
+          duration: v.duration,
+        })),
+        stats: {
+          total: visuals.length,
+          unsplash: visuals.filter((v) => v.source === 'unsplash').length,
+          pexels: visuals.filter((v) => v.source === 'pexels').length,
+          solid: visuals.filter((v) => v.source === 'solid').length,
+        },
+        keywordExtraction: keywordDetails,
+        tokenUsage,
+      };
+    }
+
+    return { visuals, _procedureLog: log };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) log.stages.match_visual.error = message;
+    throw err;
+  } finally {
+    if (log) log.stages.match_visual.durationMs = Date.now() - start;
+  }
 }
 
 // ── 节点 4：合并结果（同步点）────────────────────────
@@ -136,6 +220,7 @@ export async function matchVisualNode(
 export async function composeVideoNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
   if (!state.scriptSegments?.length) {
     throw new Error('缺少脚本分段');
   }
@@ -146,36 +231,69 @@ export async function composeVideoNode(
   const scenes = state.scriptSegments;
   const visuals = state.visuals ?? [];
 
-  // 按 sceneIndex 建立 visual 查找表，确保对齐（不依赖数组顺序）
-  const visualMap = new Map(visuals.map((v) => [v.sceneIndex, v]));
-
-  // 回填 duration：每个场景的展示时长 = (endFrame - startFrame) / fps
-  const alignedVisuals = scenes.map((scene, i) => {
-    const visual = visualMap.get(i);
-    const durationSec =
-      (scene.endFrame - scene.startFrame) / VIDEO_FPS;
-
-    if (visual) {
-      return { ...visual, duration: durationSec };
-    }
-    // 极端情况：该场景没有 visual → 生成纯色兜底
-    return {
-      sceneIndex: i,
-      type: 'solid' as const,
-      url: `hsl(${(i * 47) % 360}, 55%, 30%)`,
-      source: 'solid',
-      duration: durationSec,
+  const log = state._procedureLog as ProcedureLog | null;
+  if (log) {
+    log.stages.compose_video.input = {
+      scenes: scenes.map((s) => ({
+        text: s.text,
+        startFrame: s.startFrame,
+        endFrame: s.endFrame,
+      })),
+      visuals: visuals.map((v) => ({
+        sceneIndex: v.sceneIndex,
+        duration: v.duration,
+      })),
     };
-  });
+  }
 
-  console.log(
-    `[agent] compose → ${alignedVisuals.length} 个场景已对齐 ` +
-      `(音频: ${state.duration?.toFixed(1)}s, ` +
-      `画面: ${alignedVisuals.filter((v) => v.type === 'image').length} 图片 + ` +
-      `${alignedVisuals.filter((v) => v.type === 'solid').length} 纯色)`
-  );
+  try {
+    const visualMap = new Map(visuals.map((v) => [v.sceneIndex, v]));
 
-  return { visuals: alignedVisuals };
+    const alignedVisuals = scenes.map((scene, i) => {
+      const visual = visualMap.get(i);
+      const durationSec =
+        (scene.endFrame - scene.startFrame) / VIDEO_FPS;
+
+      if (visual) {
+        return { ...visual, duration: durationSec };
+      }
+      return {
+        sceneIndex: i,
+        type: 'solid' as const,
+        url: `hsl(${(i * 47) % 360}, 55%, 30%)`,
+        source: 'solid',
+        duration: durationSec,
+      };
+    });
+
+    if (log) {
+      log.stages.compose_video.output = {
+        visuals: alignedVisuals.map((v) => ({
+          sceneIndex: v.sceneIndex,
+          type: v.type,
+          source: v.source,
+          url: v.url,
+          photographer: v.photographer,
+          duration: v.duration,
+        })),
+      };
+    }
+
+    console.log(
+      `[agent] compose → ${alignedVisuals.length} 个场景已对齐 ` +
+        `(音频: ${state.duration?.toFixed(1)}s, ` +
+        `画面: ${alignedVisuals.filter((v) => v.type === 'image').length} 图片 + ` +
+        `${alignedVisuals.filter((v) => v.type === 'solid').length} 纯色)`
+    );
+
+    return { visuals: alignedVisuals, _procedureLog: log };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) log.stages.compose_video.error = message;
+    throw err;
+  } finally {
+    if (log) log.stages.compose_video.durationMs = Date.now() - start;
+  }
 }
 
 // ── 节点 5：渲染入队 ─────────────────────────────────
@@ -186,6 +304,7 @@ export async function composeVideoNode(
 export async function queueNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
   if (!state.scriptSegments?.length) {
     throw new Error('缺少脚本分段');
   }
@@ -193,17 +312,41 @@ export async function queueNode(
     throw new Error('缺少音频路径');
   }
 
-  const queue = getQueue();
+  const log = state._procedureLog as ProcedureLog | null;
 
-  const job = await queue.add('generate-video', {
+  const jobData = {
     text: state.userPrompt,
     script: state.scriptSegments,
     audioPath: state.audioPath,
-    visuals: state.visuals, // Phase 2: 画面素材
-    aiModel: state.aiModel, // 可观测性
-  });
+    visuals: state.visuals,
+    aiModel: state.aiModel,
+  };
 
-  console.log(`[agent] queue → job #${job.id} 已入队`);
+  if (log) {
+    log.stages.queue.input.jobData = jobData;
+  }
 
-  return { jobId: String(job.id) };
+  try {
+    const queue = getQueue();
+    const job = await queue.add('generate-video', jobData);
+
+    const jobId = String(job.id);
+
+    if (log) {
+      log.stages.queue.output.jobId = jobId;
+      log.jobId = jobId;
+      // 入队后立即保存日志（不包含 render 阶段）
+      await saveProcedureLog(log, jobId);
+    }
+
+    console.log(`[agent] queue → job #${jobId} 已入队`);
+
+    return { jobId, _procedureLog: log };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) log.stages.queue.error = message;
+    throw err;
+  } finally {
+    if (log) log.stages.queue.durationMs = Date.now() - start;
+  }
 }

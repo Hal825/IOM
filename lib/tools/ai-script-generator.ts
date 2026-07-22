@@ -1,6 +1,7 @@
 import { generateScript } from './script-generator';
 import { SCRIPT_GENERATION_SYSTEM } from '@/lib/prompts/script-generation';
 import type { ScriptScene } from '@/lib/types';
+import type { TokenUsage } from '@/lib/log/procedure';
 
 /**
  * AI 脚本生成器 — 调用 AI 模型（兼容 OpenAI 格式）生成字幕脚本。
@@ -31,12 +32,15 @@ export interface AiScriptResult {
   model: string;
   /** 实际重试次数 */
   retries: number;
+  /** Token 消耗（最后一次成功调用） */
+  tokenUsage?: TokenUsage;
 }
 
 interface DeepSeekResponse {
   choices: Array<{
     message: { content: string };
   }>;
+  usage?: TokenUsage;
 }
 
 interface ParsedScene {
@@ -93,7 +97,9 @@ function parseAndValidate(raw: string): ParsedScriptOutput {
 
 // ── DeepSeek API 调用 ───────────────────────────────
 
-async function callDeepSeek(userPrompt: string): Promise<string> {
+async function callDeepSeek(
+  userPrompt: string
+): Promise<{ content: string; usage?: TokenUsage }> {
   if (!AI_SCRIPT_API_KEY || !AI_SCRIPT_BASE_URL || !AI_SCRIPT_MODEL) {
     throw new Error(
       'AI 脚本生成环境变量未配置（AI_SCRIPT_API_KEY / AI_SCRIPT_BASE_URL / AI_SCRIPT_MODEL）'
@@ -124,13 +130,13 @@ async function callDeepSeek(userPrompt: string): Promise<string> {
     );
   }
 
-  const data = (await resp.json()) as DeepSeekResponse;//4. 解析响应 JSON
-  const content = data.choices?.[0]?.message?.content;//5. 提取内容
+  const data = (await resp.json()) as DeepSeekResponse; //4. 解析响应 JSON
+  const content = data.choices?.[0]?.message?.content; //5. 提取内容
   if (!content?.trim()) {
-    throw new Error('DeepSeek 返回空内容');
+    throw new Error('AI 脚本生成返回空内容');
   }
 
-  return content;
+  return { content, usage: data.usage };
 }
 
 // ── 指数退避重试 ────────────────────────────────────
@@ -183,8 +189,9 @@ export async function generateScriptWithAI(
 
   try {
     const { result, retries } = await withRetry(async () => {
-      const content = await callDeepSeek(userPrompt);
-      return parseAndValidate(content);
+      const { content, usage } = await callDeepSeek(userPrompt);
+      const parsed = parseAndValidate(content);
+      return { ...parsed, usage };
     });
 
     const scenes = result.scenes.map((s) => ({
@@ -198,7 +205,7 @@ export async function generateScriptWithAI(
         (retries > 0 ? `（重试 ${retries} 次）` : '')
     );
 
-    return { scenes, model: AI_SCRIPT_MODEL!, retries };
+    return { scenes, model: AI_SCRIPT_MODEL!, retries, tokenUsage: result.usage };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[ai-script] 失败，回退规则切句: ${message}`);

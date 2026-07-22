@@ -1,10 +1,10 @@
 /**
- * 图片预下载 & AI 生成工具 — 在 Remotion 渲染前将远程图片本地化。
+ * 图片预下载 & AI 生成工具 — 在 Remotion 渲染前将远程图片本地化并转为 Base64。
  *
  * 流程：
  * 1. 下载 Unsplash/Pexels 远程图片 → app/images/<jobId>/
  * 2. 对 solid（纯色兜底）场景，调用 AI 生成图片
- * 3. 返回本地化后的 VisualAsset[]，供 Remotion staticFile() 引用
+ * 3. 将本地文件转为 Base64 DataURL，内联传递给 Remotion（无需文件服务）
  *
  * 支持任意兼容 OpenAI 接口的图片生成服务（DashScope / 火山引擎 / DALL-E 等）。
  * 通过 AI_IMAGE_MODEL 指定模型，AI_IMAGE_API_KEY / AI_IMAGE_BASE_URL 配置连接。
@@ -128,13 +128,37 @@ async function generateImageWithAI(
   }
 }
 
+// ── Base64 内联转换 ────────────────────────────────
+
+/** 扩展名 → MIME 类型映射 */
+const MIME_MAP: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+};
+
+/**
+ * 将本地图片文件读取为 Base64 DataURL。
+ * Remotion 可直接用 data: URL 作为 <Img src>，无需文件服务或 staticFile()。
+ */
+async function fileToBase64DataUrl(filePath: string): Promise<string> {
+  const buffer = await fs.readFile(filePath);
+  const base64 = buffer.toString('base64');
+  const ext = path.extname(filePath).toLowerCase();
+  const mime = MIME_MAP[ext] ?? 'image/jpeg';
+  return `data:${mime};base64,${base64}`;
+}
+
 // ── 公开 API ────────────────────────────────────────
 
 /**
- * 预处理画面素材：远程图片下载到本地 + solid 场景 AI 生图。
+ * 预处理画面素材：远程图片下载到本地 + solid 场景 AI 生图 + Base64 内联。
  *
- * 图片持久存储到 app/images/<jobId>/，url 返回 staticFile 可用的相对路径。
- * 调用方需在渲染前将图片复制到 Remotion bundle public/ 目录。
+ * 图片持久存储到 app/images/<jobId>/（用于缓存/调试），
+ * 但返回的 VisualAsset[].url 已经是 Base64 DataURL，可直接传给 Remotion <Img>。
+ * solid 类型的 url（如 "#ff0000"）保持不变。
  */
 export async function prepareVisuals(
   visuals: VisualAsset[] | undefined,
@@ -152,15 +176,13 @@ export async function prepareVisuals(
     const ext = visual.type === 'image' ? '.jpg' : '.png';
     const localName = `scene_${String(visual.sceneIndex).padStart(3, '0')}${ext}`;
     const destPath = path.join(imageDir, localName);
-    // 返回绝对路径，Remotion <Img> 可直接读取本地文件
-    const localUrl = destPath;
 
     if (visual.type === 'image') {
       // ── 远程图片 → 下载到本地 ──
       const ok = await downloadImage(visual.url, destPath);
       if (ok) {
-        console.log(`[image-dl] 场景 ${visual.sceneIndex} 已下载 → ${localUrl}`);
-        prepared.push({ ...visual, url: localUrl });
+        console.log(`[image-dl] 场景 ${visual.sceneIndex} 已下载 → ${destPath}`);
+        prepared.push({ ...visual, url: destPath });
       } else {
         // 下载失败 → 回退 AI 生图
         console.warn(
@@ -172,7 +194,7 @@ export async function prepareVisuals(
           prepared.push({
             ...visual,
             type: 'image',
-            url: localUrl,
+            url: destPath,
             source: 'ai-generated',
             photographer: undefined,
           });
@@ -186,11 +208,11 @@ export async function prepareVisuals(
       const sceneText = script[visual.sceneIndex]?.text ?? '';
       const ok = await generateImageWithAI(sceneText, destPath);
       if (ok) {
-        console.log(`[image-gen] 场景 ${visual.sceneIndex} AI 生成 → ${localUrl}`);
+        console.log(`[image-gen] 场景 ${visual.sceneIndex} AI 生成 → ${destPath}`);
         prepared.push({
           ...visual,
           type: 'image',
-          url: localUrl,
+          url: destPath,
           source: 'ai-generated',
           photographer: undefined,
         });
@@ -213,5 +235,22 @@ export async function prepareVisuals(
       `下载=${downloaded - aiGen}, AI生成=${aiGen}, 纯色兜底=${solidFallback}`
   );
 
-  return prepared;
+  // ── 将本地图片转为 Base64 DataURL，内联传递给 Remotion ──
+  const withBase64 = await Promise.all(
+    prepared.map(async (v) => {
+      if (v.type === 'image' && v.url && !v.url.startsWith('data:')) {
+        try {
+          const dataUrl = await fileToBase64DataUrl(v.url);
+          return { ...v, url: dataUrl };
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn(`[image-dl] Base64 转换失败 ${v.url}: ${message}`);
+          return v; // 保留原始路径，让渲染层兜底处理
+        }
+      }
+      return v;
+    })
+  );
+
+  return withBase64;
 }

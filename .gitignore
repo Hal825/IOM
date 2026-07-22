@@ -43,6 +43,9 @@ storage/output/*
 # downloaded/generated images for rendering
 app/images/*
 
+# procedure logs
+log/procedure/
+
 # vercel
 .vercel
 

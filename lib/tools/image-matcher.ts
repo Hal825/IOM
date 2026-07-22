@@ -1,5 +1,6 @@
 import type { VisualAsset } from '@/lib/types';
-import { extractKeywords } from './keyword-extractor';
+import { extractKeywords, batchExtractKeywords } from './keyword-extractor';
+import type { TokenUsage } from '@/lib/log/procedure';
 
 /**
  * 画面匹配工具 — Unsplash + Pexels 双路故障转移。
@@ -128,11 +129,10 @@ function generateSolidColor(seed: string): string {
  * Unsplash → Pexels → 纯色 三级降级。
  */
 async function matchOneVisual(
+  keyword: string,
   text: string,
   sceneIndex: number
 ): Promise<VisualAsset> {
-  const keyword = await extractKeywords(text);
-  console.log(`[visual] 场景 ${sceneIndex} 关键词: "${keyword}"`);
 
   // 1. Unsplash
   const unsplashResult = await searchUnsplash(keyword);
@@ -184,9 +184,12 @@ export async function matchVisuals(
 
   console.log(`[visual] 开始为 ${scenes.length} 个场景匹配画面...`);
 
-  // 所有场景并发请求（每个场景内部串行 Unsplash→Pexels，场景之间并行）
   const results = await Promise.all(
-    scenes.map((scene, i) => matchOneVisual(scene.text, sceneIndexOffset + i))
+    scenes.map(async (scene, i) => {
+      const keyword = await extractKeywords(scene.text);
+      console.log(`[visual] 场景 ${i} 关键词: "${keyword}"`);
+      return matchOneVisual(keyword, scene.text, sceneIndexOffset + i);
+    })
   );
 
   console.log(
@@ -196,4 +199,67 @@ export async function matchVisuals(
   );
 
   return results;
+}
+
+/** 关键词详情（供日志记录） */
+export interface KeywordDetail {
+  sceneIndex: number;
+  originalText: string;
+  extractedKeyword: string;
+  method: 'llm' | 'rule';
+}
+
+/** matchVisualsWithDetail 的返回值 */
+export interface MatchVisualsDetailResult {
+  visuals: VisualAsset[];
+  tokenUsage?: TokenUsage;
+  keywordDetails: KeywordDetail[];
+}
+
+/**
+ * 批量匹配画面素材（详细版，返回关键词提取详情和 token 消耗）。
+ *
+ * 优化：使用批量 LLM 调用替代逐个场景请求，
+ * N 个场景只需 1 次 HTTP 请求，降低超时风险并减少 Token 消耗。
+ */
+export async function matchVisualsWithDetail(
+  scenes: Array<{ text: string }>,
+  sceneIndexOffset: number = 0
+): Promise<MatchVisualsDetailResult> {
+  if (!scenes.length) return { visuals: [], keywordDetails: [] };
+
+  console.log(`[visual] 开始为 ${scenes.length} 个场景匹配画面（批量模式）...`);
+
+  // 1. 批量提取关键词（一次 LLM 调用）
+  const sceneTexts = scenes.map((s) => s.text);
+  const keywordResults = await batchExtractKeywords(sceneTexts);
+
+  // 2. 汇总 tokenUsage（批量调用只产生一次消耗）
+  const llmResult = keywordResults.find((r) => r.method === 'llm');
+  const tokenUsage: TokenUsage | undefined = llmResult?.tokenUsage;
+
+  // 3. 构建关键词详情（供日志记录）
+  const keywordDetails: KeywordDetail[] = keywordResults.map((r, i) => ({
+    sceneIndex: sceneIndexOffset + i,
+    originalText: scenes[i].text,
+    extractedKeyword: r.keyword,
+    method: r.method,
+  }));
+
+  // 4. 并行匹配画面（Unsplash/Pexels/纯色）
+  const visuals = await Promise.all(
+    scenes.map(async (scene, i) => {
+      const keyword = keywordResults[i].keyword;
+      console.log(`[visual] 场景 ${i} 关键词: "${keyword}" (${keywordResults[i].method})`);
+      return matchOneVisual(keyword, scene.text, sceneIndexOffset + i);
+    })
+  );
+
+  console.log(
+    `[visual] 完成: Unsplash=${visuals.filter((r) => r.source === 'unsplash').length}, ` +
+      `Pexels=${visuals.filter((r) => r.source === 'pexels').length}, ` +
+      `兜底=${visuals.filter((r) => r.source === 'solid').length}`
+  );
+
+  return { visuals, tokenUsage, keywordDetails };
 }

@@ -5,6 +5,12 @@ import { executeTask } from '../lib/orchestrator.old';
 import { renderVideo } from '../lib/tools/renderer';
 import { warmUp } from '../lib/tools/renderer';
 import { QUEUE_NAME, type TaskData, type TaskResult } from '../lib/types';
+import {
+  findProcedureLog,
+  saveProcedureLog,
+  calculateTotalTokenUsage,
+  cleanupOldLogs,
+} from '../lib/log/procedure';
 
 /**
  * BullMQ Worker 进程 — 独立于 Next.js 运行（npm run worker）。
@@ -35,23 +41,65 @@ async function main() {
         await job.updateProgress(50);
         await job.log(`阶段 3/3: 渲染视频（脚本 ${job.data.script.length} 个场景）`);
 
-        const videoPath = await renderVideo({
-          script: job.data.script,
-          audioPath: job.data.audioPath,
-          outputDir: path.join(STORAGE_DIR, 'output'),
-          jobId,
-          visuals: job.data.visuals,
-          onProgress: (p) => {
-            void job.updateProgress(50 + Math.round(p * 45));
-          },
-        });
+        // 加载 agent 阶段保存的日志
+        const log = await findProcedureLog(jobId);
+        const renderStart = Date.now();
 
-        await job.updateProgress(100);
-        return {
-          videoPath: path.relative(STORAGE_DIR, videoPath).replaceAll('\\', '/'),
-          audioPath: path.relative(STORAGE_DIR, job.data.audioPath).replaceAll('\\', '/'),
-          script: job.data.script,
-        };
+        if (log) {
+          log.stages.render.input = {
+            script: job.data.script,
+            audioPath: job.data.audioPath,
+            visuals: job.data.visuals ?? [],
+            outputDir: path.join(STORAGE_DIR, 'output'),
+            jobId,
+          };
+        }
+
+        try {
+          const videoPath = await renderVideo({
+            script: job.data.script,
+            audioPath: job.data.audioPath,
+            outputDir: path.join(STORAGE_DIR, 'output'),
+            jobId,
+            visuals: job.data.visuals,
+            onProgress: (p) => {
+              void job.updateProgress(50 + Math.round(p * 45));
+            },
+          });
+
+          if (log) {
+            log.stages.render.output = {
+              videoPath,
+              durationSec: job.data.script.length
+                ? Math.max(...job.data.script.map((s) => s.endFrame)) / 30
+                : 0,
+            };
+            log.finalStatus = 'success';
+          }
+
+          await job.updateProgress(100);
+          return {
+            videoPath: path.relative(STORAGE_DIR, videoPath).replaceAll('\\', '/'),
+            audioPath: path.relative(STORAGE_DIR, job.data.audioPath).replaceAll('\\', '/'),
+            script: job.data.script,
+          };
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          if (log) {
+            log.stages.render.error = message;
+            log.finalStatus = 'failed';
+            log.globalError = message;
+          }
+          throw err;
+        } finally {
+          if (log) {
+            log.stages.render.durationMs = Date.now() - renderStart;
+            log.totalDurationMs =
+              Date.now() - new Date(log.timestamp).getTime();
+            log.totalTokenUsage = calculateTotalTokenUsage(log);
+            await saveProcedureLog(log, jobId);
+          }
+        }
       }
 
       // ── 旧模式（兼容）：走完整流水线 ──
@@ -76,6 +124,9 @@ async function main() {
   worker.on('error', (err) => {
     console.error(`[worker] Worker 错误: ${err.message}`);
   });
+
+  // 清理过期日志（异步，不阻塞启动）
+  cleanupOldLogs(7).catch(() => {});
 
   // 预热 Remotion bundle（首次运行还会自动下载 Chrome Headless Shell，约 200MB）
   console.log('[worker] 预热 Remotion bundle（首次运行需数分钟，会下载浏览器内核）...');
