@@ -10,26 +10,16 @@
  */
 
 import type { TokenUsage } from '@/lib/log/procedure';
+import {
+  KEYWORD_EXTRACTION_SYSTEM,
+  BATCH_KEYWORD_EXTRACTION_SYSTEM,
+} from '@/lib/prompts/keyword-extraction';
 
 // ── 配置（全部来自环境变量）─────────────────────────
 
 const AI_KEYWORD_API_KEY = process.env.AI_KEYWORD_API_KEY;
 const AI_KEYWORD_BASE_URL = process.env.AI_KEYWORD_BASE_URL;
 const AI_KEYWORD_MODEL = process.env.AI_KEYWORD_MODEL;
-
-// ── Prompt ──────────────────────────────────────────
-
-const SYSTEM_PROMPT =
-  '你是搜索关键词专家。从用户文本中提取1-3个英文关键词（名词或形容词+名词），用于图片搜索。只输出关键词，空格分隔，不要其他内容。';
-
-/** 批量提取用系统提示词：要求返回 JSON 数组 */
-const BATCH_SYSTEM_PROMPT = `你是搜索关键词专家。用户将提供多个场景文本（按数字编号）。
-请为每个场景提取 1-3 个英文关键词（名词或形容词+名词），用于图片搜索。
-
-**必须严格按顺序返回一个 JSON 数组**，格式如下：
-["场景1关键词", "场景2关键词", "场景3关键词", ...]
-
-只输出 JSON 数组，不要包含其他任何内容。`;
 
 // ── 类型 ────────────────────────────────────────────
 
@@ -85,7 +75,7 @@ async function callVolcEngine(
       body: JSON.stringify({
         model: AI_KEYWORD_MODEL,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: KEYWORD_EXTRACTION_SYSTEM },
           { role: 'user', content: text },
         ],
         max_tokens: 20,
@@ -148,7 +138,7 @@ async function batchCallVolcEngine(
       body: JSON.stringify({
         model: AI_KEYWORD_MODEL,
         messages: [
-          { role: 'system', content: BATCH_SYSTEM_PROMPT },
+          { role: 'system', content: BATCH_KEYWORD_EXTRACTION_SYSTEM },
           { role: 'user', content: userContent },
         ],
         max_tokens: 100, // 足够容纳 6-10 个场景的关键词

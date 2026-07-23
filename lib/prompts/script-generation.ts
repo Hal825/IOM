@@ -20,7 +20,3 @@ export const SCRIPT_GENERATION_SYSTEM = `你是一个专业的短视频脚本编
     { "text": "第二条字幕文本" }
   ]
 }`;
-
-/** 画面匹配 — 关键词提取提示词（预留，当前用规则提取） */
-export const VISUAL_KEYWORD_SYSTEM = `从以下文本中提取 1-3 个最适合用于图片搜索的英文关键词。
-只输出关键词，用空格分隔，不要包含任何其他内容。`;

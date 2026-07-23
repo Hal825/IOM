@@ -7,7 +7,7 @@ import { matchVisualsWithDetail } from '@/lib/tools/image-matcher';
 import { synthesizeSpeech } from '@/lib/tools/tts';
 import { getQueue } from '@/lib/queue';
 import { STORAGE_DIR } from '@/lib/tasks';
-import { VIDEO_FPS } from '@/lib/types';
+import { VIDEO_FPS, type ScriptScene } from '@/lib/types';
 import {
   type ProcedureLog,
   createProcedureLog,
@@ -42,6 +42,34 @@ export async function scriptAiNode(
   log.stages.script_ai.input.userPrompt = prompt;
 
   try {
+    // === Phase 3: Proposal-driven 路径 ===
+    // 如果上游 proposal 节点已产出分镜脚本，直接映射为 ScriptScene[]
+    if (state.proposal?.shotScript && state.proposal.shotScript.length > 0) {
+      const scenes: ScriptScene[] = state.proposal.shotScript.map((shot) => ({
+        text: shot.audioTts.text || shot.subtitleText,
+        startFrame: 0,
+        endFrame: 0,
+      }));
+
+      log.stages.script_ai.output = {
+        scenes,
+        model: 'proposal-driven',
+        retries: 0,
+      };
+
+      console.log(
+        `[agent] script_ai → ${scenes.length} 个场景 (proposal-driven)`
+      );
+
+      return {
+        scriptSegments: scenes,
+        aiModel: 'proposal-driven',
+        retryCount: 0,
+        _procedureLog: log,
+      };
+    }
+
+    // === 原有 AI / 规则路径（向后兼容）===
     const result = await generateScriptWithAI(prompt);
 
     if (result.scenes.length === 0) {

@@ -1,5 +1,5 @@
 import { Annotation } from '@langchain/langgraph';
-import type { ScriptScene, VisualAsset } from '@/lib/types';
+import type { ScriptScene, VisualAsset, ResearchReport, Proposal } from '@/lib/types';
 
 /**
  * LangGraph 工作流状态 — Phase 2 扩展字段。
@@ -74,6 +74,12 @@ export const VideoGenState = Annotation.Root({
   userPrompt: Annotation<string>,
   /** 脚本风格（可选，透传给 LLM） */
   style: Annotation<string>,
+
+  // === Phase 3: 调研 & 提案 ===
+  /** 调研报告：文本分析结果（research 节点输出） */
+  researchReport: Annotation<ResearchReport | null>,
+  /** 制作提案：分镜脚本和风格指南（proposal 节点输出） */
+  proposal: Annotation<Proposal | null>,
 
   // === 中间产物 ===
   /** 切分后的字幕场景列表（TTS 前不含帧区间，TTS 后由 assignFrames 回填） */

@@ -13,6 +13,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { type VisualAsset, type ScriptScene } from '@/lib/types';
+import { buildImageGenPrompt } from '@/lib/prompts/image-generation';
 
 /** 图片本地存储根目录 */
 export const IMAGE_STORE_DIR = path.resolve('./app/images');
@@ -88,7 +89,7 @@ async function generateImageWithAI(
               role: 'user',
               content: [
                 {
-                  text: ` cinematic landscape, 16:9 wide angle, high quality, photorealistic — ${prompt}`,
+                  text: buildImageGenPrompt(prompt),
                 },
               ],
             },

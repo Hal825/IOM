@@ -93,6 +93,68 @@ export const VIDEO_FPS = 30;
 export const VIDEO_WIDTH = 1280;
 export const VIDEO_HEIGHT = 720;
 
+// ── Phase 3: Research & Proposal ────────────────────
+
+/** 调研报告：文本内容分析与风格识别结果 */
+export interface ResearchReport {
+  metadata: { topic: string; wordCount: number; language: string };// 元数据：主题、字数、语言
+  contentSkeleton: {
+    segments: Array<{
+      id: string;
+      title: string;
+      originalText: string;
+      summary: string; // 核心摘要 (50-100字)
+      keywords: string[];
+    }>;// 内容分段：每段的id,标题、原文、摘要、关键词
+    flow: 'chronological' | 'cause-effect' | 'problem-solution' | 'narrative';// 逻辑流向：时间顺序、因果关系、问题-解决、叙事
+  };// 内容结构：分段信息 + 逻辑流向
+  styleProfile: {
+    tone: 'professional' | 'lively' | 'serious' | 'inspirational' | 'minimal';
+    pace: 'slow' | 'medium' | 'fast';
+    visualStyle: string; // 描述性标签，如 "科技感、蓝色调"
+    suggestedBGM: string; // 如 "轻快钢琴"
+  };// 风格分析：语气、节奏、视觉风格、建议背景音乐
+}
+
+/** 制作提案：视频分镜脚本与风格指南 */
+export interface Proposal {
+  blueprint: {
+    title: string;
+    totalDuration: number; // 预估总秒数
+    sceneCount: number;
+    aspectRatio: '16:9' | '9:16' | '1:1';
+  };
+  shotScript: Array<{
+    // 直接对接 Remotion
+    sceneId: string;
+    duration: number;
+    visualDescription: string;
+    layout: {
+      textPosition: 'center' | 'top' | 'bottom';
+      backgroundColor: string; // HEX 或渐变色
+      animation: 'fade' | 'slide' | 'typing' | 'none';
+    };
+    subtitleText: string; // 最终显示字幕
+    audioTts: {
+      text: string; // 朗读文本
+      speed: number;
+      voice: string; // 如 'zh-CN-XiaoxiaoNeural'
+    };
+  }>;
+  styleGuide: {
+    globalTone: string;
+    colorPalette: string[];
+    fontFamily: string;
+    backgroundMusic: { style: string; source?: string };
+    transitions: 'smooth' | 'cut' | 'zoom';
+  };
+  feasibility: {
+    riskLevel: 'low' | 'medium' | 'high';
+    estimatedRenderTime: number;
+    suggestions: string[];
+  };
+}
+
 /** Remotion composition 的 inputProps */
 export interface VideoCompositionProps {
   script: ScriptScene[];

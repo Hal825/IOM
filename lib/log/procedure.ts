@@ -28,6 +28,30 @@ export interface ProcedureLog {
   totalTokenUsage?: TokenUsage;
 
   stages: {
+    research: {
+      input: { userPrompt: string };
+      output: {
+        report: unknown;
+        model?: string;
+        retries?: number;
+        tokenUsage?: TokenUsage;
+      };
+      durationMs: number;
+      error?: string;
+    };
+
+    proposal: {
+      input: { researchReport?: unknown; userPrompt?: string };
+      output: {
+        proposal: unknown;
+        model?: string;
+        retries?: number;
+        tokenUsage?: TokenUsage;
+      };
+      durationMs: number;
+      error?: string;
+    };
+
     script_ai: {
       input: { userPrompt: string };
       output: {
@@ -134,6 +158,16 @@ export function createProcedureLog(jobId: string): ProcedureLog {
     timestamp: new Date().toISOString(),
     totalDurationMs: 0,
     stages: {
+      research: {
+        input: { userPrompt: '' },
+        output: { report: {} },
+        durationMs: 0,
+      },
+      proposal: {
+        input: {},
+        output: { proposal: {} },
+        durationMs: 0,
+      },
       script_ai: {
         input: { userPrompt: '' },
         output: { scenes: [], model: '', retries: 0 },
@@ -243,6 +277,8 @@ export function calculateTotalTokenUsage(
   log: ProcedureLog
 ): TokenUsage | undefined {
   return sumTokenUsage([
+    log.stages.research.output.tokenUsage,
+    log.stages.proposal.output.tokenUsage,
     log.stages.script_ai.output.tokenUsage,
     log.stages.match_visual.output.tokenUsage,
   ]);
