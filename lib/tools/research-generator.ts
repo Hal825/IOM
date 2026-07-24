@@ -76,14 +76,14 @@ function parseAndValidateResearch(raw: string): ResearchReport {
   const obj = parsed as Record<string, unknown>;// 将解析结果转换为 Record<string, unknown> 类型
 
   // ── metadata 校验 ──
-  const metadata = obj.metadata as Record<string, unknown> | undefined;
-  if (!metadata || typeof metadata.topic !== 'string' || !metadata.topic.trim()) {
+  const metadata = obj.metadata as Record<string, unknown> | undefined;// 尝试获取 metadata 对象
+  if (!metadata || typeof metadata.topic !== 'string' || !metadata.topic.trim()) {// 检查 metadata.topic 是否为有效字符串
     throw new Error('[research] metadata.topic 缺失或无效');
   }
-  if (typeof metadata.wordCount !== 'number') {
+  if (typeof metadata.wordCount !== 'number') {// 检查 metadata.wordCount 是否为数字
     throw new Error('[research] metadata.wordCount 缺失或非数字');
   }
-  if (typeof metadata.language !== 'string' || !metadata.language.trim()) {
+  if (typeof metadata.language !== 'string' || !metadata.language.trim()) {// 检查 metadata.language 是否为有效字符串
     throw new Error('[research] metadata.language 缺失或无效');
   }
 
