@@ -1,7 +1,7 @@
 import { Worker, type Job } from 'bullmq';
 import path from 'node:path';
 import { createRedisConnection } from '../lib/queue';
-import { executeTask } from '../lib/orchestrator.old';
+import { executeTask } from '../lib/orchestrator';
 import { renderVideo } from '../lib/tools/renderer';
 import { warmUp } from '../lib/tools/renderer';
 import { QUEUE_NAME, type TaskData, type TaskResult } from '../lib/types';

@@ -42,7 +42,7 @@ export const PROPOSAL_SYSTEM = `你是一个专业的短视频导演和视觉设
 - **colorPalette**：4-5 个 HEX 色值组成的配色方案
 - **fontFamily**：字体（"sans-serif" / "serif" / "monospace"），默认 "sans-serif"
 - **backgroundMusic.style**：BGM 风格（对应 suggestedBGM）
-- **transitions**：转场方式（"smooth" / "cut" / "zoom"），默认 "fade"
+- **transitions**：转场方式（"smooth" / "cut" / "zoom"），默认 "smooth"
 
 ### 4. 可行性评估（feasibility）
 - **riskLevel**：风险等级
@@ -86,7 +86,7 @@ export const PROPOSAL_SYSTEM = `你是一个专业的短视频导演和视觉设
     "backgroundMusic": {
       "style": "科技感电子氛围"
     },
-    "transitions": "fade"
+    "transitions": "smooth"
   },
   "feasibility": {
     "riskLevel": "low",

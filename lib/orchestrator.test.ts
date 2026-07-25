@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Job } from 'bullmq';
-import { executeTask } from './orchestrator.old';
+import { executeTask } from './orchestrator';
 import type { TaskData } from './types';
 
 // Mock 掉三个工具模块，只验证编排逻辑

@@ -109,8 +109,8 @@ export interface ResearchReport {
     flow: 'chronological' | 'cause-effect' | 'problem-solution' | 'narrative';// 逻辑流向：时间顺序、因果关系、问题-解决、叙事
   };// 内容结构：分段信息 + 逻辑流向
   styleProfile: {
-    tone: 'professional' | 'lively' | 'serious' | 'inspirational' | 'minimal';
-    pace: 'slow' | 'medium' | 'fast';
+    tone: 'professional' | 'lively' | 'serious' | 'inspirational' | 'minimal';// 语气：专业、活泼、严肃、鼓舞人心、极简
+    pace: 'slow' | 'medium' | 'fast';// 节奏：慢、中、快
     visualStyle: string; // 描述性标签，如 "科技感、蓝色调"
     suggestedBGM: string; // 如 "轻快钢琴"
   };// 风格分析：语气、节奏、视觉风格、建议背景音乐

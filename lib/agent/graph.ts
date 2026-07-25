@@ -6,9 +6,9 @@ import {
   matchVisualNode,
   composeVideoNode,
   queueNode,
+  researchNode,
+  proposalNode,
 } from './nodes';
-import { researchNode } from './research/node';
-import { proposalNode } from './proposal/node';
 
 /**
  * Phase 3 工作流（含调研 + 提案）：
@@ -17,7 +17,7 @@ import { proposalNode } from './proposal/node';
  *       │
  *   research      ← 文本分析（LLM + 规则回退）
  *       │
- *   proposal      ← 分镜提案（LLM + 规则回退）
+ *   generate_proposal ← 分镜提案（LLM + 规则回退）
  *       │
  *   script_ai     ← 从 Proposal.shotScript 映射 ScriptScene[]（或回退 AI 生成）
  *       │
@@ -42,7 +42,7 @@ function fanout(state: VideoGenStateType): Send[] {
 
 const workflow = new StateGraph(VideoGenState)
   .addNode('research', researchNode)
-  .addNode('proposal', proposalNode)
+  .addNode('generate_proposal', proposalNode)
   .addNode('script_ai', scriptAiNode)
   .addNode('tts', ttsNode)
   .addNode('match_visual', matchVisualNode)
@@ -51,8 +51,8 @@ const workflow = new StateGraph(VideoGenState)
 
   // 入口 → 调研 → 提案 → 脚本生成
   .addEdge('__start__', 'research')
-  .addEdge('research', 'proposal')
-  .addEdge('proposal', 'script_ai')
+  .addEdge('research', 'generate_proposal')
+  .addEdge('generate_proposal', 'script_ai')
   // fan-out: Send API 并行分派
   .addConditionalEdges('script_ai', fanout)
   // 汇聚：两个并发分支都指向 compose_video

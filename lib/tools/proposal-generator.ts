@@ -42,27 +42,27 @@ interface ChatResponse {
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
 
-function isValidAspectRatio(v: unknown): v is Proposal['blueprint']['aspectRatio'] {
+function isValidAspectRatio(v: unknown): v is Proposal['blueprint']['aspectRatio'] {// 校验宽高比
   return typeof v === 'string' && ['16:9', '9:16', '1:1'].includes(v);
 }
 
-function isValidTextPosition(v: unknown): v is 'center' | 'top' | 'bottom' {
+function isValidTextPosition(v: unknown): v is 'center' | 'top' | 'bottom' {// 校验文本位置
   return typeof v === 'string' && ['center', 'top', 'bottom'].includes(v);
 }
 
-function isValidAnimation(v: unknown): v is 'fade' | 'slide' | 'typing' | 'none' {
+function isValidAnimation(v: unknown): v is 'fade' | 'slide' | 'typing' | 'none' {// 校验动画类型
   return typeof v === 'string' && ['fade', 'slide', 'typing', 'none'].includes(v);
 }
 
-function isValidTransitions(v: unknown): v is 'smooth' | 'cut' | 'zoom' {
+function isValidTransitions(v: unknown): v is 'smooth' | 'cut' | 'zoom' {// 校验过渡效果
   return typeof v === 'string' && ['smooth', 'cut', 'zoom'].includes(v);
 }
 
-function isValidRiskLevel(v: unknown): v is 'low' | 'medium' | 'high' {
+function isValidRiskLevel(v: unknown): v is 'low' | 'medium' | 'high' {// 校验风险等级
   return typeof v === 'string' && ['low', 'medium', 'high'].includes(v);
 }
 
-function parseAndValidateProposal(raw: string): Proposal {
+function parseAndValidateProposal(raw: string): Proposal {// 解析 LLM 输出的 Proposal JSON，并进行结构校验
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('[proposal] 响应中未找到 JSON 对象');
@@ -371,9 +371,9 @@ function fallbackProposal(
  * - 未配置 → 直接走规则生成
  */
 export async function generateProposal(
-  report: ResearchReport | null,
-  userPrompt: string,
-  styleHint?: string
+  report: ResearchReport | null,//调研报告（可为 null）
+  userPrompt: string,//用户原始文本
+  styleHint?: string//用户偏好风格提示（可选）
 ): Promise<ProposalResult> {
   // 未配置 API Key → 静默回退
   if (!PROPOSAL_API_KEY) {
@@ -385,15 +385,15 @@ export async function generateProposal(
     };
   }
 
-  try {
+  try {// 调用 LLM 生成 Proposal
     const { result, retries } = await withRetry(async () => {
       const { content, usage } = await callProposalLLM(
-        report,
-        userPrompt,
-        styleHint
+        report,//调研报告
+        userPrompt,//用户原始文本
+        styleHint//用户偏好风格提示
       );
-      const proposal = parseAndValidateProposal(content);
-      return { ...proposal, usage };
+      const proposal = parseAndValidateProposal(content);//解析并校验 Proposal
+      return { ...proposal, usage };//返回 Proposal 和 token 使用情况
     });
 
     console.log(
@@ -403,25 +403,25 @@ export async function generateProposal(
         (retries > 0 ? `（重试 ${retries} 次）` : '')
     );
 
-    return {
+    return {//返回最终结果
       proposal: {
-        blueprint: result.blueprint,
-        shotScript: result.shotScript,
-        styleGuide: result.styleGuide,
-        feasibility: result.feasibility,
+        blueprint: result.blueprint,//蓝图信息
+        shotScript: result.shotScript,//镜头脚本
+        styleGuide: result.styleGuide,//风格指南
+        feasibility: result.feasibility,//可行性分析
       },
-      model: PROPOSAL_LLM_MODEL!,
-      retries,
-      tokenUsage: result.usage,
+      model: PROPOSAL_LLM_MODEL!,//使用的 LLM 模型
+      retries,//重试次数
+      tokenUsage: result.usage,//token 使用情况
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = err instanceof Error ? err.message : String(err);//获取错误信息
     console.error(`[proposal] 失败，回退规则生成: ${message}`);
 
     return {
-      proposal: fallbackProposal(report, userPrompt),
-      model: `fallback(${PROPOSAL_LLM_MODEL ?? 'unknown'})`,
-      retries: MAX_RETRIES,
+      proposal: fallbackProposal(report, userPrompt),//回退到规则生成
+      model: `fallback(${PROPOSAL_LLM_MODEL ?? 'unknown'})`,//标记为回退模型
+      retries: MAX_RETRIES,//最大重试次数
     };
   }
 }

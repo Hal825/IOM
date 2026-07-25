@@ -454,10 +454,10 @@ export async function researchNode(
 export async function proposalNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();// 记录节点开始时间
-  const log = state._procedureLog as ProcedureLog | null;// 获取当前流程日志
+  const start = Date.now();
+  const log = state._procedureLog as ProcedureLog | null;
 
-  if (log) {// 如果日志存在，记录 proposal 节点的输入参数
+  if (log) {
     log.stages.proposal.input = {
       researchReport: state.researchReport ?? undefined,
       userPrompt: state.userPrompt,
@@ -471,7 +471,7 @@ export async function proposalNode(
       state.style ?? undefined
     );
 
-    if (log) {// 如果日志存在，记录 proposal 节点的输出结果
+    if (log) {
       log.stages.proposal.output = {
         proposal: result.proposal,
         model: result.model,

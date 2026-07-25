@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getQueue } from '@/lib/queue';
 import { jobToSummary } from '@/lib/tasks';
-import { videoGraph } from '../../lib/agent/graph';
+import { videoGraph } from '@/lib/agent/graph';
 
 export const dynamic = 'force-dynamic';
 
