@@ -52,68 +52,48 @@ export interface ProcedureLog {
       error?: string;
     };
 
-    script_ai: {
-      input: { userPrompt: string };
+    asset_gen: {
+      input: {
+        proposal: {
+          characterCount: number;
+          sceneCount: number;
+        };
+      };
       output: {
-        scenes: Array<{ text: string; startFrame?: number; endFrame?: number }>;
-        model: string;
-        retries: number;
-        tokenUsage?: TokenUsage;
+        manifest: unknown;
+        characterCount: number;
+        sceneCount: number;
       };
       durationMs: number;
       error?: string;
     };
 
     tts: {
-      input: { scriptSegments: Array<{ text: string }> };
+      input: {
+        sceneCount: number;
+        voice: string;
+      };
       output: {
         audioPath: string;
         durationSec: number;
+        model?: string;
       };
       durationMs: number;
       error?: string;
     };
 
-    match_visual: {
-      input: { scenes: Array<{ text: string }> };
-      output: {
-        visuals: Array<{
-          sceneIndex: number;
-          type: string;
-          source: string;
-          url: string;
-          localPath?: string;
-          photographer?: string;
-          duration: number;
-        }>;
-        stats: { total: number; unsplash: number; pexels: number; solid: number };
-        keywordExtraction: Array<{
-          sceneIndex: number;
-          originalText: string;
-          extractedKeyword: string;
-          method: 'llm' | 'rule';
-        }>;
-        tokenUsage?: TokenUsage;
-      };
-      durationMs: number;
-      error?: string;
-    };
-
-    compose_video: {
+    video_gen: {
       input: {
-        scenes: Array<{ text: string; startFrame: number; endFrame: number }>;
-        visuals: Array<{ sceneIndex: number; duration: number }>;
+        proposal: unknown;
+        assetManifest: {
+          characterCount: number;
+          sceneCount: number;
+        };
       };
       output: {
-        visuals: Array<{
-          sceneIndex: number;
-          type: string;
-          source: string;
-          url: string;
-          localPath?: string;
-          photographer?: string;
-          duration: number;
-        }>;
+        videoPath: string;
+        durationSec: number;
+        model?: string;
       };
       durationMs: number;
       error?: string;
@@ -122,24 +102,6 @@ export interface ProcedureLog {
     queue: {
       input: { jobData: unknown };
       output: { jobId: string };
-      durationMs: number;
-      error?: string;
-    };
-
-    render: {
-      input: {
-        script: unknown[];
-        audioPath: string;
-        visuals: unknown[];
-        outputDir: string;
-        jobId: string;
-      };
-      output: {
-        videoPath: string;
-        durationSec: number;
-        resolution?: string;
-        fps?: number;
-      };
       durationMs: number;
       error?: string;
     };
@@ -168,38 +130,24 @@ export function createProcedureLog(jobId: string): ProcedureLog {
         output: { proposal: {} },
         durationMs: 0,
       },
-      script_ai: {
-        input: { userPrompt: '' },
-        output: { scenes: [], model: '', retries: 0 },
+      asset_gen: {
+        input: { proposal: { characterCount: 0, sceneCount: 0 } },
+        output: { manifest: {}, characterCount: 0, sceneCount: 0 },
         durationMs: 0,
       },
       tts: {
-        input: { scriptSegments: [] },
+        input: { sceneCount: 0, voice: '' },
         output: { audioPath: '', durationSec: 0 },
         durationMs: 0,
       },
-      match_visual: {
-        input: { scenes: [] },
-        output: {
-          visuals: [],
-          stats: { total: 0, unsplash: 0, pexels: 0, solid: 0 },
-          keywordExtraction: [],
-        },
-        durationMs: 0,
-      },
-      compose_video: {
-        input: { scenes: [], visuals: [] },
-        output: { visuals: [] },
+      video_gen: {
+        input: { proposal: {}, assetManifest: { characterCount: 0, sceneCount: 0 } },
+        output: { videoPath: '', durationSec: 0 },
         durationMs: 0,
       },
       queue: {
         input: { jobData: {} },
         output: { jobId: '' },
-        durationMs: 0,
-      },
-      render: {
-        input: { script: [], audioPath: '', visuals: [], outputDir: '', jobId: '' },
-        output: { videoPath: '', durationSec: 0 },
         durationMs: 0,
       },
     },
@@ -279,8 +227,6 @@ export function calculateTotalTokenUsage(
   return sumTokenUsage([
     log.stages.research.output.tokenUsage,
     log.stages.proposal.output.tokenUsage,
-    log.stages.script_ai.output.tokenUsage,
-    log.stages.match_visual.output.tokenUsage,
   ]);
 }
 

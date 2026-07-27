@@ -5,7 +5,7 @@ import type { TokenUsage } from '@/lib/log/procedure';
 /**
  * Research 工具 — 调用 LLM 进行文本内容分析与结构识别。
  *
- * 策略（与 ai-script-generator.ts 一致）：
+ * 策略：
  * 1. 调用 AI API，要求返回 ResearchReport JSON
  * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
  * 3. 全部失败时回退到规则分析（fallbackResearch）
@@ -23,48 +23,44 @@ const MAX_TOKENS = 2000;
 // ── 类型 ────────────────────────────────────────────
 
 export interface ResearchResult {
-  report: ResearchReport;// 研究报告
-  model: string;// 使用的模型名称（或回退标记）
-  retries: number;// 重试次数（0 表示首次成功）
-  tokenUsage?: TokenUsage;// 可选：LLM 调用的 token 使用情况
+  report: ResearchReport;
+  model: string;
+  retries: number;
+  tokenUsage?: TokenUsage;
 }
 
 interface ChatResponse {
-  choices: Array<{// 选择的回答
-    message: { content: string };// 消息内容
+  choices: Array<{
+    message: { content: string };
   }>;
   usage?: TokenUsage;
 }
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
 
-// v: unknown：参数 v 被声明为 unknown 类型，表示它可以接收任何值，但使用前必须进行类型检查（类型安全）
-// v is ResearchReport['contentSkeleton']['flow']：这是 类型谓词（type predicate），
-// 告诉 TypeScript 编译器：如果函数返回 true，则参数 v 的类型就是 ResearchReport['contentSkeleton']['flow']
-function isValidFlow(v: unknown): v is ResearchReport['contentSkeleton']['flow'] {// 检查 flow 是否为有效值
+function isValidFlow(v: unknown): v is ResearchReport['contentSkeleton']['flow'] {
   return typeof v === 'string' &&
     ['chronological', 'cause-effect', 'problem-solution', 'narrative'].includes(v);
 }
 
-function isValidTone(v: unknown): v is ResearchReport['styleProfile']['tone'] {// 检查 tone 是否为有效值
+function isValidTone(v: unknown): v is ResearchReport['styleProfile']['tone'] {
   return typeof v === 'string' &&
     ['professional', 'lively', 'serious', 'inspirational', 'minimal'].includes(v);
 }
 
-function isValidPace(v: unknown): v is ResearchReport['styleProfile']['pace'] {// 检查 pace 是否为有效值
-  return typeof v === 'string' &&
-    ['slow', 'medium', 'fast'].includes(v);
+function isValidPace(v: unknown): v is ResearchReport['styleProfile']['pace'] {
+  return typeof v === 'string' && ['slow', 'medium', 'fast'].includes(v);
 }
 
 function parseAndValidateResearch(raw: string): ResearchReport {
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);// 尝试从原始字符串中匹配 JSON 对象
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('[research] 响应中未找到 JSON 对象');
   }
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(jsonMatch[0]);// 尝试解析 JSON 字符串（获取第一个完整的结果）
+    parsed = JSON.parse(jsonMatch[0]);
   } catch {
     throw new Error('[research] JSON 解析失败');
   }
@@ -73,17 +69,17 @@ function parseAndValidateResearch(raw: string): ResearchReport {
     throw new Error('[research] 输出不是有效对象');
   }
 
-  const obj = parsed as Record<string, unknown>;// 将解析结果转换为 Record<string, unknown> 类型
+  const obj = parsed as Record<string, unknown>;
 
   // ── metadata 校验 ──
-  const metadata = obj.metadata as Record<string, unknown> | undefined;// 尝试获取 metadata 对象
-  if (!metadata || typeof metadata.topic !== 'string' || !metadata.topic.trim()) {// 检查 metadata.topic 是否为有效字符串
+  const metadata = obj.metadata as Record<string, unknown> | undefined;
+  if (!metadata || typeof metadata.topic !== 'string' || !metadata.topic.trim()) {
     throw new Error('[research] metadata.topic 缺失或无效');
   }
-  if (typeof metadata.wordCount !== 'number') {// 检查 metadata.wordCount 是否为数字
+  if (typeof metadata.wordCount !== 'number') {
     throw new Error('[research] metadata.wordCount 缺失或非数字');
   }
-  if (typeof metadata.language !== 'string' || !metadata.language.trim()) {// 检查 metadata.language 是否为有效字符串
+  if (typeof metadata.language !== 'string' || !metadata.language.trim()) {
     throw new Error('[research] metadata.language 缺失或无效');
   }
 
@@ -101,7 +97,6 @@ function parseAndValidateResearch(raw: string): ResearchReport {
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i] as Record<string, unknown> | undefined;
     if (!seg) throw new Error(`[research] segments[${i}] 无效`);
-
     if (typeof seg.id !== 'string' || !seg.id.trim()) {
       throw new Error(`[research] segments[${i}].id 缺失`);
     }
@@ -141,7 +136,38 @@ function parseAndValidateResearch(raw: string): ResearchReport {
     throw new Error('[research] styleProfile.suggestedBGM 缺失');
   }
 
-  return parsed as ResearchReport;
+  // ── characterAnalysis 校验（新增字段，兼容旧格式）──
+  const characterAnalysis = obj.characterAnalysis as Record<string, unknown> | undefined;
+  let hasCharacter = false;
+  let characterHints: string[] = [];
+
+  if (characterAnalysis) {
+    hasCharacter = typeof characterAnalysis.hasCharacter === 'boolean'
+      ? characterAnalysis.hasCharacter
+      : false;
+    characterHints = Array.isArray(characterAnalysis.characterHints)
+      ? characterAnalysis.characterHints.filter((h): h is string => typeof h === 'string')
+      : [];
+  }
+
+  return {
+    metadata: {
+      topic: metadata.topic as string,
+      wordCount: metadata.wordCount as number,
+      language: metadata.language as string,
+    },
+    contentSkeleton: {
+      segments: segments as ResearchReport['contentSkeleton']['segments'],
+      flow: contentSkeleton.flow as ResearchReport['contentSkeleton']['flow'],
+    },
+    styleProfile: {
+      tone: styleProfile.tone as ResearchReport['styleProfile']['tone'],
+      pace: styleProfile.pace as ResearchReport['styleProfile']['pace'],
+      visualStyle: styleProfile.visualStyle as string,
+      suggestedBGM: styleProfile.suggestedBGM as string,
+    },
+    characterAnalysis: { hasCharacter, characterHints },
+  };
 }
 
 // ── LLM API 调用 ────────────────────────────────────
@@ -205,7 +231,7 @@ async function withRetry<T>(
       lastError = err instanceof Error ? err : new Error(String(err));
       if (attempt === maxRetries) break;
 
-      const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+      const delay = Math.pow(2, attempt) * 1000;
       console.warn(
         `[research] 第 ${attempt + 1} 次失败: ${lastError.message}，` +
           `${delay / 1000}s 后重试...`
@@ -224,12 +250,10 @@ async function withRetry<T>(
  * 不调用任何 API，纯本地处理。
  */
 function fallbackResearch(userPrompt: string): ResearchReport {
-  // 按段落拆分（双换行）
   const paragraphs = userPrompt
     .split(/\n\s*\n/)
     .filter((p) => p.trim().length > 0);
 
-  // 如果段落太少，按句子拆分
   let rawSegments: string[];
   if (paragraphs.length <= 1) {
     rawSegments = userPrompt
@@ -239,9 +263,7 @@ function fallbackResearch(userPrompt: string): ResearchReport {
     rawSegments = paragraphs;
   }
 
-  // 限制最多 8 段
   if (rawSegments.length > 8) {
-    // 合并相邻短段
     const merged: string[] = [];
     let acc = '';
     for (const seg of rawSegments) {
@@ -258,7 +280,6 @@ function fallbackResearch(userPrompt: string): ResearchReport {
 
   const segments = rawSegments.map((text, i) => {
     const trimmed = text.trim();
-    // 提取关键词：取前 3 个较长的中文字符片段
     const chineseTokens = trimmed
       .replace(/[^一-鿿]+/g, ' ')
       .split(/\s+/)
@@ -276,6 +297,11 @@ function fallbackResearch(userPrompt: string): ResearchReport {
 
   const wordCount = userPrompt.replace(/\s/g, '').length;
 
+  // 简单角色检测：检查是否有人物描述关键词
+  const charKeywords = ['医生', '护士', '老师', '学生', '工程师', '设计师', '老人', '小孩', '他', '她',
+    '穿着', '戴着', '身材', '头发', '眼睛', '医生', '警察', '厨师', '演员', '歌手'];
+  const hasCharacter = charKeywords.some((kw) => userPrompt.includes(kw));
+
   return {
     metadata: {
       topic: segments[0]?.title ?? '未命名主题',
@@ -292,6 +318,10 @@ function fallbackResearch(userPrompt: string): ResearchReport {
       visualStyle: 'clean modern presentation with abstract elements',
       suggestedBGM: 'ambient instrumental',
     },
+    characterAnalysis: {
+      hasCharacter,
+      characterHints: hasCharacter ? ['检测到可能的人物描述'] : [],
+    },
   };
 }
 
@@ -305,7 +335,6 @@ function fallbackResearch(userPrompt: string): ResearchReport {
 export async function analyzeContent(
   userPrompt: string
 ): Promise<ResearchResult> {
-  // 未配置 API Key → 静默回退
   if (!RESEARCH_API_KEY) {
     console.log('[research] 未配置 RESEARCH_API_KEY，使用规则分析');
     return {
@@ -324,7 +353,8 @@ export async function analyzeContent(
 
     console.log(
       `[research] ${RESEARCH_LLM_MODEL} 分析完成：` +
-        `${result.contentSkeleton.segments.length} 个段落` +
+        `${result.contentSkeleton.segments.length} 个段落, ` +
+        `角色需求: ${result.characterAnalysis.hasCharacter ? '是' : '否'}` +
         (retries > 0 ? `（重试 ${retries} 次）` : '')
     );
 
@@ -333,6 +363,7 @@ export async function analyzeContent(
         metadata: result.metadata,
         contentSkeleton: result.contentSkeleton,
         styleProfile: result.styleProfile,
+        characterAnalysis: result.characterAnalysis,
       },
       model: RESEARCH_LLM_MODEL!,
       retries,

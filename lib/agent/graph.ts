@@ -1,65 +1,54 @@
 import { StateGraph, END, Send } from '@langchain/langgraph';
 import { VideoGenState, type VideoGenStateType } from './state';
 import {
-  scriptAiNode,
-  ttsNode,
-  matchVisualNode,
-  composeVideoNode,
-  queueNode,
   researchNode,
   proposalNode,
+  assetGenNode,
+  ttsNode,
+  videoGenNode,
 } from './nodes';
 
 /**
- * Phase 3 工作流（含调研 + 提案）：
+ * 新工作流（纯 AI 管线）：
  *
  *   __start__
  *       │
- *   research      ← 文本分析（LLM + 规则回退）
+ *   research       ← 文本分析（LLM + 规则回退）
  *       │
- *   generate_proposal ← 分镜提案（LLM + 规则回退）
+ *   proposal       ← 分镜提案 + 角色设计（LLM + 规则回退）
  *       │
- *   script_ai     ← 从 Proposal.shotScript 映射 ScriptScene[]（或回退 AI 生成）
- *       │
- *   fanout (Send) ← 并行分派到 tts + match_visual
+ *   fanout (Send)  ← 并行分派到 asset_gen + tts
  *     ╱     ╲
- *   tts   match_visual   ← 并发执行（无依赖关系）
+ *   asset_gen   tts    ← 并发执行（两者均只依赖 proposal，无相互依赖）
  *     ╲     ╱
- *   compose_video  ← 同步点：帧区间 + 画面按 sceneIndex 对齐
- *       │
- *   queue          ← BullMQ 入队
+ *   video_gen      ← 汇聚点：Proposal + AssetManifest + audioUrl → AI 视频生成
  *       │
  *      END
  */
 
-/** fan-out 路由函数：返回 Send[] 将脚本同时分派给 TTS 和画面匹配 */
+/** fan-out 路由函数：将 proposal 同时分派给素材生成和语音合成 */
 function fanout(state: VideoGenStateType): Send[] {
   return [
-    new Send('tts', { scriptSegments: state.scriptSegments }),
-    new Send('match_visual', { scriptSegments: state.scriptSegments }),
+    new Send('asset_gen', { proposal: state.proposal }),
+    new Send('tts', { proposal: state.proposal }),
   ];
 }
 
 const workflow = new StateGraph(VideoGenState)
   .addNode('research', researchNode)
   .addNode('generate_proposal', proposalNode)
-  .addNode('script_ai', scriptAiNode)
+  .addNode('asset_gen', assetGenNode)
   .addNode('tts', ttsNode)
-  .addNode('match_visual', matchVisualNode)
-  .addNode('compose_video', composeVideoNode)
-  .addNode('queue', queueNode)
+  .addNode('video_gen', videoGenNode)
 
-  // 入口 → 调研 → 提案 → 脚本生成
+  // 入口 → 调研 → 提案
   .addEdge('__start__', 'research')
   .addEdge('research', 'generate_proposal')
-  .addEdge('generate_proposal', 'script_ai')
-  // fan-out: Send API 并行分派
-  .addConditionalEdges('script_ai', fanout)
-  // 汇聚：两个并发分支都指向 compose_video
-  .addEdge('tts', 'compose_video')
-  .addEdge('match_visual', 'compose_video')
-  // 后续线性流转
-  .addEdge('compose_video', 'queue')
-  .addEdge('queue', END);
+  // fan-out: Send API 并行分派 asset_gen 和 tts
+  .addConditionalEdges('generate_proposal', fanout)
+  // 汇聚：两个并发分支都指向 video_gen
+  .addEdge('asset_gen', 'video_gen')
+  .addEdge('tts', 'video_gen')
+  .addEdge('video_gen', END);
 
 export const videoGraph = workflow.compile();

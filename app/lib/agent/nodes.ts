@@ -1,399 +1,20 @@
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { type VideoGenStateType, type VideoGenStateUpdate } from './state';
-import { generateScript, assignFrames } from '@/lib/tools/script-generator';
-import { generateScriptWithAI } from '@/lib/tools/ai-script-generator';
-import { matchVisualsWithDetail } from '@/lib/tools/image-matcher';
-import { synthesizeSpeech } from '@/lib/tools/tts';
+import { type VideoGenStateType, type VideoGenStateUpdate } from '@/lib/agent/state';
 import { getQueue } from '@/lib/queue';
-import { STORAGE_DIR } from '@/lib/tasks';
-import { VIDEO_FPS, type ScriptScene } from '@/lib/types';
-import {
-  type ProcedureLog,
-  createProcedureLog,
-  saveProcedureLog,
-} from '@/lib/log/procedure';
+import { type ProcedureLog, createProcedureLog, saveProcedureLog } from '@/lib/log/procedure';
 import { analyzeContent } from '@/lib/tools/research-generator';
 import { generateProposal } from '@/lib/tools/proposal-generator';
+import { generateAssets } from '@/lib/tools/asset-generator';
+import { generateVideo } from '@/lib/tools/video-generator';
+import { synthesizeSpeech } from '@/lib/tools/tts-generator';
 
-// ── 工具函数 ────────────────────────────────────────
+// ── 公共工具 ────────────────────────────────────────
 
-function makeTaskId(): string {
-  return `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+function ensureLog(state: VideoGenStateType): ProcedureLog {
+  return (state._procedureLog as ProcedureLog | null) ?? createProcedureLog(state.jobId || 'unknown');
 }
 
-// ── 节点 1：AI 脚本生成（DeepSeek + 规则回退）────────
+// ── 节点 1：Research 调研 ────────────────────────────
 
-/**
- * 使用 AI（DeepSeek）生成字幕脚本，失败时自动回退到规则切句。
- * 输出 scriptSegments（帧区间初始为 0，由 ttsNode 回填）。
- */
-export async function scriptAiNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-  const prompt = state.userPrompt;
-  if (!prompt?.trim()) {
-    throw new Error('用户输入为空');
-  }
-
-  // 初始化日志（若尚未创建）
-  const log: ProcedureLog =
-    (state._procedureLog as ProcedureLog | null) ??
-    createProcedureLog(state.jobId || 'unknown');
-  log.stages.script_ai.input.userPrompt = prompt;
-
-  try {
-    // === Phase 3: Proposal-driven 路径 ===
-    // 如果上游 proposal 节点已产出分镜脚本，直接映射为 ScriptScene[]
-    if (state.proposal?.shotScript && state.proposal.shotScript.length > 0) {
-      const scenes: ScriptScene[] = state.proposal.shotScript.map((shot) => ({
-        text: shot.audioTts.text || shot.subtitleText,
-        startFrame: 0,
-        endFrame: 0,
-      }));
-
-      log.stages.script_ai.output = {
-        scenes,
-        model: 'proposal-driven',
-        retries: 0,
-      };
-
-      console.log(
-        `[agent] script_ai → ${scenes.length} 个场景 (proposal-driven)`
-      );
-
-      return {
-        scriptSegments: scenes,
-        aiModel: 'proposal-driven',
-        retryCount: 0,
-        _procedureLog: log,
-      };
-    }
-
-    // === 原有 AI / 规则路径（向后兼容）===
-    const result = await generateScriptWithAI(prompt);
-
-    if (result.scenes.length === 0) {
-      throw new Error('AI 脚本生成结果为空');
-    }
-
-    log.stages.script_ai.output = {
-      scenes: result.scenes,
-      model: result.model,
-      retries: result.retries,
-      tokenUsage: result.tokenUsage,
-    };
-
-    console.log(
-      `[agent] script_ai → ${result.scenes.length} 个场景 ` +
-        `(model: ${result.model}, retries: ${result.retries})`
-    );
-
-    return {
-      scriptSegments: result.scenes,
-      aiModel: result.model,
-      retryCount: result.retries,
-      _procedureLog: log,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log.stages.script_ai.error = message;
-    throw err;
-  } finally {
-    log.stages.script_ai.durationMs = Date.now() - start;
-  }
-}
-
-// ── 节点 1b（保留）：规则脚本生成 ────────────────────
-
-/**
- * 纯规则切句（Phase 1 行为，作为显式回退选项保留）。
- */
-export async function scriptNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  const scenes = generateScript(state.userPrompt);
-
-  if (scenes.length === 0) {
-    throw new Error('脚本生成结果为空');
-  }
-
-  return { scriptSegments: scenes };
-}
-
-// ── 节点 2：语音合成 + 帧区间回填 ────────────────────
-
-/**
- * 把脚本文本合成为 MP3，用音频时长回填各场景的帧区间。
- * 与 matchVisualNode 并行执行（无依赖关系）。
- */
-export async function ttsNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-  if (!state.scriptSegments?.length) {
-    throw new Error('缺少脚本分段，请先执行脚本生成');
-  }
-
-  const log = state._procedureLog as ProcedureLog | null;
-  if (log) {
-    log.stages.tts.input.scriptSegments = state.scriptSegments.map((s) => ({
-      text: s.text,
-    }));
-  }
-
-  try {
-    const taskId = makeTaskId();
-    const audioDir = path.join(STORAGE_DIR, 'audio', taskId);
-
-    const fullText = state.scriptSegments.map((s) => s.text).join('');
-    const { audioPath, duration } = await synthesizeSpeech(fullText, audioDir);
-
-    const scriptWithFrames = assignFrames(
-      state.scriptSegments,
-      duration,
-      VIDEO_FPS
-    );
-
-    if (log) {
-      log.stages.tts.output = {
-        audioPath,
-        durationSec: duration,
-      };
-    }
-
-    console.log(
-      `[agent] tts → ${duration.toFixed(1)}s 音频 → ${audioPath}`
-    );
-
-    return {
-      scriptSegments: scriptWithFrames,
-      audioPath,
-      duration,
-      _procedureLog: log,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (log) log.stages.tts.error = message;
-    throw err;
-  } finally {
-    if (log) log.stages.tts.durationMs = Date.now() - start;
-  }
-}
-
-// ── 节点 3：画面匹配（Unsplash → Pexels → 纯色）─────
-
-/**
- * 为每个脚本场景匹配画面素材。
- * 与 ttsNode 并行执行（无依赖关系）。
- * 返回的 visuals 不含 duration，由 composeVideoNode 从帧区间回填。
- */
-export async function matchVisualNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-  if (!state.scriptSegments?.length) {
-    throw new Error('缺少脚本分段，请先执行脚本生成');
-  }
-
-  const log = state._procedureLog as ProcedureLog | null;
-  if (log) {
-    log.stages.match_visual.input.scenes = state.scriptSegments.map((s) => ({
-      text: s.text,
-    }));
-  }
-
-  try {
-    const { visuals, tokenUsage, keywordDetails } =
-      await matchVisualsWithDetail(state.scriptSegments);
-
-    if (log) {
-      log.stages.match_visual.output = {
-        visuals: visuals.map((v) => ({
-          sceneIndex: v.sceneIndex,
-          type: v.type,
-          source: v.source,
-          url: v.url,
-          photographer: v.photographer,
-          duration: v.duration,
-        })),
-        stats: {
-          total: visuals.length,
-          unsplash: visuals.filter((v) => v.source === 'unsplash').length,
-          pexels: visuals.filter((v) => v.source === 'pexels').length,
-          solid: visuals.filter((v) => v.source === 'solid').length,
-        },
-        keywordExtraction: keywordDetails,
-        tokenUsage,
-      };
-    }
-
-    return { visuals, _procedureLog: log };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (log) log.stages.match_visual.error = message;
-    throw err;
-  } finally {
-    if (log) log.stages.match_visual.durationMs = Date.now() - start;
-  }
-}
-
-// ── 节点 4：合并结果（同步点）────────────────────────
-
-/**
- * TTS 与画面匹配的同步点。
- * 将帧区间信息回填到 visuals 的 duration 字段，确保两者按 sceneIndex 对齐。
- *
- * 关键：使用 sceneIndex 做 Map 合并，不依赖数组顺序。
- */
-export async function composeVideoNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-  if (!state.scriptSegments?.length) {
-    throw new Error('缺少脚本分段');
-  }
-  if (!state.audioPath) {
-    throw new Error('缺少音频路径');
-  }
-
-  const scenes = state.scriptSegments;
-  const visuals = state.visuals ?? [];
-
-  const log = state._procedureLog as ProcedureLog | null;
-  if (log) {
-    log.stages.compose_video.input = {
-      scenes: scenes.map((s) => ({
-        text: s.text,
-        startFrame: s.startFrame,
-        endFrame: s.endFrame,
-      })),
-      visuals: visuals.map((v) => ({
-        sceneIndex: v.sceneIndex,
-        duration: v.duration,
-      })),
-    };
-  }
-
-  try {
-    const visualMap = new Map(visuals.map((v) => [v.sceneIndex, v]));
-
-    const alignedVisuals = scenes.map((scene, i) => {
-      const visual = visualMap.get(i);
-      const durationSec =
-        (scene.endFrame - scene.startFrame) / VIDEO_FPS;
-
-      if (visual) {
-        return { ...visual, duration: durationSec };
-      }
-      return {
-        sceneIndex: i,
-        type: 'solid' as const,
-        url: `hsl(${(i * 47) % 360}, 55%, 30%)`,
-        source: 'solid',
-        duration: durationSec,
-      };
-    });
-
-    if (log) {
-      log.stages.compose_video.output = {
-        visuals: alignedVisuals.map((v) => ({
-          sceneIndex: v.sceneIndex,
-          type: v.type,
-          source: v.source,
-          url: v.url,
-          photographer: v.photographer,
-          duration: v.duration,
-        })),
-      };
-    }
-
-    console.log(
-      `[agent] compose → ${alignedVisuals.length} 个场景已对齐 ` +
-        `(音频: ${state.duration?.toFixed(1)}s, ` +
-        `画面: ${alignedVisuals.filter((v) => v.type === 'image').length} 图片 + ` +
-        `${alignedVisuals.filter((v) => v.type === 'solid').length} 纯色)`
-    );
-
-    return { visuals: alignedVisuals, _procedureLog: log };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (log) log.stages.compose_video.error = message;
-    throw err;
-  } finally {
-    if (log) log.stages.compose_video.durationMs = Date.now() - start;
-  }
-}
-
-// ── 节点 5：渲染入队 ─────────────────────────────────
-
-/**
- * 把脚本、音频路径、画面素材推入 BullMQ 队列，由 Worker 消费渲染。
- */
-export async function queueNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-  if (!state.scriptSegments?.length) {
-    throw new Error('缺少脚本分段');
-  }
-  if (!state.audioPath) {
-    throw new Error('缺少音频路径');
-  }
-
-  const log = state._procedureLog as ProcedureLog | null;
-
-  const jobData = {
-    text: state.userPrompt,
-    script: state.scriptSegments,
-    audioPath: state.audioPath,
-    visuals: state.visuals,
-    aiModel: state.aiModel,
-  };
-
-  if (log) {
-    log.stages.queue.input.jobData = jobData;
-  }
-
-  try {
-    const queue = getQueue();
-    const job = await queue.add('generate-video', jobData);
-
-    const jobId = String(job.id);
-
-    if (log) {
-      log.stages.queue.output.jobId = jobId;
-      log.jobId = jobId;
-      // 入队后立即保存日志（不包含 render 阶段）
-      await saveProcedureLog(log, jobId);
-    }
-
-    console.log(`[agent] queue → job #${jobId} 已入队`);
-
-    return { jobId, _procedureLog: log };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (log) log.stages.queue.error = message;
-    throw err;
-  } finally {
-    if (log) log.stages.queue.durationMs = Date.now() - start;
-  }
-}
-
-// ── 节点 6：Research 调研 ────────────────────────────
-
-/**
- * Research 节点：文本内容分析与结构识别。
- *
- * 调用 LLM（或规则兜底）分析 userPrompt：
- * - 语义分段 + 摘要 + 关键词
- * - 逻辑流类型（chronological / cause-effect / problem-solution / narrative）
- * - 风格基调（tone / pace / visualStyle / suggestedBGM）
- *
- * 输出 researchReport 写入 state，供 proposal 节点消费。
- * analyzeContent() 内置兜底逻辑，不会因 LLM 失败而抛异常。
- */
 export async function researchNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
@@ -403,10 +24,7 @@ export async function researchNode(
     throw new Error('用户输入为空');
   }
 
-  // 初始化日志（若尚未创建）
-  const log: ProcedureLog =
-    (state._procedureLog as ProcedureLog | null) ??
-    createProcedureLog(state.jobId || 'unknown');
+  const log = ensureLog(state);
   log.stages.research.input.userPrompt = prompt;
 
   try {
@@ -420,8 +38,9 @@ export async function researchNode(
     };
 
     console.log(
-      `[agent] research → ${result.report.contentSkeleton.segments.length} 个段落 ` +
-        `(model: ${result.model}, retries: ${result.retries})`
+      `[agent] research → ${result.report.contentSkeleton.segments.length} 个段落, ` +
+        `角色需求: ${result.report.characterAnalysis.hasCharacter ? '是' : '否'} ` +
+        `(model: ${result.model})`
     );
 
     return {
@@ -437,27 +56,15 @@ export async function researchNode(
   }
 }
 
-// ── 节点 7：Proposal 提案 ────────────────────────────
+// ── 节点 2：Proposal 提案 ────────────────────────────
 
-/**
- * Proposal 节点：视频制作方案生成。
- *
- * 基于 ResearchReport（或原始文本兜底）生成：
- * - 视频蓝图（标题、时长、场景数、比例）
- * - 分镜脚本（sceneId / duration / visualDescription / layout / subtitleText / audioTts）
- * - 风格指南（配色 / 字体 / BGM / 转场）
- * - 可行性评估
- *
- * 输出 proposal 写入 state，供 script_ai 节点消费。
- * generateProposal() 内置兜底逻辑，不会因 LLM 失败而抛异常。
- */
 export async function proposalNode(
   state: VideoGenStateType
 ): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();// 记录节点开始时间
-  const log = state._procedureLog as ProcedureLog | null;// 获取当前流程日志
+  const start = Date.now();
+  const log = state._procedureLog as ProcedureLog | null;
 
-  if (log) {// 如果日志存在，记录 proposal 节点的输入参数
+  if (log) {
     log.stages.proposal.input = {
       researchReport: state.researchReport ?? undefined,
       userPrompt: state.userPrompt,
@@ -471,7 +78,7 @@ export async function proposalNode(
       state.style ?? undefined
     );
 
-    if (log) {// 如果日志存在，记录 proposal 节点的输出结果
+    if (log) {
       log.stages.proposal.output = {
         proposal: result.proposal,
         model: result.model,
@@ -480,10 +87,14 @@ export async function proposalNode(
       };
     }
 
+    const charInfo = result.proposal.characters?.length
+      ? `, ${result.proposal.characters.length} 个角色`
+      : '';
+
     console.log(
-      `[agent] proposal → ${result.proposal.shotScript.length} 个镜头，` +
-        `${result.proposal.blueprint.totalDuration}s ` +
-        `(model: ${result.model}, retries: ${result.retries})`
+      `[agent] proposal → ${result.proposal.shotScript.length} 个镜头, ` +
+        `${result.proposal.blueprint.totalDuration}s${charInfo} ` +
+        `(model: ${result.model})`
     );
 
     return {
@@ -496,5 +107,203 @@ export async function proposalNode(
     throw err;
   } finally {
     if (log) log.stages.proposal.durationMs = Date.now() - start;
+  }
+}
+
+// ── 节点 3：Asset Generation 素材生成 ────────────────
+
+export async function assetGenNode(
+  state: VideoGenStateType
+): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
+  if (!state.proposal) {
+    throw new Error('缺少 Proposal，请先执行提案生成');
+  }
+
+  const log = state._procedureLog as ProcedureLog | null;
+  if (log) {
+    log.stages.asset_gen.input = {
+      proposal: {
+        characterCount: state.proposal.characters?.length ?? 0,
+        sceneCount: state.proposal.shotScript.length,
+      },
+    };
+  }
+
+  try {
+    const jobId = state.jobId || `asset-${Date.now()}`;
+    const result = await generateAssets(state.proposal, jobId);
+
+    if (log) {
+      log.stages.asset_gen.output = {
+        manifest: result.manifest,
+        characterCount: result.characterCount,
+        sceneCount: result.sceneCount,
+      };
+    }
+
+    console.log(
+      `[agent] asset_gen → ${result.characterCount} 个角色, ` +
+        `${result.sceneCount} 个场景背景`
+    );
+
+    return {
+      assetManifest: result.manifest,
+      _procedureLog: log,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) log.stages.asset_gen.error = message;
+    throw err;
+  } finally {
+    if (log) log.stages.asset_gen.durationMs = Date.now() - start;
+  }
+}
+
+// ── 节点 4：TTS 语音合成 ─────────────────────────────
+
+export async function ttsNode(
+  state: VideoGenStateType
+): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
+  if (!state.proposal) {
+    throw new Error('缺少 Proposal，请先执行提案生成');
+  }
+
+  const log = state._procedureLog as ProcedureLog | null;
+  if (log) {
+    log.stages.tts.input = {
+      sceneCount: state.proposal.shotScript.length,
+      voice: process.env.AI_TTS_VOICE ?? 'default',
+    };
+  }
+
+  try {
+    const jobId = state.jobId || `tts-${Date.now()}`;
+    const result = await synthesizeSpeech(state.proposal, jobId);
+
+    if (log) {
+      log.stages.tts.output = {
+        audioPath: result.audioPath,
+        durationSec: result.durationSec,
+        model: result.model,
+      };
+    }
+
+    console.log(
+      `[agent] tts → ${result.durationSec}s, model: ${result.model}` +
+        (result.audioPath ? ` → ${result.audioPath}` : ' (占位)')
+    );
+
+    return {
+      audioUrl: result.audioPath,
+      audioDuration: result.durationSec,
+      _procedureLog: log,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) log.stages.tts.error = message;
+    throw err;
+  } finally {
+    if (log) log.stages.tts.durationMs = Date.now() - start;
+  }
+}
+
+// ── 节点 5：Video Generation 视频生成 + 入队 ─────────
+
+export async function videoGenNode(
+  state: VideoGenStateType
+): Promise<Partial<VideoGenStateUpdate>> {
+  const start = Date.now();
+  if (!state.proposal) {
+    throw new Error('缺少 Proposal');
+  }
+  if (!state.assetManifest) {
+    throw new Error('缺少 AssetManifest，请先执行素材生成');
+  }
+
+  const log = state._procedureLog as ProcedureLog | null;
+  const jobId = state.jobId || `job-${Date.now()}`;
+
+  if (log) {
+    log.stages.video_gen.input = {
+      proposal: state.proposal.blueprint,
+      assetManifest: {
+        characterCount: state.assetManifest.characters.length,
+        sceneCount: state.assetManifest.scenes.length,
+      },
+    };
+  }
+
+  try {
+    // AI 视频生成（带入语音音频）
+    const videoResult = await generateVideo(
+      state.proposal,
+      state.assetManifest,
+      jobId,
+      state.audioUrl || undefined
+    );
+
+    if (log) {
+      log.stages.video_gen.output = {
+        videoPath: videoResult.videoPath,
+        durationSec: videoResult.durationSec,
+        model: videoResult.model,
+      };
+    }
+
+    console.log(
+      `[agent] video_gen → ${videoResult.durationSec}s, model: ${videoResult.model}`
+    );
+
+    // 入队 BullMQ
+    let queueJobId = jobId;
+    try {
+      const queue = getQueue();
+      const job = await queue.add('generate-video', {
+        text: state.userPrompt,
+        videoUrl: videoResult.videoPath,
+        durationSec: videoResult.durationSec,
+      });
+      queueJobId = String(job.id);
+
+      if (log) {
+        log.stages.queue.input = { jobData: { text: state.userPrompt, videoUrl: videoResult.videoPath } };
+        log.stages.queue.output = { jobId: queueJobId };
+      }
+
+      console.log(`[agent] queue → job #${queueJobId} 已入队`);
+    } catch (queueErr) {
+      const qMsg = queueErr instanceof Error ? queueErr.message : String(queueErr);
+      console.warn(`[agent] 入队失败（非致命）: ${qMsg}`);
+      if (log) {
+        log.stages.queue.error = qMsg;
+      }
+    }
+
+    if (log) {
+      log.jobId = queueJobId;
+      log.stages.video_gen.durationMs = Date.now() - start;
+      log.stages.queue.durationMs = Date.now() - start;
+      log.finalStatus = 'success';
+      await saveProcedureLog(log, queueJobId);
+    }
+
+    return {
+      videoUrl: videoResult.videoPath,
+      durationSec: videoResult.durationSec,
+      videoGenStatus: 'completed',
+      jobId: queueJobId,
+      _procedureLog: log,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (log) {
+      log.stages.video_gen.error = message;
+      log.stages.video_gen.durationMs = Date.now() - start;
+      log.finalStatus = 'failed';
+      log.globalError = message;
+    }
+    throw err;
   }
 }

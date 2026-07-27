@@ -1,11 +1,11 @@
 import { PROPOSAL_SYSTEM } from '@/lib/prompts/proposal';
-import type { ResearchReport, Proposal } from '@/lib/types';
+import type { ResearchReport, Proposal, Character } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
 
 /**
  * Proposal 工具 — 基于 ResearchReport 调用 LLM 生成视频制作提案。
  *
- * 策略（与 ai-script-generator.ts 一致）：
+ * 策略：
  * 1. 调用 AI API，要求返回 Proposal JSON
  * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
  * 3. 全部失败时回退到规则生成（fallbackProposal）
@@ -42,27 +42,27 @@ interface ChatResponse {
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
 
-function isValidAspectRatio(v: unknown): v is Proposal['blueprint']['aspectRatio'] {// 校验宽高比
+function isValidAspectRatio(v: unknown): v is Proposal['blueprint']['aspectRatio'] {
   return typeof v === 'string' && ['16:9', '9:16', '1:1'].includes(v);
 }
 
-function isValidTextPosition(v: unknown): v is 'center' | 'top' | 'bottom' {// 校验文本位置
+function isValidTextPosition(v: unknown): v is 'center' | 'top' | 'bottom' {
   return typeof v === 'string' && ['center', 'top', 'bottom'].includes(v);
 }
 
-function isValidAnimation(v: unknown): v is 'fade' | 'slide' | 'typing' | 'none' {// 校验动画类型
+function isValidAnimation(v: unknown): v is 'fade' | 'slide' | 'typing' | 'none' {
   return typeof v === 'string' && ['fade', 'slide', 'typing', 'none'].includes(v);
 }
 
-function isValidTransitions(v: unknown): v is 'smooth' | 'cut' | 'zoom' {// 校验过渡效果
+function isValidTransitions(v: unknown): v is 'smooth' | 'cut' | 'zoom' {
   return typeof v === 'string' && ['smooth', 'cut', 'zoom'].includes(v);
 }
 
-function isValidRiskLevel(v: unknown): v is 'low' | 'medium' | 'high' {// 校验风险等级
+function isValidRiskLevel(v: unknown): v is 'low' | 'medium' | 'high' {
   return typeof v === 'string' && ['low', 'medium', 'high'].includes(v);
 }
 
-function parseAndValidateProposal(raw: string): Proposal {// 解析 LLM 输出的 Proposal JSON，并进行结构校验
+function parseAndValidateProposal(raw: string): Proposal {
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('[proposal] 响应中未找到 JSON 对象');
@@ -119,6 +119,11 @@ function parseAndValidateProposal(raw: string): Proposal {// 解析 LLM 输出�
     if (typeof shot.subtitleText !== 'string' || !shot.subtitleText.trim()) {
       throw new Error(`[proposal] shotScript[${i}].subtitleText 缺失`);
     }
+    // videoPrompt 校验（新增字段，兼容旧格式）
+    if (typeof shot.videoPrompt !== 'string' || !shot.videoPrompt.trim()) {
+      // 回退：用 visualDescription 填充
+      shot.videoPrompt = shot.visualDescription as string;
+    }
 
     // layout 校验
     const layout = shot.layout as Record<string, unknown> | undefined;
@@ -131,19 +136,6 @@ function parseAndValidateProposal(raw: string): Proposal {// 解析 LLM 输出�
     }
     if (!isValidAnimation(layout.animation)) {
       throw new Error(`[proposal] shotScript[${i}].layout.animation 无效`);
-    }
-
-    // audioTts 校验
-    const audioTts = shot.audioTts as Record<string, unknown> | undefined;
-    if (!audioTts) throw new Error(`[proposal] shotScript[${i}].audioTts 缺失`);
-    if (typeof audioTts.text !== 'string' || !audioTts.text.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].audioTts.text 缺失`);
-    }
-    if (typeof audioTts.speed !== 'number') {
-      throw new Error(`[proposal] shotScript[${i}].audioTts.speed 缺失`);
-    }
-    if (typeof audioTts.voice !== 'string' || !audioTts.voice.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].audioTts.voice 缺失`);
     }
   }
 
@@ -180,7 +172,83 @@ function parseAndValidateProposal(raw: string): Proposal {// 解析 LLM 输出�
     throw new Error('[proposal] feasibility.suggestions 缺失');
   }
 
-  return parsed as Proposal;
+  // ── characters 校验（新增字段，可选）──
+  let characters: Character[] | undefined;
+  if (obj.characters && Array.isArray(obj.characters)) {
+    const chars = obj.characters as unknown[];
+    characters = [];
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i] as Record<string, unknown> | undefined;
+      if (!c) continue;
+      if (typeof c.characterId !== 'string' || !c.characterId.trim()) continue;
+      if (typeof c.name !== 'string' || !c.name.trim()) continue;
+      if (typeof c.appearance !== 'string' || !c.appearance.trim()) continue;
+
+      characters.push({
+        characterId: c.characterId as string,
+        name: c.name as string,
+        appearance: c.appearance as string,
+        role: (typeof c.role === 'string' ? c.role : '角色') as string,
+        appearsInScenes: (Array.isArray(c.appearsInScenes)
+          ? c.appearsInScenes.filter((s): s is string => typeof s === 'string')
+          : []) as string[],
+      });
+    }
+    if (characters.length === 0) characters = undefined;
+  }
+
+  // ── videoGen 校验（新增字段，可选）──
+  let videoGen: Proposal['videoGen'] | undefined;
+  if (obj.videoGen && typeof obj.videoGen === 'object') {
+    const vg = obj.videoGen as Record<string, unknown>;
+    videoGen = {
+      style: (typeof vg.style === 'string' ? vg.style : 'cinematic documentary') as string,
+      duration: (typeof vg.duration === 'number' ? vg.duration : blueprint.totalDuration) as number,
+    };
+  }
+
+  // ── 构建并返回 ──
+  return {
+    blueprint: {
+      title: blueprint.title as string,
+      totalDuration: blueprint.totalDuration as number,
+      sceneCount: blueprint.sceneCount as number,
+      aspectRatio: blueprint.aspectRatio as Proposal['blueprint']['aspectRatio'],
+    },
+    shotScript: shotScript.map((s) => {
+      const shot = s as Record<string, unknown>;
+      const layout = shot.layout as Record<string, unknown>;
+      return {
+        sceneId: shot.sceneId as string,
+        duration: shot.duration as number,
+        visualDescription: shot.visualDescription as string,
+        layout: {
+          textPosition: layout.textPosition as 'center' | 'top' | 'bottom',
+          backgroundColor: layout.backgroundColor as string,
+          animation: layout.animation as 'fade' | 'slide' | 'typing' | 'none',
+        },
+        subtitleText: shot.subtitleText as string,
+        videoPrompt: shot.videoPrompt as string,
+      };
+    }),
+    styleGuide: {
+      globalTone: styleGuide.globalTone as string,
+      colorPalette: styleGuide.colorPalette as string[],
+      fontFamily: styleGuide.fontFamily as string,
+      backgroundMusic: {
+        style: (bgMusic.style as string) ?? 'ambient',
+        source: bgMusic.source as string | undefined,
+      },
+      transitions: styleGuide.transitions as 'smooth' | 'cut' | 'zoom',
+    },
+    feasibility: {
+      riskLevel: feasibility.riskLevel as 'low' | 'medium' | 'high',
+      estimatedRenderTime: feasibility.estimatedRenderTime as number,
+      suggestions: feasibility.suggestions as string[],
+    },
+    characters,
+    videoGen,
+  };
 }
 
 // ── LLM API 调用 ────────────────────────────────────
@@ -196,7 +264,6 @@ async function callProposalLLM(
     );
   }
 
-  // 构建用户消息：优先使用 ResearchReport，否则用原始文本
   let userContent: string;
   if (researchReport) {
     userContent = `以下是对用户文本的调研分析报告（JSON 格式）：\n${JSON.stringify(researchReport, null, 2)}\n\n请基于以上报告生成视频制作方案。`;
@@ -282,7 +349,6 @@ function fallbackProposal(
   report: ResearchReport | null,
   userPrompt: string
 ): Proposal {
-  // 如果有调研报告，从 segments 生成；否则拆分原始文本
   const segments = report?.contentSkeleton.segments;
   const tone = report?.styleProfile.tone ?? 'professional';
 
@@ -295,11 +361,9 @@ function fallbackProposal(
       summary: seg.summary,
     }));
   } else {
-    // 回退：按句子拆分原始文本
     const sentences = userPrompt
       .split(/(?<=[。！？；.!?;])/)
       .filter((s) => s.trim().length > 0);
-    // 限制场景数
     const limited = sentences.slice(0, PROPOSAL_MAX_SCENES);
     sceneEntries = limited.map((s, i) => ({
       text: s.trim(),
@@ -308,8 +372,7 @@ function fallbackProposal(
     }));
   }
 
-  const durationPerScene =
-    Number(process.env.PROPOSAL_DEFAULT_DURATION_PER_SCENE) || 8;
+  const durationPerScene = PROPOSAL_DEFAULT_DURATION_PER_SCENE;
 
   const shotScript: Proposal['shotScript'] = sceneEntries.map((entry, i) => ({
     sceneId: `shot-${i + 1}`,
@@ -321,12 +384,23 @@ function fallbackProposal(
       animation: 'fade' as const,
     },
     subtitleText: entry.summary.slice(0, 30),
-    audioTts: {
-      text: entry.text,
-      speed: 1.0,
-      voice: 'zh-CN-XiaoxiaoNeural',
-    },
+    videoPrompt: `Cinematic scene with modern abstract background, clean composition. Text overlay: "${entry.summary.slice(0, 30)}". Smooth fade transition.`,
   }));
+
+  // 角色兜底
+  let characters: Character[] | undefined;
+  const charAnalysis = report?.characterAnalysis;
+  if (charAnalysis?.hasCharacter && charAnalysis.characterHints.length > 0) {
+    characters = [
+      {
+        characterId: 'char-1',
+        name: '角色',
+        appearance: `A professional character with modern attire, friendly expression, suitable for video presentation. ${charAnalysis.characterHints.join('; ')}`,
+        role: '视频角色',
+        appearsInScenes: shotScript.map((s) => s.sceneId),
+      },
+    ];
+  }
 
   const toneMap: Record<string, string> = {
     professional: '专业商务风格',
@@ -360,6 +434,11 @@ function fallbackProposal(
       estimatedRenderTime: shotScript.length * durationPerScene * 1.5,
       suggestions: [],
     },
+    characters,
+    videoGen: {
+      style: 'cinematic documentary',
+      duration: shotScript.length * durationPerScene,
+    },
   };
 }
 
@@ -371,11 +450,10 @@ function fallbackProposal(
  * - 未配置 → 直接走规则生成
  */
 export async function generateProposal(
-  report: ResearchReport | null,//调研报告（可为 null）
-  userPrompt: string,//用户原始文本
-  styleHint?: string//用户偏好风格提示（可选）
+  report: ResearchReport | null,
+  userPrompt: string,
+  styleHint?: string
 ): Promise<ProposalResult> {
-  // 未配置 API Key → 静默回退
   if (!PROPOSAL_API_KEY) {
     console.log('[proposal] 未配置 PROPOSAL_API_KEY，使用规则生成');
     return {
@@ -385,43 +463,45 @@ export async function generateProposal(
     };
   }
 
-  try {// 调用 LLM 生成 Proposal
+  try {
     const { result, retries } = await withRetry(async () => {
-      const { content, usage } = await callProposalLLM(
-        report,//调研报告
-        userPrompt,//用户原始文本
-        styleHint//用户偏好风格提示
-      );
-      const proposal = parseAndValidateProposal(content);//解析并校验 Proposal
-      return { ...proposal, usage };//返回 Proposal 和 token 使用情况
+      const { content, usage } = await callProposalLLM(report, userPrompt, styleHint);
+      const proposal = parseAndValidateProposal(content);
+      return { ...proposal, usage };
     });
+
+    const charInfo = result.characters?.length
+      ? `, ${result.characters.length} 个角色`
+      : '';
 
     console.log(
       `[proposal] ${PROPOSAL_LLM_MODEL} 生成完成：` +
         `${result.blueprint.sceneCount} 个镜头，` +
-        `${result.blueprint.totalDuration}s` +
+        `${result.blueprint.totalDuration}s${charInfo}` +
         (retries > 0 ? `（重试 ${retries} 次）` : '')
     );
 
-    return {//返回最终结果
+    return {
       proposal: {
-        blueprint: result.blueprint,//蓝图信息
-        shotScript: result.shotScript,//镜头脚本
-        styleGuide: result.styleGuide,//风格指南
-        feasibility: result.feasibility,//可行性分析
+        blueprint: result.blueprint,
+        shotScript: result.shotScript,
+        styleGuide: result.styleGuide,
+        feasibility: result.feasibility,
+        characters: result.characters,
+        videoGen: result.videoGen,
       },
-      model: PROPOSAL_LLM_MODEL!,//使用的 LLM 模型
-      retries,//重试次数
-      tokenUsage: result.usage,//token 使用情况
+      model: PROPOSAL_LLM_MODEL!,
+      retries,
+      tokenUsage: result.usage,
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);//获取错误信息
+    const message = err instanceof Error ? err.message : String(err);
     console.error(`[proposal] 失败，回退规则生成: ${message}`);
 
     return {
-      proposal: fallbackProposal(report, userPrompt),//回退到规则生成
-      model: `fallback(${PROPOSAL_LLM_MODEL ?? 'unknown'})`,//标记为回退模型
-      retries: MAX_RETRIES,//最大重试次数
+      proposal: fallbackProposal(report, userPrompt),
+      model: `fallback(${PROPOSAL_LLM_MODEL ?? 'unknown'})`,
+      retries: MAX_RETRIES,
     };
   }
 }

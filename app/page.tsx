@@ -25,12 +25,19 @@ export default function HomePage() {
   (
     async () => {
     try {
-      const res = await fetch('/api/tasks', { cache: 'no-store' });//不缓存，确保每次都能获取最新任务列表(GET->getqueue->bullmq.getJobs->jobToSummary->promise.all->sort)
-      const data = await res.json();//解析 JSON 响应
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);//如果响应状态不是 OK，抛出错误
-      // 当 HTTP 状态码在 200 ~ 299 之间时，res.ok === true（表示请求成功）。
-      // 当 HTTP 状态码是 400、500 等其他值时，res.ok === false（表示请求失败）。
-      setTasks(data.tasks);//更新任务列表状态
+      const res = await fetch('/api/tasks', { cache: 'no-store' });
+      if (!res.ok) {
+        // 尝试解析错误 JSON，失败则用 HTTP 状态
+        const text = await res.text().catch(() => '');
+        let message = `HTTP ${res.status}`;
+        try {
+          const err = JSON.parse(text);
+          if (err.error) message = err.error;
+        } catch { /* 非 JSON 响应（如 HTML 报错页）*/ }
+        throw new Error(message);
+      }
+      const data = await res.json();
+      setTasks(data.tasks);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取任务列表失败');
@@ -54,13 +61,19 @@ export default function HomePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
-        // value={text}                        // 👈 读取：将 state 作为输入框的唯一数据源
-        // onChange={(e) => setText(e.target.value)} // 👈 写入：用户每次按键都同步更新 state
       });
-      const data = await res.json();//解析 JSON 响应(ID+状态码)
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      setText('');//清空输入框
-      await fetchTasks();//立即刷新任务列表，显示新提交的任务
+      if (!res.ok) {
+        const resText = await res.text().catch(() => '');
+        let message = `HTTP ${res.status}`;
+        try {
+          const err = JSON.parse(resText);
+          if (err.error) message = err.error;
+        } catch { /* 非 JSON 响应 */ }
+        throw new Error(message);
+      }
+      const data = await res.json();
+      setText('');
+      await fetchTasks();
     } catch (err) {
       setError(err instanceof Error ? err.message : '提交失败');
     } finally {
@@ -74,7 +87,7 @@ export default function HomePage() {
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">OpenMontage</h1>
           <p className="mt-1 text-sm text-slate-400">
-            输入文本 → 自动生成脚本、语音与字幕视频
+            输入文本 → AI 自动生成角色素材与视频
           </p>
         </header>
 

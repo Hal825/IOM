@@ -9,7 +9,7 @@ import type { TaskResult } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-/** 下载任务生成的 MP4 */
+/** 下载/获取任务生成的视频 */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -28,7 +28,12 @@ export async function GET(
       return NextResponse.json({ error: '视频尚未生成完成' }, { status: 409 });
     }
 
-    // 防路径穿越：解析后必须仍在 STORAGE_DIR 内
+    // 远程 URL → 重定向
+    if (result.videoPath.startsWith('http://') || result.videoPath.startsWith('https://')) {
+      return NextResponse.redirect(result.videoPath);
+    }
+
+    // 本地文件 → 流式下载
     const videoAbsPath = path.resolve(STORAGE_DIR, result.videoPath);
     if (!videoAbsPath.startsWith(STORAGE_DIR)) {
       return NextResponse.json({ error: '非法路径' }, { status: 400 });

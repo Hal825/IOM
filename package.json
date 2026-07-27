@@ -11,24 +11,17 @@
     "worker": "tsx watch workers/video-worker.ts",
     "redis:up": "docker compose up -d",
     "redis:down": "docker compose down",
-    "remotion:studio": "remotion studio remotion/index.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@langchain/core": "^1.2.3",
     "@langchain/langgraph": "^1.4.8",
-    "@remotion/bundler": "4.0.487",
-    "@remotion/cli": "4.0.487",
-    "@remotion/renderer": "4.0.487",
     "bullmq": "^5.80.8",
     "ioredis": "^5.11.1",
-    "msedge-tts": "^2.0.7",
-    "music-metadata": "^11.14.0",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "remotion": "4.0.487"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

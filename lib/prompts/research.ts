@@ -39,6 +39,13 @@ export const RESEARCH_SYSTEM = `你是一个专业的视频内容策划分析师
 - **visualStyle**：视觉风格描述（如 "科技感蓝色调"、"温暖自然风格"、"简约商务黑白"）
 - **suggestedBGM**：建议背景音乐风格（如 "轻快钢琴"、"大气管弦乐"、"电子氛围"）
 
+### 4. 角色需求检测
+- **hasCharacter**：布尔值。判断用户文本是否需要创建特定角色出镜：
+  - 用户明确描述了角色外貌、性别、年龄、服装等 → true
+  - 用户描述了故事/场景中的具体人物（如"一个年轻医生"、"一位老者"、"小明"）→ true
+  - 纯知识科普、无人物描述、仅抽象概念 → false
+- **characterHints**：字符串数组。从原文中提取的角色相关线索（外貌、身份、动作描述等），供下游提案节点设计角色时参考。如无则为空数组 []。**注意：仅提取线索片段，不要在此处做详细特征描述。**
+
 严格按以下 JSON 格式输出，不要包含任何其他文字：
 
 {
@@ -64,5 +71,9 @@ export const RESEARCH_SYSTEM = `你是一个专业的视频内容策划分析师
     "pace": "medium",
     "visualStyle": "科技感蓝色调，干净现代",
     "suggestedBGM": "科技感电子氛围"
+  },
+  "characterAnalysis": {
+    "hasCharacter": false,
+    "characterHints": []
   }
 }`;
