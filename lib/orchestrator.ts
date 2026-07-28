@@ -6,8 +6,9 @@ import { videoGraph } from '@/lib/agent/graph';
 /**
  * 核心编排器 — 调用 LangGraph 管线完成端到端视频生成。
  *
- * 新流程：research → proposal → asset_gen → video_gen
- * progress 映射: 10=research, 30=proposal, 60=asset_gen, 90=video_gen, 100=完成
+ * 新流程：research → proposal → script_gen
+ *   → fanout(asset_gen ‖ tts) → fanout(shot_video_gen × N)
+ *   → video_merge → END
  */
 export async function executeTask(
   job: Job<TaskData>,
@@ -15,19 +16,13 @@ export async function executeTask(
 ): Promise<TaskResult> {
   const jobId = String(job.id);
   const text = job.data.text?.trim();
-  if (!text) {
-    throw new Error('任务文本为空');
-  }
+  if (!text) throw new Error('任务文本为空');
 
-  // LangGraph 状态机：调研 → 提案 → 素材生成 → 视频生成
   await job.updateProgress(10);
-  await job.log('阶段 1/4: 内容调研');
+  await job.log('LangGraph 管线启动');
   const result = await videoGraph.invoke({ userPrompt: text, jobId });
 
-  await job.updateProgress(90);
-  await job.log('阶段 4/4: 视频生成');
-
-  const videoPath = (result.videoUrl as string) ?? '';
+  const videoPath = (result.mergedVideoUrl as string) ?? '';
   const durationSec = (result.durationSec as number) ?? 0;
 
   await job.updateProgress(100);

@@ -18,7 +18,7 @@ const RESEARCH_BASE_URL = process.env.RESEARCH_BASE_URL;
 const RESEARCH_LLM_MODEL = process.env.RESEARCH_LLM_MODEL;
 
 const MAX_RETRIES = 3;
-const MAX_TOKENS = 2000;
+const MAX_TOKENS = 8000;
 
 // ── 类型 ────────────────────────────────────────────
 
@@ -82,6 +82,19 @@ function parseAndValidateResearch(raw: string): ResearchReport {
   if (typeof metadata.language !== 'string' || !metadata.language.trim()) {
     throw new Error('[research] metadata.language 缺失或无效');
   }
+  // 新增字段（兼容旧格式）
+  const contentType = typeof metadata.contentType === 'string' && metadata.contentType.trim()
+    ? metadata.contentType
+    : '未分类';
+  const sceneTime = Array.isArray(metadata.sceneTime)
+    ? metadata.sceneTime.filter((t): t is string => typeof t === 'string')
+    : [];
+  const sceneLocation = Array.isArray(metadata.sceneLocation)
+    ? metadata.sceneLocation.filter((l): l is string => typeof l === 'string')
+    : [];
+  const userDemand = typeof metadata.userDemand === 'string' && metadata.userDemand.trim()
+    ? metadata.userDemand
+    : null;
 
   // ── contentSkeleton 校验 ──
   const contentSkeleton = obj.contentSkeleton as Record<string, unknown> | undefined;
@@ -150,11 +163,48 @@ function parseAndValidateResearch(raw: string): ResearchReport {
       : [];
   }
 
+  // ── readiness 校验（新增字段，兼容旧格式）──
+  const readiness = obj.readiness as Record<string, unknown> | undefined;
+  let overallScore = 50;
+  let dimensions = { information: 50, logic: 50, visual: 50, emotion: 50, completeness: 50 };
+  let shortcomings: string[] = [];
+  let expansionHints: string[] = [];
+  let canProceedDirectly = false;
+
+  if (readiness) {
+    overallScore = typeof readiness.overallScore === 'number'
+      ? Math.max(0, Math.min(100, readiness.overallScore))
+      : 50;
+    if (readiness.dimensions && typeof readiness.dimensions === 'object') {
+      const dims = readiness.dimensions as Record<string, unknown>;
+      dimensions = {
+        information: typeof dims.information === 'number' ? Math.max(0, Math.min(100, dims.information)) : 50,
+        logic: typeof dims.logic === 'number' ? Math.max(0, Math.min(100, dims.logic)) : 50,
+        visual: typeof dims.visual === 'number' ? Math.max(0, Math.min(100, dims.visual)) : 50,
+        emotion: typeof dims.emotion === 'number' ? Math.max(0, Math.min(100, dims.emotion)) : 50,
+        completeness: typeof dims.completeness === 'number' ? Math.max(0, Math.min(100, dims.completeness)) : 50,
+      };
+    }
+    shortcomings = Array.isArray(readiness.shortcomings)
+      ? readiness.shortcomings.filter((s): s is string => typeof s === 'string')
+      : [];
+    expansionHints = Array.isArray(readiness.expansionHints)
+      ? readiness.expansionHints.filter((h): h is string => typeof h === 'string')
+      : [];
+    canProceedDirectly = typeof readiness.canProceedDirectly === 'boolean'
+      ? readiness.canProceedDirectly
+      : overallScore >= 70;
+  }
+
   return {
     metadata: {
       topic: metadata.topic as string,
       wordCount: metadata.wordCount as number,
       language: metadata.language as string,
+      contentType,
+      sceneTime,
+      sceneLocation,
+      userDemand,
     },
     contentSkeleton: {
       segments: segments as ResearchReport['contentSkeleton']['segments'],
@@ -167,6 +217,7 @@ function parseAndValidateResearch(raw: string): ResearchReport {
       suggestedBGM: styleProfile.suggestedBGM as string,
     },
     characterAnalysis: { hasCharacter, characterHints },
+    readiness: { overallScore, dimensions, shortcomings, expansionHints, canProceedDirectly },
   };
 }
 
@@ -196,7 +247,6 @@ async function callResearchLLM(
       max_tokens: MAX_TOKENS,
       temperature: 0.5,
     }),
-    signal: AbortSignal.timeout(30000),
   });
 
   if (!resp.ok) {
@@ -243,140 +293,42 @@ async function withRetry<T>(
   throw lastError ?? new Error('[research] 未知错误');
 }
 
-// ── 规则兜底 ────────────────────────────────────────
-
-/**
- * 基于规则的文本分析。
- * 不调用任何 API，纯本地处理。
- */
-function fallbackResearch(userPrompt: string): ResearchReport {
-  const paragraphs = userPrompt
-    .split(/\n\s*\n/)
-    .filter((p) => p.trim().length > 0);
-
-  let rawSegments: string[];
-  if (paragraphs.length <= 1) {
-    rawSegments = userPrompt
-      .split(/(?<=[。！？；.!?;])/)
-      .filter((s) => s.trim().length > 0);
-  } else {
-    rawSegments = paragraphs;
-  }
-
-  if (rawSegments.length > 8) {
-    const merged: string[] = [];
-    let acc = '';
-    for (const seg of rawSegments) {
-      if ((acc + seg).length < 120 && merged.length < 7) {
-        acc += seg;
-      } else {
-        if (acc) merged.push(acc);
-        acc = seg;
-      }
-    }
-    if (acc) merged.push(acc);
-    rawSegments = merged.slice(0, 8);
-  }
-
-  const segments = rawSegments.map((text, i) => {
-    const trimmed = text.trim();
-    const chineseTokens = trimmed
-      .replace(/[^一-鿿]+/g, ' ')
-      .split(/\s+/)
-      .filter((t) => t.length >= 2)
-      .slice(0, 3);
-
-    return {
-      id: `seg-${i + 1}`,
-      title: trimmed.slice(0, 15).replace(/\n/g, ' '),
-      originalText: trimmed,
-      summary: trimmed.slice(0, 60).replace(/\n/g, ' '),
-      keywords: chineseTokens.length > 0 ? chineseTokens : ['文本分析'],
-    };
-  });
-
-  const wordCount = userPrompt.replace(/\s/g, '').length;
-
-  // 简单角色检测：检查是否有人物描述关键词
-  const charKeywords = ['医生', '护士', '老师', '学生', '工程师', '设计师', '老人', '小孩', '他', '她',
-    '穿着', '戴着', '身材', '头发', '眼睛', '医生', '警察', '厨师', '演员', '歌手'];
-  const hasCharacter = charKeywords.some((kw) => userPrompt.includes(kw));
-
-  return {
-    metadata: {
-      topic: segments[0]?.title ?? '未命名主题',
-      wordCount,
-      language: 'zh-CN',
-    },
-    contentSkeleton: {
-      segments,
-      flow: 'narrative',
-    },
-    styleProfile: {
-      tone: 'professional',
-      pace: 'medium',
-      visualStyle: 'clean modern presentation with abstract elements',
-      suggestedBGM: 'ambient instrumental',
-    },
-    characterAnalysis: {
-      hasCharacter,
-      characterHints: hasCharacter ? ['检测到可能的人物描述'] : [],
-    },
-  };
-}
-
 // ── 公开 API ────────────────────────────────────────
 
 /**
  * 分析用户文本，返回结构化的 ResearchReport。
- * - 已配置 API Key → 调用 LLM，失败回退规则分析
- * - 未配置 → 直接走规则分析
+ * 零容错：API Key 未配置或调用失败直接抛异常。
  */
 export async function analyzeContent(
   userPrompt: string
 ): Promise<ResearchResult> {
-  if (!RESEARCH_API_KEY) {
-    console.log('[research] 未配置 RESEARCH_API_KEY，使用规则分析');
-    return {
-      report: fallbackResearch(userPrompt),
-      model: 'rule-based',
-      retries: 0,
-    };
+  if (!RESEARCH_API_KEY || !RESEARCH_BASE_URL || !RESEARCH_LLM_MODEL) {
+    throw new Error('Research 环境变量未配置（RESEARCH_API_KEY / RESEARCH_BASE_URL / RESEARCH_LLM_MODEL）');
   }
 
-  try {
-    const { result, retries } = await withRetry(async () => {
-      const { content, usage } = await callResearchLLM(userPrompt);
-      const report = parseAndValidateResearch(content);
-      return { ...report, usage };
-    });
+  const { result, retries } = await withRetry(async () => {
+    const { content, usage } = await callResearchLLM(userPrompt);
+    const report = parseAndValidateResearch(content);
+    return { ...report, usage };
+  });
 
-    console.log(
-      `[research] ${RESEARCH_LLM_MODEL} 分析完成：` +
-        `${result.contentSkeleton.segments.length} 个段落, ` +
-        `角色需求: ${result.characterAnalysis.hasCharacter ? '是' : '否'}` +
-        (retries > 0 ? `（重试 ${retries} 次）` : '')
-    );
+  console.log(
+    `[research] ${RESEARCH_LLM_MODEL} 分析完成：` +
+      `${result.contentSkeleton.segments.length} 个段落, ` +
+      `角色需求: ${result.characterAnalysis.hasCharacter ? '是' : '否'}` +
+      (retries > 0 ? `（重试 ${retries} 次）` : '')
+  );
 
-    return {
-      report: {
-        metadata: result.metadata,
-        contentSkeleton: result.contentSkeleton,
-        styleProfile: result.styleProfile,
-        characterAnalysis: result.characterAnalysis,
-      },
-      model: RESEARCH_LLM_MODEL!,
-      retries,
-      tokenUsage: result.usage,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[research] 失败，回退规则分析: ${message}`);
-
-    return {
-      report: fallbackResearch(userPrompt),
-      model: `fallback(${RESEARCH_LLM_MODEL ?? 'unknown'})`,
-      retries: MAX_RETRIES,
-    };
-  }
+  return {
+    report: {
+      metadata: result.metadata,
+      contentSkeleton: result.contentSkeleton,
+      styleProfile: result.styleProfile,
+      characterAnalysis: result.characterAnalysis,
+      readiness: result.readiness,
+    },
+    model: RESEARCH_LLM_MODEL,
+    retries,
+    tokenUsage: result.usage,
+  };
 }

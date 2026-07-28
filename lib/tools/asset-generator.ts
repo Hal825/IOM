@@ -1,31 +1,24 @@
 /**
- * 素材生成工具 — AI 图片生成节点。
+ * 素材生成工具 — 角色使用预置素材 + 场景 AI 生成。
  *
- * 读取 Proposal 中的 characters 和 shotScript，调用 AI 图片 API：
- * - 每个角色 → 1 次 API 调用生成 4 视图（front / back / left / right）
- * - 每个镜头 → 1 次 API 调用生成场景背景图
+ * - 角色：从 storage/assets/char_userd_1/{male,female}/ 复制预设四视图
+ * - 场景：调用 DashScope qwen-image-2.0 生成背景图，按 sceneImageRef 去重
  *
- * 输出 AssetManifest，供下游 video_generation 节点消费。
- *
- * 支持任意兼容 OpenAI 图片接口的服务（DashScope / 火山引擎 Ark / DALL-E 等）。
- * 通过 AI_ASSET_MODEL / AI_ASSET_API_KEY / AI_ASSET_BASE_URL 配置。
+ * 零容错：任何异常直接抛出。
  */
 
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import type { Proposal, CharacterAsset, SceneAsset, AssetManifest } from '@/lib/types';
-import {
-  buildCharacterViewPrompt,
-  buildSceneBackgroundPrompt,
-} from '@/lib/prompts/asset-generation';
+import type { Proposal, VideoScript, CharacterAsset, SceneAsset, AssetManifest } from '@/lib/types';
+import { buildSceneBackgroundPrompt } from '@/lib/prompts/asset-generation';
+import { uploadCharacterViews, isOssConfigured } from '@/lib/tools/oss-uploader';
 
-// ── 配置（全部来自环境变量）─────────────────────────
+// ── 配置 ────────────────────────────────────────────
 
-const AI_ASSET_API_KEY = process.env.AI_ASSET_API_KEY;
-const AI_ASSET_BASE_URL = process.env.AI_ASSET_BASE_URL;
-const AI_ASSET_MODEL = process.env.AI_ASSET_MODEL;
+const AI_ASSET_API_KEY = process.env.AI_ASSET_API_KEY!;
+const AI_ASSET_BASE_URL = process.env.AI_ASSET_BASE_URL!;
+const AI_ASSET_MODEL = process.env.AI_ASSET_MODEL!;
 
-/** 素材本地存储根目录 */
 export const ASSET_STORE_DIR = path.resolve('./storage/assets');
 
 // ── API 调用 ─────────────────────────────────────────
@@ -40,254 +33,126 @@ interface ImageGenResponse {
   };
 }
 
-/**
- * 调用 AI 图片 API 生成单张图片。
- */
-async function callImageAPI(prompt: string): Promise<string | null> {
+async function callImageAPI(prompt: string): Promise<string> {
   if (!AI_ASSET_API_KEY || !AI_ASSET_BASE_URL || !AI_ASSET_MODEL) {
-    console.log('[asset-gen] AI 图片生成未配置，跳过');
-    return null;
+    throw new Error('AI 图片生成环境变量未配置（AI_ASSET_API_KEY / AI_ASSET_BASE_URL / AI_ASSET_MODEL）');
   }
 
-  try {
-    console.log(`[asset-gen] 生成中: "${prompt.slice(0, 60)}..."`);
+  console.log(`[asset-gen] 生成中: "${prompt.slice(0, 60)}..."`);
 
-    const resp = await fetch(AI_ASSET_BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${AI_ASSET_API_KEY}`,
+  const resp = await fetch(AI_ASSET_BASE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${AI_ASSET_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: AI_ASSET_MODEL,
+      input: {
+        messages: [{ role: 'user', content: [{ text: prompt }] }],
       },
-      body: JSON.stringify({
-        model: AI_ASSET_MODEL,
-        input: {
-          messages: [
-            {
-              role: 'user',
-              content: [{ text: prompt }],
-            },
-          ],
-        },
-        parameters: {
-          size: '1280*720',
-          n: 1,
-        },
-      }),
-      signal: AbortSignal.timeout(60_000),
+      parameters: { size: '1280*720', n: 1 },
+    }),
     });
 
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      console.warn(
-        `[asset-gen] API 返回 ${resp.status}: ${errText.slice(0, 200)}`
-      );
-      return null;
-    }
-
-    const data = (await resp.json()) as ImageGenResponse;
-    const imageUrl = data.output?.choices?.[0]?.message?.content?.[0]?.image;
-
-    if (!imageUrl) {
-      console.warn('[asset-gen] 响应中未找到图片 URL');
-      return null;
-    }
-
-    return imageUrl;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[asset-gen] API 异常: ${message}`);
-    return null;
-  }
-}
-
-/**
- * 调用 AI 图片 API 批量生成多张图片。
- * 一次 API 调用，返回 n 张独立图片 URL。
- */
-async function callImageAPIBatch(
-  prompt: string,
-  n: number
-): Promise<string[]> {
-  if (!AI_ASSET_API_KEY || !AI_ASSET_BASE_URL || !AI_ASSET_MODEL) {
-    console.log('[asset-gen] AI 图片生成未配置，跳过');
-    return [];
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`图片生成 API 返回 ${resp.status}: ${errText.slice(0, 200)}`);
   }
 
-  try {
-    console.log(`[asset-gen] 批量生成 ${n} 张: "${prompt.slice(0, 60)}..."`);
+  const data = (await resp.json()) as ImageGenResponse;
+  const imageUrl = data.output?.choices?.[0]?.message?.content?.[0]?.image;
+  if (!imageUrl) throw new Error('图片生成响应中未找到图片 URL');
 
-    const resp = await fetch(AI_ASSET_BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${AI_ASSET_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: AI_ASSET_MODEL,
-        input: {
-          messages: [
-            {
-              role: 'user',
-              content: [{ text: prompt }],
-            },
-          ],
-        },
-        parameters: {
-          size: '1280*720',
-          n,
-        },
-      }),
-      signal: AbortSignal.timeout(120_000),
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      console.warn(
-        `[asset-gen] 批量 API 返回 ${resp.status}: ${errText.slice(0, 200)}`
-      );
-      return [];
-    }
-
-    const data = (await resp.json()) as ImageGenResponse;
-    const choices = data.output?.choices ?? [];
-
-    const urls = choices
-      .map((choice) => choice.message?.content?.[0]?.image)
-      .filter((url): url is string => !!url);
-
-    if (urls.length === 0) {
-      console.warn('[asset-gen] 批量响应中未找到任何图片 URL');
-      return [];
-    }
-
-    console.log(`[asset-gen] 批量返回 ${urls.length}/${n} 张图片`);
-    return urls;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[asset-gen] 批量 API 异常: ${message}`);
-    return [];
-  }
+  return imageUrl;
 }
 
 // ── 本地存储 ─────────────────────────────────────────
 
-async function downloadToLocal(url: string, localPath: string): Promise<string | null> {
-  try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-    if (!resp.ok) return null;
+async function downloadToLocal(url: string, localPath: string): Promise<string> {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`下载图片失败: HTTP ${resp.status}`);
 
-    const buffer = Buffer.from(await resp.arrayBuffer());
-    await fs.mkdir(path.dirname(localPath), { recursive: true });
-    await fs.writeFile(localPath, buffer);
-    return localPath;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[asset-gen] 下载失败: ${message}`);
-    return null;
-  }
+  const buffer = Buffer.from(await resp.arrayBuffer());
+  await fs.mkdir(path.dirname(localPath), { recursive: true });
+  await fs.writeFile(localPath, buffer);
+  return localPath;
 }
 
-// ── 纯色兜底 ─────────────────────────────────────────
+// ── 预置角色素材 ────────────────────────────────────
 
-function generateSolidColor(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-    hash |= 0;
-  }
-  const h = Math.abs(hash) % 360;
-  return `hsl(${h}, 55%, 30%)`;
+const CHAR_PRESET_DIR = path.resolve('./storage/assets/char_userd_1');
+const VIEW_ORDER: Array<keyof CharacterAsset['views']> = ['front', 'back', 'left', 'right'];
+
+/** 从 appearance 文本中检测性别（英文描述） */
+function detectGender(appearance: string): 'male' | 'female' {
+  const lower = appearance.toLowerCase();
+  if (/\b(female|woman|girl|lady|her|she)\b/.test(lower)) return 'female';
+  return 'male'; // 默认男性
 }
-
-// ── 角色视图生成（单次 API 调用，4 张独立图片）───────
-
-/** 4 视角顺序（与 API 返回的 4 张图片一一对应） */
-const VIEW_ORDER: Array<keyof CharacterAsset['views']> = [
-  'front', 'back', 'left', 'right',
-];
 
 /**
- * 为单个角色生成 4 视图素材。
- * 一次 API 调用生成 4 张独立图片，按顺序对应 front / back / left / right。
+ * 使用预置角色素材，不再调用 AI 生成。
+ * 1. 从 storage/assets/char_userd_1/{male|female}/ 复制四视图到任务目录
+ * 2. 上传到 OSS 获取公网 URL（供视频生成 API 引用）
  */
-async function generateCharacterViews(
+async function usePresetCharacter(
   character: { characterId: string; name: string; appearance: string },
   jobId: string
 ): Promise<CharacterAsset> {
-  const views: CharacterAsset['views'] = {
-    front: '',
-    back: '',
-    left: '',
-    right: '',
-  };
+  const gender = detectGender(character.appearance);
+  const presetDir = path.join(CHAR_PRESET_DIR, gender);
 
-  const prompt = buildCharacterViewPrompt(character.name, character.appearance);
   const charDir = path.join(ASSET_STORE_DIR, jobId, 'characters', character.characterId);
+  await fs.mkdir(charDir, { recursive: true });
 
-  // 一次 API 调用，生成 4 张独立图片
-  const imageUrls = await callImageAPIBatch(prompt, 4);
+  const views: CharacterAsset['views'] = { front: '', back: '', left: '', right: '' };
 
-  // 按顺序映射到视图
-  for (let i = 0; i < VIEW_ORDER.length; i++) {
-    const view = VIEW_ORDER[i];
-    const imageUrl = imageUrls[i] ?? null;
-
-    if (imageUrl) {
-      const localPath = path.join(charDir, `${view}.png`);
-      const saved = await downloadToLocal(imageUrl, localPath);
-      views[view] = saved ?? imageUrl;
-    } else {
-      views[view] = generateSolidColor(`${character.name}-${view}`);
-      console.log(`[asset-gen] 角色 ${character.name} ${view} 视角 → 纯色兜底`);
+  for (const view of VIEW_ORDER) {
+    const srcPath = path.join(presetDir, `${view}.jpeg`);
+    const destPath = path.join(charDir, `${view}.jpeg`);
+    try {
+      await fs.copyFile(srcPath, destPath);
+      views[view] = destPath;
+    } catch {
+      throw new Error(`预置角色素材缺失: ${srcPath}`);
     }
   }
 
-  const ok = VIEW_ORDER.filter((v) => views[v]).length;
-  console.log(
-    `[asset-gen] 角色 ${character.name}: ${ok}/4 视图生成成功`
-  );
-
-  return {
-    characterId: character.characterId,
-    views,
-    prompt,
-  };
-}
-
-// ── 场景背景生成 ────────────────────────────────────
-
-async function generateSceneBackground(
-  scene: { sceneId: string; visualDescription: string },
-  sceneIndex: number,
-  jobId: string
-): Promise<SceneAsset> {
-  const prompt = buildSceneBackgroundPrompt(scene.visualDescription);
-  const imageUrl = await callImageAPI(prompt);
-
-  let finalUrl: string;
-  let remoteUrl: string | undefined;
-  if (imageUrl) {
-    // 保留远程 URL（供 video-gen 等外部 API 引用首帧）
-    remoteUrl = imageUrl;
-    const localPath = path.join(
-      ASSET_STORE_DIR,
-      jobId,
-      'scenes',
-      `scene_${String(sceneIndex).padStart(3, '0')}.png`
-    );
-    const saved = await downloadToLocal(imageUrl, localPath);
-    finalUrl = saved ?? imageUrl;
+  // 上传到 OSS（供视频 API 作为 character_image 引用）
+  let remoteViews: CharacterAsset['remoteViews'] = null;
+  if (isOssConfigured()) {
+    try {
+      const urls = await uploadCharacterViews(views, jobId, character.characterId);
+      remoteViews = urls;
+    } catch (err) {
+      console.warn(`[asset-gen] OSS 上传失败（视频中将无角色参考图）: ${(err as Error).message}`);
+    }
   } else {
-    finalUrl = generateSolidColor(scene.visualDescription);
-    console.log(`[asset-gen] 场景 ${scene.sceneId} → 纯色兜底`);
+    console.warn('[asset-gen] OSS 未配置，角色图无公网 URL（视频中将无角色参考图）');
   }
 
-  return {
-    sceneId: scene.sceneId,
-    imageUrl: finalUrl,
-    remoteUrl,
-    prompt,
-  };
+  console.log(`[asset-gen] 角色 ${character.name} → ${gender} 预设素材` +
+    (remoteViews ? ' + OSS' : ''));
+  return { characterId: character.characterId, views, remoteViews, prompt: `preset:${gender}` };
+}
+
+// ── 场景背景生成（去重）───────────────────────────────
+
+async function generateSceneBackground(
+  sceneImageRef: string,
+  summary: string,
+  jobId: string
+): Promise<{ imageUrl: string; remoteUrl: string; prompt: string }> {
+  const prompt = buildSceneBackgroundPrompt(summary);
+  const imageUrl = await callImageAPI(prompt);
+  const localPath = path.join(
+    ASSET_STORE_DIR, jobId, 'scenes',
+    `${sceneImageRef.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`
+  );
+  const saved = await downloadToLocal(imageUrl, localPath);
+
+  return { imageUrl: saved, remoteUrl: imageUrl, prompt };
 }
 
 // ── 公开 API ────────────────────────────────────────
@@ -298,46 +163,85 @@ export interface AssetGenResult {
   sceneCount: number;
 }
 
+/**
+ * 生成角色素材 + 场景背景图。
+ * 场景图按 videoScript.sceneScripts[].resourceRefs.sceneImageRef 去重：
+ * 相同 sceneImageRef 只生成一次，所有引用该 ref 的 shot 共用同一张图。
+ */
 export async function generateAssets(
   proposal: Proposal,
+  videoScript: VideoScript,
   jobId: string
 ): Promise<AssetGenResult> {
   const characters = proposal.characters ?? [];
   const shots = proposal.shotScript;
 
+  // ── 构建 sceneImageRef → 唯一场景 的映射 ──
+  const sceneRefMap = new Map<string, { summary: string; sceneIds: string[] }>();
+
+  for (const shot of shots) {
+    const sceneScript = videoScript.sceneScripts.find((s) => s.sceneId === shot.sceneId);
+    const ref = sceneScript?.resourceRefs.sceneImageRef ?? shot.sceneId;
+
+    const entry = sceneRefMap.get(ref);
+    if (entry) {
+      entry.sceneIds.push(shot.sceneId);
+    } else {
+      sceneRefMap.set(ref, { summary: shot.summary, sceneIds: [shot.sceneId] });
+    }
+  }
+
+  const uniqueSceneCount = sceneRefMap.size;
   console.log(
-    `[asset-gen] 开始生成素材: ${characters.length} 个角色, ${shots.length} 个场景`
+    `[asset-gen] 开始生成素材: ${characters.length} 个角色, ` +
+    `${shots.length} 个镜头 → ${uniqueSceneCount} 个唯一场景（去重后）`
   );
 
-  // ── 每个角色一次 API 调用生成 4 视图 ──
+  // ── 角色素材（预置，不调 AI）──
   const characterAssets: CharacterAsset[] = [];
   for (const char of characters) {
-    const asset = await generateCharacterViews(
+    const asset = await usePresetCharacter(
       { characterId: char.characterId, name: char.name, appearance: char.appearance },
       jobId
     );
     characterAssets.push(asset);
   }
 
-  // ── 并行生成场景背景 ──
-  const sceneAssets = await Promise.all(
-    shots.map((shot, i) =>
-      generateSceneBackground(
-        { sceneId: shot.sceneId, visualDescription: shot.visualDescription },
-        i,
-        jobId
-      )
-    )
-  );
+  // ── 场景素材（每个唯一 sceneImageRef 只生成一次，间隔 2s 避免限流）──
+  const refToAsset = new Map<string, { imageUrl: string; remoteUrl: string; prompt: string }>();
 
-  const manifest: AssetManifest = {
-    characters: characterAssets,
-    scenes: sceneAssets,
-  };
+  let first = true;
+  for (const [ref, info] of sceneRefMap) {
+    if (!first) {
+      await new Promise((r) => setTimeout(r, 2000)); // 请求间隔 2s
+    }
+    first = false;
+    console.log(`[asset-gen] 场景 "${ref}": 覆盖 ${info.sceneIds.length} 个镜头`);
+    const asset = await generateSceneBackground(ref, info.summary, jobId);
+    refToAsset.set(ref, asset);
+  }
+
+  // ── 展开为 SceneAsset[]（每个 shot 一条记录，共用同一张图的 shot 共享 URL）──
+  const sceneAssets: SceneAsset[] = [];
+  for (const shot of shots) {
+    const sceneScript = videoScript.sceneScripts.find((s) => s.sceneId === shot.sceneId);
+    const ref = sceneScript?.resourceRefs.sceneImageRef ?? shot.sceneId;
+    const asset = refToAsset.get(ref);
+    if (!asset) throw new Error(`场景 "${ref}" 未能生成`);
+
+    sceneAssets.push({
+      sceneId: shot.sceneId,
+      imageUrl: asset.imageUrl,
+      remoteUrl: asset.remoteUrl,
+      prompt: asset.prompt,
+    });
+  }
+
+  const manifest: AssetManifest = { characters: characterAssets, scenes: sceneAssets };
 
   console.log(
-    `[asset-gen] 完成: ${characterAssets.length} 角色, ${sceneAssets.length} 场景`
+    `[asset-gen] 完成: ${characterAssets.length} 角色, ` +
+    `${uniqueSceneCount} 个唯一场景（${sceneAssets.length} 条引用）`
   );
-
-  return { manifest, characterCount: characterAssets.length, sceneCount: sceneAssets.length };
+  return { manifest, characterCount: characterAssets.length, sceneCount: uniqueSceneCount };
 }

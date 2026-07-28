@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getQueue } from '@/lib/queue';
 import { jobToSummary } from '@/lib/tasks';
-import { videoGraph } from '@/lib/agent/graph';
 
 export const dynamic = 'force-dynamic';
 
-/** 创建任务：{ text: string } → 经 LangGraph 流水线（脚本→TTS→入队）→ { id } */
+/** 创建任务：{ text: string } → 入队 BullMQ → { id }。Worker 消费后执行完整 LangGraph 管线。 */
 export async function POST(request: Request) {
-  let body: { text?: unknown };//请求体
+  let body: { text?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: '请求体不是合法 JSON' }, { status: 400 });
   }
 
-  const text = typeof body.text === 'string' ? body.text.trim() : '';//提取 text 字段并去除首尾空白
+  const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text) {
     return NextResponse.json({ error: '文本不能为空' }, { status: 400 });
   }
@@ -23,11 +22,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    // LangGraph 状态机：脚本切分 → TTS → 入队（TTS 约 1-2 秒，入队毫秒级）
-    const result = await videoGraph.invoke({ userPrompt: text });//返回 { jobId, script, audioPath }
+    const queue = getQueue();
+    const job = await queue.add('video-generation', { text });
+    console.log(`[api] 任务 ${job.id} 已入队: "${text.slice(0, 40)}..."`);
 
     return NextResponse.json(
-      { id: result.jobId, status: 'waiting' },
+      { id: String(job.id), status: 'waiting' },
       { status: 201 }
     );
   } catch (err) {

@@ -1,0 +1,42 @@
+[
+  {
+    "sceneId": "shot-1",
+    "motionDescription": "Close-up of bamboo leaves with a water droplet trembling at the tip. The droplet falls slowly and splashes on a moss-covered stone. Gentle slow tilt-up reveals the surrounding bamboo grove, wet from recent rain. Ink-wash style, soft diffuse light.",
+    "negativePrompt": "text, people, animals, modern objects, bright sunlight",
+    "narration": "骤雨初歇，竹叶还悬着水珠。一滴滑落，砸在青石上，溅起碎玉。竹林深处，有什么正在靠近。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-2",
+    "motionDescription": "Medium shot from behind the swordsman: he holds his straight sword horizontally, shielding the mage. His hand is pale, knuckles white. The mage stands behind him, silver hair lifted by a mystical breeze, eyes closed, lips moving. Her short staff glows with a pulsing sapphire light. Slow push-in, camera focuses on the glowing gem. Ink-wash with ethereal blue highlights.",
+    "negativePrompt": "text, modern weapons, distorted faces, bright daylight",
+    "narration": null,
+    "dialogues": [
+      "以光为引...",
+      "别出声。"
+    ]
+  },
+  {
+    "sceneId": "shot-3",
+    "motionDescription": "From deep within dark bamboo, three streams of black mist slither along the ground, coalesce into three skeletal claws with bone spurs, and dive downwards with a piercing screech. Camera lurches forward rapidly, shaking, with flickering shadows. Ink-wash visuals with blue-black tones.",
+    "negativePrompt": "text, human figures, soft light, clear sky",
+    "narration": "三道黑雾贴着地面窜来，在半空凝成三只骨刺嶙峋的利爪，尖啸着俯冲而下！",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-4",
+    "motionDescription": "Swordsman's eyes narrow; he steps forward, shattering a puddle underfoot. He swings his ancient sword upward, trailing a silver arc. Simultaneously, mage's blue light streams forward. The two energies collide mid-air, freezing time: floating bamboo leaves and suspended raindrops hang motionless. Slow motion, dramatic ink-wash glow. Swordsman's mouth moves with a single word.",
+    "negativePrompt": "text, still background, modern items, blurred magic",
+    "narration": null,
+    "dialogues": [
+      "就是现在！"
+    ]
+  },
+  {
+    "sceneId": "shot-5",
+    "motionDescription": "A burst of light explodes into a shower of glowing particles drifting like fireflies. Bamboo leaves fall slowly one by one. Swordsman and mage stand side by side, robes fluttering gently. Camera pulls back from medium shot to a wider, tranquil composition. Ink-wash colors blend into a serene atmosphere.",
+    "negativePrompt": "text, violence, dark shadows, explosions, blood",
+    "narration": "光炸开了。漫天流萤般的光屑飘落，竹叶缓缓，两人并肩而立。仿佛一切都不曾发生。",
+    "dialogues": []
+  }
+]

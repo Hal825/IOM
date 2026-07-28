@@ -1,0 +1,30 @@
+[
+  {
+    "sceneId": "shot-1",
+    "motionDescription": "Slow dolly through a wet bamboo forest after rain. Waterdrops fall from leaves, splashing on mossy stones. The swordsman stands in foreground, holding his sword horizontally, shielding the mage behind him. His knuckles are white, eyes tense. Camera pushes in slightly. No mouth movement.",
+    "negativePrompt": "text, watermark, deformed faces, extra limbs, bright colors, sunny day",
+    "narration": "骤雨过后，竹叶上还悬着水珠。剑士横剑在前，将法师完全护在身后。空气，仿佛凝固了。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-2",
+    "motionDescription": "Close-up of the female mage, eyes closed, whispering a chant. Her short staff's sapphire glows bright blue, light washing over the staff. Wind blows her silver hair upward, tips glowing pale blue. Camera slowly orbits around her. Mystical atmosphere, no other characters.",
+    "negativePrompt": "text, watermark, deformed face, extra limbs, warm colors, still image",
+    "narration": "法师闭目吟唱，短杖上的蓝宝石骤然亮起。光芒如潮水漫开，她的银发被风卷向空中。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-3",
+    "motionDescription": "Action sequence: three dark mist claws rush through bamboo, turning into skeletal talons diving down. The swordsman steps forward, splashing water, and swings his sword upward in a silver arc. Blue mage light collides with the slash, causing a silent explosion. Bamboo leaves freeze mid-air, then light bursts. Camera shake and quick cut to wide shot of the explosion. Both characters visible.",
+    "negativePrompt": "text, watermark, deformed figures, extra limbs, blurry, warm tones, static pose",
+    "narration": "三道黑雾贴着地面掠来，凝成骨刺嶙峋的利爪，俯冲而下。剑士不退反进，踏碎积水，一剑斜斩。剑气与蓝光交汇，竹林为之失声。紧接着，光炸开了。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-4",
+    "motionDescription": "After the flash, glowing particles drift like fireflies. Black claws dissolve. Wind stops, light fades. Bamboo leaves gently fall, one landing on the swordsman's shoulder, another brushes the mage's eyelashes. They stand side by side, robes fluttering slightly. Camera slowly pulls back to a wide shot of the tranquil forest.",
+    "negativePrompt": "text, watermark, distorted faces, extra limbs, bright explosion remnants, warm tones",
+    "narration": "光屑如流萤飘散，黑爪化为残影消解。风停了，光也敛去。竹叶缓缓飘落，一片落在剑士肩头。两人并肩而立，天地复归清寂，仿佛一切从未发生。",
+    "dialogues": []
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "sceneId": "shot-1",
+    "motionDescription": "Slow push-in through dripping bamboo leaves onto a warrior holding his longsword protectively. Water drops fall from leaves, shattering on bluestone. The sword reflects dim forest light. No mouth movement needed from the warrior.",
+    "negativePrompt": "text, watermark, deformed face, extra limbs",
+    "narration": "一场骤雨刚刚停歇，竹叶上还挂着水珠，剑士已经横剑在前，将法师牢牢护在身后。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-2",
+    "motionDescription": "Smooth pan from the warrior's back to the mage behind him. Her eyes closed, lips moving in whisper. Gem on staff glows bright blue, light surging along the staff. Her silver hair lifts as if in wind, pale blue tips almost transparent. Slow zoom in on her face and the glowing staff.",
+    "negativePrompt": "text, watermark, distorted face",
+    "narration": "法师阖上眼帘，低声吟唱，短杖顶端的蓝宝石骤然亮起，光芒如潮水般漫过杖身。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-3",
+    "motionDescription": "From the depths of the bamboo forest, three dark smoke streams sweep across the ground, then quickly condense into bony, spiked claws diving downward with a shriek. Camera rushes forward, dynamic tracking shot.",
+    "negativePrompt": "text, people, bright colors",
+    "narration": "就在这时，竹林深处三道黑雾贴着地面疾掠而来，在半空凝成骨刺嶙峋的利爪，猛扑而下。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-4",
+    "motionDescription": "The warrior lunges forward, splashing water as he steps, swings his longsword upward in a silver arc. His sword beam intersects with a wave of blue magic from the mage. At the point of collision, everything freezes for a split second, then explodes into glowing particles that tear the dark claws apart. Close-up slow-motion on the shattering light.",
+    "negativePrompt": "text, watermark, blurred motion",
+    "narration": "剑士不退反进，一步踏碎积水，长剑由下至上斩出一道银弧。剑气与蓝光交汇，轰然炸开，漫天光屑撕裂了黑暗。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-5",
+    "motionDescription": "Wind ceases, light fades. Bamboo leaves slowly fall, spiraling down. One leaf lands on the warrior's shoulder, another brushes the mage's eyelashes. Both stand side by side, robes slightly moving. Final gentle pull-back wide shot of the quiet forest.",
+    "negativePrompt": "text, action, violence",
+    "narration": "风停了，光芒渐渐敛去，竹叶缓缓飘落，落在剑士肩头，擦过法师眉睫，四周唯有细碎的落地声。",
+    "dialogues": []
+  }
+]

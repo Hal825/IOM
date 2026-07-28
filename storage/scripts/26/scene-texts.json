@@ -1,0 +1,30 @@
+[
+  {
+    "sceneId": "shot-1",
+    "motionDescription": "Medium over-the-shoulder shot in a rain-soaked bamboo forest. Swordsman stands protectively in front, blade held horizontally, muscles tensed. Behind him, mage chants with eyes closed, short staff glowing sapphire, her silver hair rising in unnatural wind. Water drops fall from leaves. Camera slowly pushes in closer, focusing on the sword's reflection and the growing blue light. No dialogue, but mage's lips move subtly.",
+    "negativePrompt": "text, watermark, bright daylight, distorted faces, realistic weapons",
+    "narration": "骤雨初歇，剑士横剑护住身后的法师。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-2",
+    "motionDescription": "Fast push-in through dark, dense bamboo stalks. Three streams of black smoke rush along the ground towards the camera. They abruptly shoot up and coalesce into three skeletal, bone-spiked claws in midair, diving forward with a piercing screech. No characters, pure horror atmosphere. Sharp, aggressive movement.",
+    "negativePrompt": "text, people, peaceful scenery, soft lighting",
+    "narration": "黑雾贴地疾掠，化作骨刺嶙峋的利爪。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-3",
+    "motionDescription": "Swordsman steps forward, splashing water, then swings his longsword upward in a wide silver arc. Behind him, mage raises her staff, and a wave of blue light surges forward. The two energies meet in midair. For one frozen moment, leaves and raindrops suspend in the air. Then light explodes into glowing particles, tearing the three dark claws apart. Camera orbits from over-the-shoulder to front, ending on the brilliant explosion. Both characters' mouths slightly open as if shouting or chanting.",
+    "negativePrompt": "text, static pose, dark claws remaining, blurry action",
+    "narration": "一剑斜斩，剑光与魔法之光交汇，撕裂黑暗。",
+    "dialogues": []
+  },
+  {
+    "sceneId": "shot-4",
+    "motionDescription": "Wide shot of swordsman and mage standing side by side in the still bamboo forest. Rain has stopped. Leaves gently spiral down. One lands on the swordsman's shoulder, another brushes past the mage's eyelashes. The remaining light fades. Camera slowly pulls back to emphasize the peaceful aftermath. No wind now, only the soft rustle of falling leaves.",
+    "negativePrompt": "text, violence, dark claws, bright glow, wind",
+    "narration": "风停叶落，仿佛一切从未发生。",
+    "dialogues": []
+  }
+]

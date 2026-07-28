@@ -1,53 +1,97 @@
 import { Annotation } from '@langchain/langgraph';
-import type { ResearchReport, Proposal, AssetManifest } from '@/lib/types';
+import type { ResearchReport, Proposal, VideoScript, AssetManifest } from '@/lib/types';
 
-/**
- * LangGraph 工作流状态。
- *
- * 使用 Annotation.Root 定义状态通道，每个字段默认采用 LastValue 策略
- * （最新返回值覆盖旧值）。
- */
+// ── 新增辅助类型 ────────────────────────────────────
+
+/** 单个镜头的音频片段 */
+export interface SceneAudioSegment {
+  sceneId: string;
+  audioUrl: string;
+  durationSec: number;
+}
+
+/** 单个镜头的视频生成结果 */
+export interface SceneVideoResult {
+  sceneId: string;
+  videoUrl: string;
+  durationSec: number;
+  status: 'generating' | 'done' | 'failed';
+}
+
+// ── LangGraph 状态定义 ──────────────────────────────
 
 export const VideoGenState = Annotation.Root({
   // === 输入 ===
   userPrompt: Annotation<string>,
-  /** 脚本风格（可选，透传给 LLM） */
   style: Annotation<string>,
 
   // === 调研 & 提案 ===
-  /** 调研报告：文本分析结果（research 节点输出） */
   researchReport: Annotation<ResearchReport | null>,
-  /** 制作提案：分镜脚本和风格指南（proposal 节点输出） */
   proposal: Annotation<Proposal | null>,
 
+  // === 脚本生成 ===
+  videoScript: Annotation<VideoScript | null>,
+
   // === 素材生成 ===
-  /** 素材清单：角色视图 + 场景背景（asset_gen 节点输出） */
   assetManifest: Annotation<AssetManifest | null>,
 
-  // === 语音合成 ===
-  /** TTS 语音文件路径或 URL（tts 节点输出） */
-  audioUrl: Annotation<string>,
-  /** 语音时长（秒） */
-  audioDuration: Annotation<number>,
-
-  // === 视频生成 ===
-  /** 最终视频 URL 或路径（video_gen 节点输出） */
-  videoUrl: Annotation<string>,
-  /** 视频时长（秒） */
+  // === 视频输出 ===
+  /** 最终视频时长（秒），由 video_merge 节点写入 */
   durationSec: Annotation<number>,
-  /** 视频生成状态 */
-  videoGenStatus: Annotation<string>,
 
-  // === BullMQ 入队结果 ===
+  // === 分段音频 ===
+  /** 每个镜头的音频片段列表（tts 节点输出） */
+  audioSegments: Annotation<SceneAudioSegment[]>({
+    reducer: (_current: SceneAudioSegment[], update: SceneAudioSegment[]): SceneAudioSegment[] =>
+      update ?? [],
+    default: () => [],
+  }),
+
+  // === 分段视频 ===
+  /** 每个镜头的视频片段列表（shot_video_gen 节点输出），按 sceneId 合并 */
+  sceneVideos: Annotation<SceneVideoResult[]>({
+    reducer: (
+      current: SceneVideoResult[],
+      update: SceneVideoResult[] | SceneVideoResult
+    ): SceneVideoResult[] => {
+      const list = current ?? [];
+      if (!update) return list;
+      const items = Array.isArray(update) ? update : [update];
+      const merged = new Map(list.map((s) => [s.sceneId, s]));
+      for (const item of items) {
+        if (item?.sceneId) merged.set(item.sceneId, item);
+      }
+      return Array.from(merged.values());
+    },
+    default: () => [],
+  }),
+
+  // === 最终输出 ===
+  /** FFmpeg 拼接后的最终视频路径 */
+  mergedVideoUrl: Annotation<string | null>({
+    reducer: (_current: string | null, update: string | null): string | null => update ?? null,
+    default: () => null,
+  }),
+  /** 拼接日志 */
+  mergeLog: Annotation<string | null>({
+    reducer: (_current: string | null, update: string | null): string | null => update ?? null,
+    default: () => null,
+  }),
+
+  // === 脚本文本快照 ===
+  /** script_generation 输出关键文本的 JSON 快照 */
+  scriptTextSnapshot: Annotation<string | null>({
+    reducer: (_current: string | null, update: string | null): string | null => update ?? null,
+    default: () => null,
+  }),
+
+  // === BullMQ ===
   jobId: Annotation<string>,
 
   // === 可观测性 ===
-  /** 错误信息 */
   error: Annotation<string>,
-  /** 全流程日志对象（ProcedureLog），随节点流转更新 */
   _procedureLog: Annotation<unknown>({
     reducer: (_current: unknown, update: unknown) => {
-      // 深度合并 procedureLog（与旧版兼容）
       if (!update) return _current;
       if (!_current) return update;
       if (
@@ -84,7 +128,5 @@ export const VideoGenState = Annotation.Root({
   }),
 });
 
-/** 状态类型（供节点函数签名使用） */
 export type VideoGenStateType = typeof VideoGenState.State;
-/** 状态更新类型（供节点函数返回值使用） */
 export type VideoGenStateUpdate = typeof VideoGenState.Update;

@@ -6,7 +6,7 @@ import type { TaskData } from './types';
 vi.mock('@/lib/agent/graph', () => ({
   videoGraph: {
     invoke: vi.fn(async () => ({
-      videoUrl: '/storage/output/test.mp4',
+      mergedVideoUrl: '/storage/output/test.mp4',
       durationSec: 32,
       jobId: 'test-1',
     })),
@@ -48,14 +48,14 @@ describe('executeTask', () => {
     expect(result.durationSec).toBe(32);
   });
 
-  it('进度按 10→90→100 推进', async () => {
+  it('进度按 10→100 推进', async () => {
     const job = createFakeJob('你好世界。');
     await executeTask(job, STORAGE);
 
     const calls = (job.updateProgress as ReturnType<typeof vi.fn>).mock.calls.map(
       (c) => c[0]
     );
-    expect(calls).toEqual([10, 90, 100]);
+    expect(calls).toEqual([10, 100]);
   });
 
   it('空文本抛错', async () => {

@@ -3,15 +3,13 @@ import path from 'node:path';
 import { createRedisConnection } from '../lib/queue';
 import { executeTask } from '../lib/orchestrator';
 import { QUEUE_NAME, type TaskData, type TaskResult } from '../lib/types';
-import { findProcedureLog, saveProcedureLog, calculateTotalTokenUsage, cleanupOldLogs } from '../lib/log/procedure';
+import { cleanupOldLogs } from '../lib/log/procedure';
 
 /**
  * BullMQ Worker 进程 — 独立于 Next.js 运行（npm run worker）。
  *
- * 新流程（纯 AI 管线）：
- *   - API 层经 LangGraph（research→proposal→asset_gen→video_gen）完成所有 AI 调用
- *   - Worker 接收已完成的任务，执行后处理（如视频下载到本地 storage）
- *   - 兼容旧模式：job.data 仅有 text → 走完整 executeTask
+ * 消费队列中的任务，调用 executeTask() 执行完整 LangGraph 管线：
+ *   research → proposal → script_gen → (asset_gen ‖ tts) → (shot_video_gen × N) → video_merge
  */
 
 const STORAGE_DIR = path.resolve('./storage');
@@ -28,30 +26,7 @@ async function main() {
   const worker = new Worker<TaskData, TaskResult>(
     QUEUE_NAME,
     async (job: Job<TaskData>) => {
-      const jobId = String(job.id);
-
-      // ── LangGraph 模式：视频 URL/路径已生成 ──
-      if (job.data.videoUrl) {
-        console.log(`[worker] LangGraph 模式: 任务 ${jobId} 视频已生成 → ${job.data.videoUrl}`);
-        await job.updateProgress(95);
-
-        const log = await findProcedureLog(jobId);
-        if (log) {
-          log.finalStatus = 'success';
-          log.totalDurationMs = Date.now() - new Date(log.timestamp).getTime();
-          log.totalTokenUsage = calculateTotalTokenUsage(log);
-          await saveProcedureLog(log, jobId);
-        }
-
-        await job.updateProgress(100);
-        return {
-          videoPath: job.data.videoUrl,
-          durationSec: job.data.durationSec ?? 0,
-        };
-      }
-
-      // ── 旧模式（兼容）：走完整 executeTask ──
-      console.log(`[worker] 旧模式: 开始处理任务 ${jobId}: "${job.data.text.slice(0, 30)}..."`);
+      console.log(`[worker] 开始处理任务 ${String(job.id)}: "${job.data.text.slice(0, 40)}..."`);
       return executeTask(job, STORAGE_DIR);
     },
     {
@@ -68,12 +43,19 @@ async function main() {
   });
   worker.on('failed', (job, err) => {
     console.error(`[worker] ✗ 任务 ${job?.id} 失败: ${err.message}`);
+    // 展开 LangGraph 多节点并行错误
+    const detail = (err as any).errors ?? (err as any).cause?.errors;
+    if (Array.isArray(detail)) {
+      for (const e of detail) {
+        console.error(`  ↳ ${e?.message ?? String(e)}`);
+      }
+    }
   });
   worker.on('error', (err) => {
     console.error(`[worker] Worker 错误: ${err.message}`);
   });
 
-  // 清理过期日志
+  // 启动时清理过期日志
   cleanupOldLogs(7).catch(() => {});
 
   const shutdown = async () => {

@@ -16,13 +16,8 @@ import type { TokenUsage } from '@/lib/log/procedure';
 const PROPOSAL_API_KEY = process.env.PROPOSAL_API_KEY;
 const PROPOSAL_BASE_URL = process.env.PROPOSAL_BASE_URL;
 const PROPOSAL_LLM_MODEL = process.env.PROPOSAL_LLM_MODEL;
-const PROPOSAL_DEFAULT_DURATION_PER_SCENE =
-  Number(process.env.PROPOSAL_DEFAULT_DURATION_PER_SCENE) || 8;
-const PROPOSAL_MAX_SCENES =
-  Number(process.env.PROPOSAL_MAX_SCENES) || 15;
-
 const MAX_RETRIES = 3;
-const MAX_TOKENS = 3000;
+const MAX_TOKENS = 20000;
 
 // ── 类型 ────────────────────────────────────────────
 
@@ -60,6 +55,15 @@ function isValidTransitions(v: unknown): v is 'smooth' | 'cut' | 'zoom' {
 
 function isValidRiskLevel(v: unknown): v is 'low' | 'medium' | 'high' {
   return typeof v === 'string' && ['low', 'medium', 'high'].includes(v);
+}
+
+function isValidTransitionType(v: unknown): v is 'none' | 'fade' | 'zoom' | 'pan' | 'slide' | 'cut' {
+  return typeof v === 'string' &&
+    ['none', 'fade', 'zoom', 'pan', 'slide', 'cut'].includes(v);
+}
+
+function toTransitionType(v: unknown): 'none' | 'fade' | 'zoom' | 'pan' | 'slide' | 'cut' {
+  return isValidTransitionType(v) ? v : 'cut';
 }
 
 function parseAndValidateProposal(raw: string): Proposal {
@@ -113,17 +117,17 @@ function parseAndValidateProposal(raw: string): Proposal {
     if (typeof shot.duration !== 'number') {
       throw new Error(`[proposal] shotScript[${i}].duration 缺失`);
     }
-    if (typeof shot.visualDescription !== 'string' || !shot.visualDescription.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].visualDescription 缺失`);
+    // summary 校验（新字段，替代 visualDescription）
+    if (typeof shot.summary !== 'string' || !shot.summary.trim()) {
+      throw new Error(`[proposal] shotScript[${i}].summary 缺失`);
     }
     if (typeof shot.subtitleText !== 'string' || !shot.subtitleText.trim()) {
       throw new Error(`[proposal] shotScript[${i}].subtitleText 缺失`);
     }
-    // videoPrompt 校验（新增字段，兼容旧格式）
-    if (typeof shot.videoPrompt !== 'string' || !shot.videoPrompt.trim()) {
-      // 回退：用 visualDescription 填充
-      shot.videoPrompt = shot.visualDescription as string;
-    }
+
+    // transition 校验（新字段，必需）
+    const transition = shot.transition as Record<string, unknown> | undefined;
+    if (!transition) throw new Error(`[proposal] shotScript[${i}].transition 缺失`);
 
     // layout 校验
     const layout = shot.layout as Record<string, unknown> | undefined;
@@ -172,7 +176,7 @@ function parseAndValidateProposal(raw: string): Proposal {
     throw new Error('[proposal] feasibility.suggestions 缺失');
   }
 
-  // ── characters 校验（新增字段，可选）──
+  // ── characters 校验（可选）──
   let characters: Character[] | undefined;
   if (obj.characters && Array.isArray(obj.characters)) {
     const chars = obj.characters as unknown[];
@@ -197,7 +201,7 @@ function parseAndValidateProposal(raw: string): Proposal {
     if (characters.length === 0) characters = undefined;
   }
 
-  // ── videoGen 校验（新增字段，可选）──
+  // ── videoGen 校验（可选）──
   let videoGen: Proposal['videoGen'] | undefined;
   if (obj.videoGen && typeof obj.videoGen === 'object') {
     const vg = obj.videoGen as Record<string, unknown>;
@@ -206,6 +210,52 @@ function parseAndValidateProposal(raw: string): Proposal {
       duration: (typeof vg.duration === 'number' ? vg.duration : blueprint.totalDuration) as number,
     };
   }
+
+  // ── extraction 校验（新字段，兼容旧格式）──
+  const extraction: Proposal['extraction'] = (() => {
+    const extr = obj.extraction as Record<string, unknown> | undefined;
+    const rawScenes = Array.isArray(extr?.rawScenes)
+      ? extr.rawScenes.map((r) => {
+          const rs = r as Record<string, unknown>;
+          return {
+            id: (rs.id as string) ?? '',
+            content: (rs.content as string) ?? '',
+          };
+        }).filter((r) => r.id && r.content)
+      : [];
+    return { rawScenes };
+  })();
+
+  // ── optimizationLog 校验（新字段，兼容旧格式）──
+  const optimizationLog: Proposal['optimizationLog'] = Array.isArray(obj.optimizationLog)
+    ? obj.optimizationLog.map((o) => {
+        const entry = o as Record<string, unknown>;
+        const result: Proposal['optimizationLog'][number] = {
+          action: ((entry.action as string) ?? 'keep') as Proposal['optimizationLog'][number]['action'],
+        };
+        if (entry.sourceId) result.sourceId = entry.sourceId as string;
+        if (entry.sourceIds && Array.isArray(entry.sourceIds)) {
+          result.sourceIds = (entry.sourceIds as unknown[]).filter((s): s is string => typeof s === 'string');
+        }
+        if (entry.mergedContent) result.mergedContent = entry.mergedContent as string;
+        if (entry.revisedContent) result.revisedContent = entry.revisedContent as string;
+        if (entry.addedContent) result.addedContent = entry.addedContent as string;
+        if (entry.reason) result.reason = entry.reason as string;
+        return result;
+      })
+    : [];
+
+  // ── _expansionApplied 校验（新字段，兼容旧格式）──
+  const _expansionApplied: Proposal['_expansionApplied'] = (() => {
+    const ea = obj._expansionApplied as Record<string, unknown> | null | undefined;
+    if (!ea) return null;
+    return {
+      expansions: Array.isArray(ea.expansions)
+        ? ea.expansions.filter((e): e is string => typeof e === 'string')
+        : [],
+      reason: (ea.reason as string) ?? '',
+    };
+  })();
 
   // ── 构建并返回 ──
   return {
@@ -218,19 +268,36 @@ function parseAndValidateProposal(raw: string): Proposal {
     shotScript: shotScript.map((s) => {
       const shot = s as Record<string, unknown>;
       const layout = shot.layout as Record<string, unknown>;
+      const transition = shot.transition as Record<string, unknown> | undefined;
       return {
         sceneId: shot.sceneId as string,
         duration: shot.duration as number,
-        visualDescription: shot.visualDescription as string,
+        summary: shot.summary as string,
         layout: {
           textPosition: layout.textPosition as 'center' | 'top' | 'bottom',
           backgroundColor: layout.backgroundColor as string,
           animation: layout.animation as 'fade' | 'slide' | 'typing' | 'none',
         },
         subtitleText: shot.subtitleText as string,
-        videoPrompt: shot.videoPrompt as string,
+        transition: {
+          from: {
+            sceneId: (transition?.from as Record<string, unknown> | null)?.sceneId as string | null ?? null,
+            type: toTransitionType((transition?.from as Record<string, unknown> | null)?.type),
+            visualLink: ((transition?.from as Record<string, unknown> | null)?.visualLink as string) ?? '',
+          },
+          to: {
+            sceneId: (transition?.to as Record<string, unknown> | null)?.sceneId as string | null ?? null,
+            type: toTransitionType((transition?.to as Record<string, unknown> | null)?.type),
+            visualLink: ((transition?.to as Record<string, unknown> | null)?.visualLink as string) ?? '',
+          },
+        },
+        cast: Array.isArray(shot.cast)
+          ? shot.cast.filter((c): c is string => typeof c === 'string')
+          : [],
       };
     }),
+    extraction,
+    optimizationLog,
     styleGuide: {
       globalTone: styleGuide.globalTone as string,
       colorPalette: styleGuide.colorPalette as string[],
@@ -248,6 +315,7 @@ function parseAndValidateProposal(raw: string): Proposal {
     },
     characters,
     videoGen,
+    _expansionApplied,
   };
 }
 
@@ -290,7 +358,6 @@ async function callProposalLLM(
       max_tokens: MAX_TOKENS,
       temperature: 0.6,
     }),
-    signal: AbortSignal.timeout(30000),
   });
 
   if (!resp.ok) {
@@ -337,171 +404,52 @@ async function withRetry<T>(
   throw lastError ?? new Error('[proposal] 未知错误');
 }
 
-// ── 规则兜底 ────────────────────────────────────────
-
-const FALLBACK_COLORS = ['#0a1628', '#1a1a2e', '#16213e', '#0f3460', '#1a1a3e'];
-
-/**
- * 基于规则生成 Proposal。
- * 不调用任何 API，纯本地处理。
- */
-function fallbackProposal(
-  report: ResearchReport | null,
-  userPrompt: string
-): Proposal {
-  const segments = report?.contentSkeleton.segments;
-  const tone = report?.styleProfile.tone ?? 'professional';
-
-  let sceneEntries: Array<{ text: string; title: string; summary: string }>;
-
-  if (segments && segments.length > 0) {
-    sceneEntries = segments.map((seg) => ({
-      text: seg.originalText,
-      title: seg.title,
-      summary: seg.summary,
-    }));
-  } else {
-    const sentences = userPrompt
-      .split(/(?<=[。！？；.!?;])/)
-      .filter((s) => s.trim().length > 0);
-    const limited = sentences.slice(0, PROPOSAL_MAX_SCENES);
-    sceneEntries = limited.map((s, i) => ({
-      text: s.trim(),
-      title: `段落 ${i + 1}`,
-      summary: s.trim().slice(0, 30),
-    }));
-  }
-
-  const durationPerScene = PROPOSAL_DEFAULT_DURATION_PER_SCENE;
-
-  const shotScript: Proposal['shotScript'] = sceneEntries.map((entry, i) => ({
-    sceneId: `shot-${i + 1}`,
-    duration: durationPerScene,
-    visualDescription: `Abstract background with modern design, cinematic composition, suitable for ${entry.title}`,
-    layout: {
-      textPosition: 'center' as const,
-      backgroundColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-      animation: 'fade' as const,
-    },
-    subtitleText: entry.summary.slice(0, 30),
-    videoPrompt: `Cinematic scene with modern abstract background, clean composition. Text overlay: "${entry.summary.slice(0, 30)}". Smooth fade transition.`,
-  }));
-
-  // 角色兜底
-  let characters: Character[] | undefined;
-  const charAnalysis = report?.characterAnalysis;
-  if (charAnalysis?.hasCharacter && charAnalysis.characterHints.length > 0) {
-    characters = [
-      {
-        characterId: 'char-1',
-        name: '角色',
-        appearance: `A professional character with modern attire, friendly expression, suitable for video presentation. ${charAnalysis.characterHints.join('; ')}`,
-        role: '视频角色',
-        appearsInScenes: shotScript.map((s) => s.sceneId),
-      },
-    ];
-  }
-
-  const toneMap: Record<string, string> = {
-    professional: '专业商务风格',
-    lively: '轻松活泼风格',
-    serious: '严肃庄重风格',
-    inspirational: '激励鼓舞风格',
-    minimal: '简洁极简风格',
-  };
-
-  return {
-    blueprint: {
-      title: report?.metadata.topic ?? '视频制作',
-      totalDuration: shotScript.length * durationPerScene,
-      sceneCount: shotScript.length,
-      aspectRatio: '16:9',
-    },
-    shotScript,
-    styleGuide: {
-      globalTone: toneMap[tone] ?? tone,
-      colorPalette: FALLBACK_COLORS,
-      fontFamily: 'sans-serif',
-      backgroundMusic: {
-        style: report?.styleProfile.suggestedBGM ?? 'ambient instrumental',
-      },
-      transitions: 'smooth',
-    },
-    feasibility: {
-      riskLevel:
-        shotScript.length <= 5 ? 'low' :
-        shotScript.length <= 10 ? 'medium' : 'high',
-      estimatedRenderTime: shotScript.length * durationPerScene * 1.5,
-      suggestions: [],
-    },
-    characters,
-    videoGen: {
-      style: 'cinematic documentary',
-      duration: shotScript.length * durationPerScene,
-    },
-  };
-}
-
 // ── 公开 API ────────────────────────────────────────
 
 /**
  * 基于 ResearchReport 生成视频制作提案。
- * - 已配置 API Key → 调用 LLM，失败回退规则生成
- * - 未配置 → 直接走规则生成
+ * 零容错：API Key 未配置或调用失败直接抛异常。
  */
 export async function generateProposal(
   report: ResearchReport | null,
   userPrompt: string,
   styleHint?: string
 ): Promise<ProposalResult> {
-  if (!PROPOSAL_API_KEY) {
-    console.log('[proposal] 未配置 PROPOSAL_API_KEY，使用规则生成');
-    return {
-      proposal: fallbackProposal(report, userPrompt),
-      model: 'rule-based',
-      retries: 0,
-    };
+  if (!PROPOSAL_API_KEY || !PROPOSAL_BASE_URL || !PROPOSAL_LLM_MODEL) {
+    throw new Error('Proposal 环境变量未配置（PROPOSAL_API_KEY / PROPOSAL_BASE_URL / PROPOSAL_LLM_MODEL）');
   }
 
-  try {
-    const { result, retries } = await withRetry(async () => {
-      const { content, usage } = await callProposalLLM(report, userPrompt, styleHint);
-      const proposal = parseAndValidateProposal(content);
-      return { ...proposal, usage };
-    });
+  const { result, retries } = await withRetry(async () => {
+    const { content, usage } = await callProposalLLM(report, userPrompt, styleHint);
+    const proposal = parseAndValidateProposal(content);
+    return { ...proposal, usage };
+  });
 
-    const charInfo = result.characters?.length
-      ? `, ${result.characters.length} 个角色`
-      : '';
+  const charInfo = result.characters?.length
+    ? `, ${result.characters.length} 个角色`
+    : '';
 
-    console.log(
-      `[proposal] ${PROPOSAL_LLM_MODEL} 生成完成：` +
-        `${result.blueprint.sceneCount} 个镜头，` +
-        `${result.blueprint.totalDuration}s${charInfo}` +
-        (retries > 0 ? `（重试 ${retries} 次）` : '')
-    );
+  console.log(
+    `[proposal] ${PROPOSAL_LLM_MODEL} 生成完成：` +
+      `${result.blueprint.sceneCount} 个镜头，` +
+      `${result.blueprint.totalDuration}s${charInfo}` +
+      (retries > 0 ? `（重试 ${retries} 次）` : '')
+  );
 
-    return {
-      proposal: {
-        blueprint: result.blueprint,
-        shotScript: result.shotScript,
-        styleGuide: result.styleGuide,
-        feasibility: result.feasibility,
-        characters: result.characters,
-        videoGen: result.videoGen,
-      },
-      model: PROPOSAL_LLM_MODEL!,
-      retries,
-      tokenUsage: result.usage,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[proposal] 失败，回退规则生成: ${message}`);
-
-    return {
-      proposal: fallbackProposal(report, userPrompt),
-      model: `fallback(${PROPOSAL_LLM_MODEL ?? 'unknown'})`,
-      retries: MAX_RETRIES,
-    };
-  }
+  return {
+    proposal: {
+      blueprint: result.blueprint,
+      shotScript: result.shotScript,
+      extraction: result.extraction,
+      optimizationLog: result.optimizationLog,
+      styleGuide: result.styleGuide,
+      feasibility: result.feasibility,
+      characters: result.characters,
+      videoGen: result.videoGen,
+      _expansionApplied: result._expansionApplied,
+    },
+    model: PROPOSAL_LLM_MODEL,
+    retries,
+    tokenUsage: result.usage,
+  };
 }
