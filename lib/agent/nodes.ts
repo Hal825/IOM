@@ -42,7 +42,6 @@ const SCRIPTS_DIR = path.resolve(process.cwd(), 'storage', 'scripts');
 // ============================================================
 
 export async function researchNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
   if (!state.userPrompt?.trim()) throw new Error('用户输入为空');
 
   const result = await analyzeContent(state.userPrompt);
@@ -54,9 +53,6 @@ export async function researchNode(state: VideoGenStateType): Promise<Partial<Vi
 
   return {
     researchReport: result.report,
-    _procedureLog: {
-      research: { input: { userPrompt: state.userPrompt }, output: { report: result.report, model: result.model, retries: result.retries, tokenUsage: result.tokenUsage }, durationMs: Date.now() - start },
-    },
   };
 }
 
@@ -65,8 +61,6 @@ export async function researchNode(state: VideoGenStateType): Promise<Partial<Vi
 // ============================================================
 
 export async function proposalNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-
   const result = await generateProposal(
     state.researchReport ?? null,
     state.userPrompt,
@@ -84,9 +78,6 @@ export async function proposalNode(state: VideoGenStateType): Promise<Partial<Vi
 
   return {
     proposal: result.proposal,
-    _procedureLog: {
-      proposal: { input: { researchReport: state.researchReport ?? undefined, userPrompt: state.userPrompt }, output: { proposal: result.proposal, model: result.model, retries: result.retries, tokenUsage: result.tokenUsage }, durationMs: Date.now() - start },
-    },
   };
 }
 
@@ -95,7 +86,6 @@ export async function proposalNode(state: VideoGenStateType): Promise<Partial<Vi
 // ============================================================
 
 export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
   if (!state.proposal) throw new Error('缺少 Proposal');
 
   const result = await generateScript(
@@ -131,9 +121,6 @@ export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<V
   return {
     videoScript: result.script,
     scriptTextSnapshot: JSON.stringify(textSnapshot),
-    _procedureLog: {
-      script_gen: { input: { proposal: state.proposal.blueprint }, output: { script: result.script, sceneCount: videoScript.sceneScripts.length, model: result.model, retries: result.retries, tokenUsage: result.tokenUsage }, durationMs: Date.now() - start },
-    },
   };
 }
 
@@ -142,7 +129,6 @@ export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<V
 // ============================================================
 
 export async function assetGenNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
   if (!state.proposal) throw new Error('缺少 Proposal');
   if (!state.videoScript) throw new Error('缺少 VideoScript');
 
@@ -155,9 +141,6 @@ export async function assetGenNode(state: VideoGenStateType): Promise<Partial<Vi
 
   return {
     assetManifest: result.manifest,
-    _procedureLog: {
-      asset_gen: { input: { proposal: { characterCount: state.proposal.characters?.length ?? 0, sceneCount: state.proposal.shotScript.length } }, output: { manifest: result.manifest, characterCount: result.characterCount, sceneCount: result.sceneCount }, durationMs: Date.now() - start },
-    },
   };
 }
 
@@ -193,7 +176,6 @@ async function alignAudioDuration(inputPath: string, outputPath: string, targetD
 }
 
 export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
   if (!state.proposal) throw new Error('缺少 Proposal');
   if (!state.videoScript) throw new Error('缺少 VideoScript');
 
@@ -253,9 +235,6 @@ export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGe
 
   return {
     audioSegments,
-    _procedureLog: {
-      tts: { input: { sceneCount: state.proposal.shotScript.length }, output: { segmentCount: audioSegments.length }, durationMs: Date.now() - start },
-    },
   };
 }
 
@@ -330,7 +309,6 @@ export async function sequentialShotVideoNode(state: VideoGenStateType): Promise
 
   return {
     sceneVideos,
-    _procedureLog: { shot_video: { sceneCount: sceneVideos.length, durationMs: Date.now() - start } },
   };
 }
 
@@ -339,7 +317,6 @@ export async function sequentialShotVideoNode(state: VideoGenStateType): Promise
 // ============================================================
 
 export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
   if (!state.proposal) throw new Error('缺少 Proposal');
 
   const sceneVideos = state.sceneVideos;
@@ -419,8 +396,5 @@ export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<
     mergedVideoUrl: outputPath,
     mergeLog: `Merged ${orderedVideos.length} scenes into ${outputPath}`,
     durationSec: totalDuration,
-    _procedureLog: {
-      video_merge: { output: outputPath, sceneCount: orderedVideos.length, durationMs: Date.now() - start },
-    },
   };
 }

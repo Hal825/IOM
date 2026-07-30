@@ -90,42 +90,6 @@ export const VideoGenState = Annotation.Root({
 
   // === 可观测性 ===
   error: Annotation<string>,
-  _procedureLog: Annotation<unknown>({
-    reducer: (_current: unknown, update: unknown) => {
-      if (!update) return _current;
-      if (!_current) return update;
-      if (
-        typeof _current === 'object' &&
-        typeof update === 'object' &&
-        !Array.isArray(_current) &&
-        !Array.isArray(update)
-      ) {
-        const merged: Record<string, unknown> = {
-          ...(_current as Record<string, unknown>),
-        };
-        for (const key of Object.keys(update as Record<string, unknown>)) {
-          const updateVal = (update as Record<string, unknown>)[key];
-          if (updateVal !== null && updateVal !== undefined) {
-            if (
-              key === 'stages' &&
-              typeof merged[key] === 'object' &&
-              typeof updateVal === 'object'
-            ) {
-              merged[key] = {
-                ...((merged[key] as Record<string, unknown>) ?? {}),
-                ...((updateVal as Record<string, unknown>) ?? {}),
-              };
-            } else {
-              merged[key] = updateVal;
-            }
-          }
-        }
-        return merged;
-      }
-      return update;
-    },
-    default: () => null,
-  }),
 });
 
 export type VideoGenStateType = typeof VideoGenState.State;

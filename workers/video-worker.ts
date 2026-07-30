@@ -3,7 +3,6 @@ import path from 'node:path';
 import { createRedisConnection } from '../lib/queue';
 import { executeTask } from '../lib/orchestrator';
 import { QUEUE_NAME, type TaskData, type TaskResult } from '../lib/types';
-import { cleanupOldLogs } from '../lib/log/procedure';
 
 /**
  * BullMQ Worker 进程 — 独立于 Next.js 运行（npm run worker）。
@@ -54,9 +53,6 @@ async function main() {
   worker.on('error', (err) => {
     console.error(`[worker] Worker 错误: ${err.message}`);
   });
-
-  // 启动时清理过期日志
-  cleanupOldLogs(7).catch(() => {});
 
   const shutdown = async () => {
     console.log('[worker] 正在关闭...');
