@@ -1,0 +1,281 @@
+{
+  "jobId": "eval-2026-07-31T07-52-26-640Z",
+  "testInput": "请帮我制作一个30秒左右的科普视频，介绍人工智能如何改变医疗诊断，要有科技感，背景音乐舒缓一些",
+  "evaluatedAt": "2026-07-31T07:53:27.668Z",
+  "original": {
+    "systemPrompt": "\n## Role\n你是一个专业的短视频导演和视频方案策划师。你的任务是基于用户输入的原始文本和研究报告，设计一个完整的视频制作方案。\n\n---\n##Context\nProgramming introduce:该项目基于TypeScript和Next.js的网页版视频自动生成工具。它的核心功能是让用户通过输入文本,利用LangGraph构建的状态机自动化地完成视频制作的整个流程。\nLangGraph: 图拓扑\n  __start__\n      │\n    research          ← 分析用户文本 → researchReport\n      │\n  generate_proposal   ← 生成视频方案 → proposal(当前节点)\n      │\n    fanout (条件边，并行分发 Send)\n     ╱        ╲\n  asset_gen    tts    ← 并行：AI 图片生成 + 语音合成\n     ╲        ╱\n    video_gen         ← 汇聚：DashScope 异步视频合成\n      │\n     END\n---\n## 输入说明\n\n你将收到以下信息：\n1. **用户原始文本（userPrompt）**：用户输入的原始内容\n2. **调研报告（researchReport）**：包含元数据、逻辑流、角色需求、内容就绪度评估\n\n---\n\n## 工作流程\n\n你必须按以下步骤**在推理中完成**，最终只输出最终方案 JSON。\n\n### 步骤一：场景摘取\n\n从用户原文中识别所有独立的\"信息单元\"，每个信息单元摘为一个原始场景。\n\n**摘取原则：**\n- 每个信息单元应包含一个相对完整、独立的观点、事实或情节\n- 摘取时尽量忠实于原文表达，不添加额外信息\n- 摘取数量不限，由内容决定\n- 如果原文信息稀疏（readiness.overallScore < 60），摘取场景会很少，这是正常的\n\n**摘取示例（内部推理，非最终输出）：**\n```\nraw-1: \"AI在医疗影像诊断中的应用\"\nraw-2: \"AI在药物研发中的应用\"\nraw-3: \"AI在新药研发中的具体案例（与raw-2高度重叠）\"\nraw-4: \"AI个性化治疗方案\"\nraw-5: \"AI伦理问题（仅一句话提及）\"\n```\n\n---\n\n### 步骤二：场景编排优化\n\n对摘取出的原始场景进行优化，形成最终场景列表。\n\n**优化操作：**\n\n| 操作 | 条件 | 说明 |\n|------|------|------|\n| **保留** | 信息完整、独立、无实质重叠 | 直接保留 |\n| **合并** | 内容高度重叠，或各自信息量不足以单独成场景 | 融合为一个场景 |\n| **修改** | 信息量不足需扩充，或过多需精简 | 调整内容粒度 |\n| **增加** | 场景间逻辑断裂、缺少开头/结尾、总场景数偏少 | 从上下文合理推断补充 |\n| **删除** | 信息量极小，无法支撑一个独立场景 | 丢弃，不进入最终列表 |\n\n**场景数量参考：**\n- 基于 researchReport.readiness.overallScore：\n  - overallScore ≥ 80：4-7 个场景\n  - overallScore ≥ 60：3-5 个场景\n  - overallScore < 60：2-4 个场景\n- 如果用户有明确时长要求（从 userDemand 中提取），在上述范围内，由你自行决定场景数量，确保总时长满足用户要求\n\n**衔接设计要求：**\n- 场景排列顺序应遵循 researchReport.contentSkeleton.flow（chronological / cause-effect / problem-solution / narrative）\n- 同一视觉主题或地点的场景应相邻排列，减少视觉跳跃\n- 每个场景必须考虑与前/后场景的衔接关系\n\n**内容补全（如果 readiness.overallScore < 70）：**\n- 当内容就绪度不足时，你需要主动补全\n- 参考 readiness.expansionHints 中的建议方向\n- 补全内容必须合理推断，不能凭空捏造与原文无关的信息\n- 在最终输出的 _expansionApplied 中记录补全情况\n\n**优化示例（内部推理，非最终输出）：**\n```\nkeep: raw-1\nmerge: raw-2 + raw-3 → \"AI在药物研发中的应用与案例\"\nrevise: raw-4 → 扩充为更完整的\"AI个性化治疗方案\"\nadd: \"AI医疗的未来展望\"（原因：缺少结尾收束）\ndelete: raw-5（原因：信息量不足，无法支撑独立场景）\n```\n\n---\n\n### 步骤三：时间分配\n\n为每个场景分配时长，确保总时长满足要求。\n\n**单场景时长范围：5-12 秒**\n\n**时长分配原则：**\n- 信息量大/重要的场景 → 8-12 秒\n- 信息量小/过渡性场景 → 5-7 秒\n\n**总时长确定逻辑：**\n\n| 情况 | 规则 |\n|------|------|\n| 用户有明确时长要求（researchReport.metadata.userDemand 中包含时长） | 总时长 = 用户要求，误差不超过 ±10% |\n| 用户无明确时长要求 | 总时长 = 场景数 × 7-9 秒（由你根据内容密度判断） |\n\n---\n\n### 步骤四：角色设计\n\n仅当 researchReport.characterAnalysis.hasCharacter = true 时执行此步骤。\n\n基于 characterHints 中的线索，设计完整的角色：\n\n**角色设计字段：**\n- **characterId**：格式 \"char-1\", \"char-2\" ...\n- **name**：角色名称（如原文未指定，根据上下文创设）\n- **appearance**：英文，30-80词。详细的角色外观描述，包含年龄、性别、发型、五官、服装、配饰、体态\n- **role**：角色在视频中的定位（如\"主讲人\"、\"场景中的医生\"）\n- **appearsInScenes**：该角色出现在哪些 sceneId 中\n\n**appearance 示例：**\n> \"Young female doctor, 30s, shoulder-length black hair tied in neat bun, warm brown eyes, light makeup, slim build. Wears clean white medical coat over light blue collared shirt, stethoscope around neck, black-rimmed glasses. Professional and approachable demeanor.\"\n\n**注意：** 如果 hasCharacter = false，输出中省略 characters 字段。\n\n---\n\n## 输出格式\n\n严格按以下 JSON 格式输出，不要包含任何其他文字。以下枚举字段必须使用指定的合法值：\n\n- blueprint.aspectRatio: 16:9 | 9:16 | 1:1\n- styleGuide.transitions: smooth | cut | zoom\n- feasibility.riskLevel: low | medium | high\n- shot.layout.textPosition: center | top | bottom\n- shot.layout.animation: fade | slide | typing | none\n- shot.transition.from.type 和 shot.transition.to.type: none | fade | zoom | pan | slide | cut\n\n此外，以下字段必须为非空字符串，不得留空：\n- blueprint.title, styleGuide.globalTone, styleGuide.fontFamily, styleGuide.backgroundMusic.style\n- 每个 shot 的 subtitleText、summary、layout.backgroundColor\n- optimizationLog 数组中每个元素的 action 必须是: keep | merge | revise | add | delete\n\n```json\n{\n  \"extraction\": {\n    \"rawScenes\": [\n      { \"id\": \"raw-1\", \"content\": \"AI在医疗影像诊断中的应用\" },\n      { \"id\": \"raw-2\", \"content\": \"AI在药物研发中的应用\" },\n      { \"id\": \"raw-3\", \"content\": \"AI在新药研发中的具体案例\" },\n      { \"id\": \"raw-4\", \"content\": \"AI个性化治疗方案\" },\n      { \"id\": \"raw-5\", \"content\": \"AI伦理问题\" }\n    ]\n  },\n  \"optimizationLog\": [\n    { \"action\": \"keep\", \"sourceId\": \"raw-1\" },\n    { \"action\": \"merge\", \"sourceIds\": [\"raw-2\", \"raw-3\"], \"mergedContent\": \"AI在药物研发中的应用与案例\" },\n    { \"action\": \"revise\", \"sourceId\": \"raw-4\", \"revisedContent\": \"AI个性化治疗方案及其优势\" },\n    { \"action\": \"add\", \"addedContent\": \"AI医疗的未来展望\", \"reason\": \"结尾需要收束\" },\n    { \"action\": \"delete\", \"sourceId\": \"raw-5\", \"reason\": \"信息量不足，无法支撑独立场景\" }\n  ],\n  \"blueprint\": {\n    \"title\": \"AI在医疗领域的革命性应用\",\n    \"totalDuration\": 45,\n    \"sceneCount\": 4,\n    \"aspectRatio\": \"16:9\"\n  },\n  \"shotScript\": [\n    {\n      \"sceneId\": \"shot-1\",\n      \"duration\": 10,\n      \"summary\": \"AI在医疗影像诊断中的应用现状\",\n      \"subtitleText\": \"AI技术正在改变医疗影像诊断方式\",\n      \"layout\": {\n        \"textPosition\": \"center\",\n        \"backgroundColor\": \"#0a1628\",\n        \"animation\": \"fade\"\n      },\n      \"transition\": {\n        \"from\": { \"sceneId\": null, \"type\": \"none\", \"visualLink\": \"\" },\n        \"to\": { \"sceneId\": \"shot-2\", \"type\": \"zoom\", \"visualLink\": \"镜头从医院大厅的AI诊断屏幕推近到屏幕上的细胞影像\" }\n      },\n      \"cast\": [\"char-1\"]\n    },\n    {\n      \"sceneId\": \"shot-2\",\n      \"duration\": 8,\n      \"summary\": \"AI加速药物研发的突破\",\n      \"subtitleText\": \"AI将药物研发周期从五年缩短至一年\",\n      \"layout\": {\n        \"textPosition\": \"center\",\n        \"backgroundColor\": \"#1a3a5c\",\n        \"animation\": \"fade\"\n      },\n      \"transition\": {\n        \"from\": { \"sceneId\": \"shot-1\", \"type\": \"zoom\", \"visualLink\": \"从细胞影像过渡到药物分子结构\" },\n        \"to\": { \"sceneId\": \"shot-3\", \"type\": \"pan\", \"visualLink\": \"镜头从药物分子结构平移至基因测序画面\" }\n      },\n      \"cast\": []\n    },\n    {\n      \"sceneId\": \"shot-3\",\n      \"duration\": 10,\n      \"summary\": \"AI个性化治疗方案\",\n      \"subtitleText\": \"AI根据基因数据为患者定制个性化治疗方案\",\n      \"layout\": {\n        \"textPosition\": \"center\",\n        \"backgroundColor\": \"#0d2847\",\n        \"animation\": \"fade\"\n      },\n      \"transition\": {\n        \"from\": { \"sceneId\": \"shot-2\", \"type\": \"pan\", \"visualLink\": \"从药物分子结构平移至基因测序画面\" },\n        \"to\": { \"sceneId\": \"shot-4\", \"type\": \"fade\", \"visualLink\": \"基因测序画面淡出，未来医疗场景淡入\" }\n      },\n      \"cast\": [\"char-1\"]\n    },\n    {\n      \"sceneId\": \"shot-4\",\n      \"duration\": 7,\n      \"summary\": \"AI医疗的未来展望\",\n      \"subtitleText\": \"AI将让医疗服务更精准、更普惠\",\n      \"layout\": {\n        \"textPosition\": \"center\",\n        \"backgroundColor\": \"#0a1628\",\n        \"animation\": \"fade\"\n      },\n      \"transition\": {\n        \"from\": { \"sceneId\": \"shot-3\", \"type\": \"fade\", \"visualLink\": \"基因测序画面淡出，未来医疗场景淡入\" },\n        \"to\": { \"sceneId\": null, \"type\": \"fade\", \"visualLink\": \"画面渐暗，全片结束\" }\n      },\n      \"cast\": []\n    }\n  ],\n  \"styleGuide\": {\n    \"globalTone\": \"科技感专业风格\",\n    \"colorPalette\": [\"#0a1628\", \"#1a3a5c\", \"#00d4ff\", \"#ffffff\", \"#0d2847\"],\n    \"fontFamily\": \"sans-serif\",\n    \"backgroundMusic\": {\n      \"style\": \"科技感电子氛围\"\n    },\n    \"transitions\": \"smooth\"\n  },\n  \"characters\": [\n    {\n      \"characterId\": \"char-1\",\n      \"name\": \"李医生\",\n      \"appearance\": \"Young female doctor, 30s, shoulder-length black hair tied in neat bun, warm brown eyes, light makeup, slim build. Wears clean white medical coat over light blue collared shirt, stethoscope around neck, black-rimmed glasses. Professional and approachable demeanor.\",\n      \"role\": \"主讲医生\",\n      \"appearsInScenes\": [\"shot-1\", \"shot-3\"]\n    }\n  ],\n  \"feasibility\": {\n    \"riskLevel\": \"low\",\n    \"estimatedRenderTime\": 60,\n    \"suggestions\": [\"建议在AI相关镜头使用蓝色调以增强科技感\"]\n  },\n  \"videoGen\": {\n    \"style\": \"cinematic documentary with smooth transitions\",\n    \"duration\": 45\n  },\n  \"_expansionApplied\": null\n}\n```\n\n---\n\n## 核心约束\n\n1. **严格输出格式**：只输出 JSON，不要包含任何解释性文字\n2. **步骤一和步骤二的中间结果必须输出**：extraction 和 optimizationLog 是必需字段，用于追溯\n3. **衔接设计是必需的**：每个 shotScript 条目必须包含 transition 字段\n4. **总时长必须精确**：所有场景 duration 之和必须等于 blueprint.totalDuration\n5. **忠实原文原则**：摘取阶段忠实原文，优化阶段合理补充，但不能凭空捏造与原文完全无关的内容\n6. **如果 hasCharacter = false**：不输出 characters 字段\n7. **如果未进行内容补全**：_expansionApplied 为 null\n\n---\n\n## 字段变化说明\n\n| 字段 | 状态 | 说明 |\n|------|------|------|\n| visualDescription | ❌ 已移除 | 移交给 script_generation 节点 |\n| videoPrompt | ❌ 已移除 | 移交给 script_generation 节点 |\n| summary | ✅ 新增 | 场景核心内容概括 |\n| transition | ✅ 新增 | 场景间衔接设计 |\n| cast | ✅ 新增 | 该场景出镜的角色引用 |\n| extraction | ✅ 新增 | 步骤一中间结果 |\n| optimizationLog | ✅ 新增 | 步骤二中间结果 |\n| feasibility | ✅ 保留 | 可行性评估 |\n",
+    "durationSec": 43.4,
+    "model": "deepseek-v4-pro",
+    "retries": 0,
+    "tokenUsage": {
+      "prompt_tokens": 3190,
+      "completion_tokens": 2750,
+      "total_tokens": 5940,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1549
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 3190
+    },
+    "cost": {
+      "inputCost": 0.00138765,
+      "outputCost": 0.0023925,
+      "totalCost": 0.00378015
+    },
+    "report": {
+      "blueprint": {
+        "title": "AI如何改变医疗诊断",
+        "totalDuration": 30,
+        "sceneCount": 4,
+        "aspectRatio": "16:9"
+      },
+      "shotScript": [
+        {
+          "sceneId": "shot-1",
+          "duration": 6,
+          "summary": "引出AI对医疗诊断的变革影响",
+          "layout": {
+            "textPosition": "center",
+            "backgroundColor": "#0a1628",
+            "animation": "fade"
+          },
+          "subtitleText": "人工智能正在改变医疗诊断的方式",
+          "transition": {
+            "from": {
+              "sceneId": null,
+              "type": "none",
+              "visualLink": ""
+            },
+            "to": {
+              "sceneId": "shot-2",
+              "type": "zoom",
+              "visualLink": "科技感背景向医学影像扫描画面推近"
+            }
+          },
+          "cast": []
+        },
+        {
+          "sceneId": "shot-2",
+          "duration": 8,
+          "summary": "AI在医学影像分析中的应用",
+          "layout": {
+            "textPosition": "center",
+            "backgroundColor": "#1a3a5c",
+            "animation": "fade"
+          },
+          "subtitleText": "AI能快速识别CT和MRI中的异常",
+          "transition": {
+            "from": {
+              "sceneId": "shot-1",
+              "type": "zoom",
+              "visualLink": "从科技感背景过渡到医学影像扫描画面"
+            },
+            "to": {
+              "sceneId": "shot-3",
+              "type": "pan",
+              "visualLink": "从影像画面平移至显微镜下的病理切片"
+            }
+          },
+          "cast": []
+        },
+        {
+          "sceneId": "shot-3",
+          "duration": 8,
+          "summary": "AI辅助病理诊断，提升准确率",
+          "layout": {
+            "textPosition": "center",
+            "backgroundColor": "#0d2847",
+            "animation": "fade"
+          },
+          "subtitleText": "AI辅助病理医生提升癌症诊断准确率",
+          "transition": {
+            "from": {
+              "sceneId": "shot-2",
+              "type": "pan",
+              "visualLink": "从影像画面平移至显微镜下的病理切片"
+            },
+            "to": {
+              "sceneId": "shot-4",
+              "type": "fade",
+              "visualLink": "病理切片画面淡出，浮现科技化总结文字背景"
+            }
+          },
+          "cast": []
+        },
+        {
+          "sceneId": "shot-4",
+          "duration": 8,
+          "summary": "总结AI赋能精准医疗",
+          "layout": {
+            "textPosition": "center",
+            "backgroundColor": "#0a1628",
+            "animation": "fade"
+          },
+          "subtitleText": "AI让医疗诊断更精准、更高效",
+          "transition": {
+            "from": {
+              "sceneId": "shot-3",
+              "type": "fade",
+              "visualLink": "病理切片画面淡出，浮现科技化总结文字背景"
+            },
+            "to": {
+              "sceneId": null,
+              "type": "fade",
+              "visualLink": "画面渐暗，全片结束"
+            }
+          },
+          "cast": []
+        }
+      ],
+      "extraction": {
+        "rawScenes": [
+          {
+            "id": "raw-1",
+            "content": "人工智能如何改变医疗诊断"
+          }
+        ]
+      },
+      "optimizationLog": [
+        {
+          "action": "revise",
+          "sourceId": "raw-1",
+          "revisedContent": "人工智能技术正在深刻变革医疗诊断领域"
+        },
+        {
+          "action": "add",
+          "addedContent": "AI在医学影像分析中的应用，快速识别CT、MRI异常",
+          "reason": "补充具体改变方式，增强信息量"
+        },
+        {
+          "action": "add",
+          "addedContent": "AI辅助病理诊断，提升癌症等疾病诊断准确率",
+          "reason": "进一步充实应用场景"
+        },
+        {
+          "action": "add",
+          "addedContent": "AI推动医疗诊断向更精准、更高效的方向发展",
+          "reason": "需要结尾总结收束"
+        }
+      ],
+      "styleGuide": {
+        "globalTone": "科技感专业科普",
+        "colorPalette": [
+          "#0a1628",
+          "#1a3a5c",
+          "#00d4ff",
+          "#ffffff",
+          "#0d2847"
+        ],
+        "fontFamily": "sans-serif",
+        "backgroundMusic": {
+          "style": "舒缓电子氛围"
+        },
+        "transitions": "smooth"
+      },
+      "feasibility": {
+        "riskLevel": "low",
+        "estimatedRenderTime": 45,
+        "suggestions": [
+          "使用蓝色与青色光影强化科技感",
+          "AI相关镜头可添加数据流动画增强视觉"
+        ]
+      },
+      "videoGen": {
+        "style": "cinematic documentary with smooth transitions",
+        "duration": 30
+      },
+      "_expansionApplied": {
+        "expansions": [],
+        "reason": ""
+      }
+    }
+  },
+  "new": {
+    "systemPrompt": "\n## Role\n你是一个专业的短视频导演和视频方案策划师。你的任务是基于用户输入的原始文本和研究报告，设计一个完整的视频制作方案。\n\n##Context\nProgramming introduce:该项目基于TypeScript和Next.js的网页版视频自动生成工具。它的核心功能是让用户通过输入文本，利用LangGraph构建的状态机自动化地完成视频制作的整个流程。\nLangGraph: 图拓扑\n  __start__\n      │\n    research              ← 分析用户文本 → researchReport\n      │\n  generate_proposal       ← 生成视频方案 → proposal（当前节点）\n      │\n  script_generation       ← 逐镜头脚本生成 → videoScript\n      │\n  fanout_assets_tts (条件边，并行分发 Send)\n     ╱        ╲\n  asset_gen   tts         ← 并行：AI 图片生成 + 分段语音合成（SSML）\n     ╲        ╱\n  shot_video_sequential   ← 串行逐个生成视频片段（间隔 5s 防限流）\n      │\n  video_merge             ← FFmpeg 拼接 + 音轨合成\n      │\n     END\n\n## Input\n你将收到以下信息：\n**调研报告（researchReport）**：包含 user_text、user_demand、content_readiness_assessment\n\n##Task\n\n### 1. 蓝图设计 (blueprint)\n- **title**：提炼视频标题（20 字以内）\n- **totalDuration**：视频总时长（秒）。如果用户有明确时长要求则遵循，否则由你根据场景数量自行决定\n- **aspectRatio**：画面比例，必须是 16:9 / 9:16 / 1:1 之一\n\n### 2. 场景设计 (scenes)\n将用户文本拆解为完整的视频场景序列。每个场景是一个独立的视觉单元，必须设计完整：\n\n- **sceneId**：场景编号，格式 \"scene-1\", \"scene-2\" ...\n- **sceneDescription**：场景完整设计方案。字符串，融合以下信息：\n  - 场景的核心内容（发生了什么/讲什么）\n  - 氛围与色调（如\"蓝色科技感\"、\"温暖黄昏\"）\n  - 视觉元素（人物/物体/场景/动作）\n  - 构图建议（如\"特写\"、\"全景\"、\"俯视\"）\n  - 文字/字幕提示（如有覆盖文字，注明位置和内容）\n\n  示例：\"一间充满科技感的现代医院诊室，蓝色调为主。年轻女医生（李医生，30岁左右，白大褂）站在AI诊断屏幕前，手指轻触屏幕调出患者影像。中景镜头，医生表情专注自信。屏幕右下角覆盖半透明蓝色标签'AI辅助诊断系统'。\"\n\n- **sceneVisual**：场景背景完整的设计\n- **duration**：该场景时长（秒），5-12 秒范围。所有场景 duration 之和必须等于 blueprint.totalDuration\n\n### 3. 风格配置 (styleProfile)\n- **tone**：视频整体基调，必须是 professional / lively / serious / inspirational / minimal 之一\n- **visualStyle**：视觉风格描述（中文，10-30 字），概括全片画面风格\n- **suggestedBGM**：背景音乐建议（中文，10-20 字），如\"科技感电子氛围\"、\"舒缓钢琴\"、\"轻快节奏\"\n\n### 4. 输出 Proposal JSON\n\n严格按以下 JSON 格式输出，不要包含任何其他文字：\n\n{\n  \"blueprint\": {\n    \"title\": \"AI如何改变医疗诊断\",\n    \"totalDuration\": 45,\n    \"aspectRatio\": \"16:9\"\n  },\n  \"scenes\": [\n    {\n      \"sceneId\": \"scene-1\",\n      \"sceneDescription\": \"一间充满科技感的现代医院诊室，蓝色调为主。年轻女医生站在AI诊断屏幕前，手指轻触屏幕调出患者影像。中景镜头，医生表情专注自信。屏幕右下角覆盖半透明蓝色标签'AI辅助诊断系统'。\",\n      \"sceneVisualHints\": \"Modern hospital consultation room with blue ambient lighting, large holographic diagnostic screen showing brain scan, clean white walls with subtle medical equipment, cinematic composition, medium shot, professional medical atmosphere, high tech sci-fi aesthetic\",\n      \"duration\": 10\n    },\n    {\n      \"sceneId\": \"scene-2\",\n      \"sceneDescription\": \"微观世界动画，药物分子结构在深蓝背景中旋转。镜头从分子结构平滑过渡到基因测序数据流，白色线条和数据在画面中流动。特写镜头，突出科技精密感。画面中央浮现半透明文字'药物研发周期：5年→1年'。\",\n      \"sceneVisualHints\": \"Microscopic molecular animation, rotating drug molecule structures in deep blue space, transitioning to flowing genetic sequencing data streams, white glowing lines against dark background, macro close-up, precision technology aesthetic, biotech visualization\",\n      \"duration\": 8\n    },\n    {\n      \"sceneId\": \"scene-3\",\n      \"sceneDescription\": \"温暖的诊疗室，柔和的自然光从窗户洒入。医生与患者面对面交流，桌上放着显示基因分析报告的平板电脑。过肩镜头，突出医患信任关系。色调从冷蓝过渡到暖白，暗示科技带来的人文关怀。\",\n      \"sceneVisualHints\": \"Warm consultation room with soft natural window light, doctor talking with patient across wooden desk, tablet showing colorful genetic analysis report, over-the-shoulder shot, warm white and soft amber tones, human-centered healthcare atmosphere, documentary style\",\n      \"duration\": 12\n    },\n    {\n      \"sceneId\": \"scene-4\",\n      \"sceneDescription\": \"开阔的未来城市天际线俯瞰，日出时分金色光线洒满画面。多个半透明全息屏幕悬浮在空中，显示医疗数据图表和心电图波形。镜头缓缓拉远，城市全景渐显。画面底部中央浮现白色标题文字'精准医疗，触手可及'，随后优雅淡出。\",\n      \"sceneVisualHints\": \"Expansive futuristic city skyline at sunrise, golden morning light spreading across skyscrapers, multiple translucent holographic screens floating in air showing medical charts and ECG waves, slow pull-back crane shot revealing full cityscape, hopeful and inspiring atmosphere, cinematic wide angle\",\n      \"duration\": 15\n    }\n  ],\n  \"styleProfile\": {\n    \"tone\": \"professional\",\n    \"visualStyle\": \"科技感蓝色调为主，尾声转暖，干净现代\",\n    \"suggestedBGM\": \"科技感电子氛围，尾声渐强\"\n  }\n}\n\n**字段约束：**\n- blueprint.title：20 字以内，非空字符串\n- blueprint.totalDuration：所有 scenes[].duration 之和必须严格相等\n- blueprint.aspectRatio：必须是 16:9 / 9:16 / 1:1 之一\n- sceneId 格式：scene-1, scene-2, scene-3 ...\n- sceneDescription：非空字符串，必须完整描述该场景的画面、氛围、动作、构图、文字\n- sceneVisualHints：英文，30-80 词，非空字符串\n- duration：5-12 秒之间的整数\n- tone：必须是 professional / lively / serious / inspirational / minimal 之一\n- visualStyle：非空字符串，10-30 字\n- suggestedBGM：非空字符串，10-20 字\n",
+    "durationSec": 15.7,
+    "model": "deepseek-v4-pro",
+    "retries": 0,
+    "tokenUsage": {
+      "prompt_tokens": 1627,
+      "completion_tokens": 744,
+      "total_tokens": 2371,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 23
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 1627
+    },
+    "cost": {
+      "inputCost": 0.00070775,
+      "outputCost": 0.00064728,
+      "totalCost": 0.00135503
+    },
+    "reportRaw": "{\n  \"blueprint\": {\n    \"title\": \"AI如何改变医疗诊断\",\n    \"totalDuration\": 30,\n    \"aspectRatio\": \"16:9\"\n  },\n  \"scenes\": [\n    {\n      \"sceneId\": \"scene-1\",\n      \"sceneDescription\": \"黑暗背景中，一个发光的蓝色大脑线框缓缓旋转，周围环绕着流动的数据粒子。镜头从特写缓拉到中景，大脑结构逐渐变得清晰。画面底部浮现半透明文字“人类大脑与AI的对话”，营造科技与生命交融的氛围。\",\n      \"sceneVisualHints\": \"Close-up rotating glowing blue brain wireframe on dark background, surrounded by flowing data particles, slow pull back to medium shot, clean and futuristic aesthetic, deep blue and cyan tones, cinematic lighting, tech-science atmosphere.\",\n      \"duration\": 8\n    },\n    {\n      \"sceneId\": \"scene-2\",\n      \"sceneDescription\": \"现代医生站在透明触控屏幕前，屏幕快速滚动显示医学影像和基因序列。医生用手指轻点屏幕，AI分析结果以光晕高亮圈出病灶区域。构图采用过肩中景，突出操作的手势和屏幕内容。画面左上角加入半透标签“AI影像识别准确率 95%”，字体简洁。\",\n      \"sceneVisualHints\": \"Over-the-shoulder medium shot of a doctor in modern white coat interacting with a transparent touchscreen displaying scrolling medical images and DNA sequences, AI analysis highlights lesion area with glowing circle, futuristic hospital room, cool blue and white tones, clean digital interface design.\",\n      \"duration\": 9\n    },\n    {\n      \"sceneId\": \"scene-3\",\n      \"sceneDescription\": \"画面切换至微观世界，病毒结构在深色背景中漂浮，大量药物分子由AI模拟路径精准接近并包裹病毒。镜头缓慢推进，展示分子对接的瞬间。画面底部亮出动态文字“AI加速药物发现”，科技蓝绿色粒子在文字周围流动。\",\n      \"sceneVisualHints\": \"Microscopic view of virus structures floating in dark background, numerous drug molecules precisely approaching and binding to virus via AI simulated paths, slow push-in macro shot, dramatic lighting with blue-green particles, text overlay at bottom reading 'AI Accelerates Drug Discovery' with flowing particle effects.\",\n      \"duration\": 8\n    },\n    {\n      \"sceneId\": \"scene-4\",\n      \"sceneDescription\": \"回归宏观，全景展现未来感诊室，医生和患者正面交谈，墙上大屏幕显示刚才AI生成的诊断报告和3D器官模型。柔和暖光从上方洒下，调和了整体的冷色调，强调科技服务于人的温度。画面中心浮现白色字幕“精准诊断，更有温度的医疗”，随后缓缓淡出。\",\n      \"sceneVisualHints\": \"Wide shot of a futuristic clinic, doctor and patient having a conversation, large wall screen showing AI-generated diagnosis report and 3D organ model, warm overhead lighting softening the cool blue ambiance, hopeful atmosphere, centered white subtitle 'Precise Diagnosis, Warmer Healthcare' fading in and out slowly.\",\n      \"duration\": 5\n    }\n  ],\n  \"styleProfile\": {\n    \"tone\": \"professional\",\n    \"visualStyle\": \"深蓝科技基调，穿插微观粒子与暖光反差，干净现代\",\n    \"suggestedBGM\": \"舒缓的电子氛围，轻微脉冲节奏\"\n  }\n}",
+    "reportParsed": {
+      "blueprint": {
+        "title": "AI如何改变医疗诊断",
+        "totalDuration": 30,
+        "aspectRatio": "16:9"
+      },
+      "scenes": [
+        {
+          "sceneId": "scene-1",
+          "sceneDescription": "黑暗背景中，一个发光的蓝色大脑线框缓缓旋转，周围环绕着流动的数据粒子。镜头从特写缓拉到中景，大脑结构逐渐变得清晰。画面底部浮现半透明文字“人类大脑与AI的对话”，营造科技与生命交融的氛围。",
+          "sceneVisualHints": "Close-up rotating glowing blue brain wireframe on dark background, surrounded by flowing data particles, slow pull back to medium shot, clean and futuristic aesthetic, deep blue and cyan tones, cinematic lighting, tech-science atmosphere.",
+          "duration": 8
+        },
+        {
+          "sceneId": "scene-2",
+          "sceneDescription": "现代医生站在透明触控屏幕前，屏幕快速滚动显示医学影像和基因序列。医生用手指轻点屏幕，AI分析结果以光晕高亮圈出病灶区域。构图采用过肩中景，突出操作的手势和屏幕内容。画面左上角加入半透标签“AI影像识别准确率 95%”，字体简洁。",
+          "sceneVisualHints": "Over-the-shoulder medium shot of a doctor in modern white coat interacting with a transparent touchscreen displaying scrolling medical images and DNA sequences, AI analysis highlights lesion area with glowing circle, futuristic hospital room, cool blue and white tones, clean digital interface design.",
+          "duration": 9
+        },
+        {
+          "sceneId": "scene-3",
+          "sceneDescription": "画面切换至微观世界，病毒结构在深色背景中漂浮，大量药物分子由AI模拟路径精准接近并包裹病毒。镜头缓慢推进，展示分子对接的瞬间。画面底部亮出动态文字“AI加速药物发现”，科技蓝绿色粒子在文字周围流动。",
+          "sceneVisualHints": "Microscopic view of virus structures floating in dark background, numerous drug molecules precisely approaching and binding to virus via AI simulated paths, slow push-in macro shot, dramatic lighting with blue-green particles, text overlay at bottom reading 'AI Accelerates Drug Discovery' with flowing particle effects.",
+          "duration": 8
+        },
+        {
+          "sceneId": "scene-4",
+          "sceneDescription": "回归宏观，全景展现未来感诊室，医生和患者正面交谈，墙上大屏幕显示刚才AI生成的诊断报告和3D器官模型。柔和暖光从上方洒下，调和了整体的冷色调，强调科技服务于人的温度。画面中心浮现白色字幕“精准诊断，更有温度的医疗”，随后缓缓淡出。",
+          "sceneVisualHints": "Wide shot of a futuristic clinic, doctor and patient having a conversation, large wall screen showing AI-generated diagnosis report and 3D organ model, warm overhead lighting softening the cool blue ambiance, hopeful atmosphere, centered white subtitle 'Precise Diagnosis, Warmer Healthcare' fading in and out slowly.",
+          "duration": 5
+        }
+      ],
+      "styleProfile": {
+        "tone": "professional",
+        "visualStyle": "深蓝科技基调，穿插微观粒子与暖光反差，干净现代",
+        "suggestedBGM": "舒缓的电子氛围，轻微脉冲节奏"
+      }
+    }
+  },
+  "comparison": {
+    "promptDiff": {
+      "originalLength": 8130,
+      "newLength": 4302,
+      "lengthDelta": "-3828 (-47.1%)"
+    },
+    "duration": {
+      "original": 43.4,
+      "new": 15.7,
+      "delta": "▼ -27712.0s / -63.9%"
+    },
+    "tokens": {
+      "originalTotal": 5940,
+      "newTotal": 2371,
+      "delta": "▼ -3569.0 / -60.1%"
+    },
+    "cost": {
+      "originalTotal": 0.00378015,
+      "newTotal": 0.00135503,
+      "delta": "$0.001355 vs $0.003780 (-64.2%)"
+    }
+  }
+}

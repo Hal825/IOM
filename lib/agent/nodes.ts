@@ -8,6 +8,7 @@ import { generateAssets } from '@/lib/tools/asset-generator';
 import { synthesizeSpeech } from '@/lib/tools/tts-generator';
 import { generateSingleVideo } from '@/lib/tools/shot-video-generator';
 import { buildShotSSML } from '@/lib/prompts/tts';
+import { saveStageLog, calculateCost, formatDurationSec } from '@/lib/log/procedure';
 
 // ── FFmpeg 辅助 ──────────────────────────────────────
 
@@ -42,14 +43,36 @@ const SCRIPTS_DIR = path.resolve(process.cwd(), 'storage', 'scripts');
 // ============================================================
 
 export async function researchNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  const startedAt = new Date().toISOString();
+  const t0 = Date.now();
+
   if (!state.userPrompt?.trim()) throw new Error('用户输入为空');
 
   const result = await analyzeContent(state.userPrompt);
+
+  const durationMs = Date.now() - t0;
+  const jobId = state.jobId || String(Date.now());
 
   console.log(
     `[agent] research → ${result.report.contentSkeleton.segments.length} 个段落, ` +
     `角色需求: ${result.report.characterAnalysis.hasCharacter ? '是' : '否'} (model: ${result.model})`
   );
+
+  // ── 阶段审计日志 ──
+  if (result.tokenUsage) {
+    const cost = calculateCost(result.model, result.tokenUsage);
+    const logPath = saveStageLog(jobId, 'research', {
+      startedAt,
+      durationSec: formatDurationSec(durationMs),
+      model: result.model,
+      retries: result.retries,
+      input: { userPrompt: state.userPrompt },
+      output: { report: result.report },
+      tokenUsage: result.tokenUsage,
+      cost,
+    });
+    console.log(`[agent] research log → ${logPath}`);
+  }
 
   return {
     researchReport: result.report,

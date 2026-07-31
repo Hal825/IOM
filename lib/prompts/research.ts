@@ -15,15 +15,19 @@ Programming introduce:该项目基于TypeScript和Next.js的网页版视频自�
 LangGraph: 图拓扑
   __start__
       │
-    research          ← 分析用户文本 → researchReport（当前节点）
+    research              ← 分析用户文本 → researchReport（当前节点）
       │
-  generate_proposal   ← 生成视频方案 → proposal
+  generate_proposal       ← 生成视频方案 + 角色设计 → proposal
       │
-    fanout (条件边，并行分发 Send)
+  script_generation       ← 逐镜头脚本生成 → videoScript
+      │
+  fanout_assets_tts (条件边，并行分发 Send)
      ╱        ╲
-  asset_gen    tts    ← 并行：AI 图片生成 + 语音合成
+  asset_gen   tts         ← 并行：AI 图片生成 + 分段语音合成（SSML）
      ╲        ╱
-    video_gen         ← 汇聚：DashScope 异步视频合成
+  shot_video_sequential   ← 串行逐个生成视频片段（间隔 5s 防限流）
+      │
+  video_merge             ← FFmpeg 拼接 + 音轨合成
       │
      END
 

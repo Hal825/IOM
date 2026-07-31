@@ -1,0 +1,256 @@
+{
+  "jobId": "script-eval-2026-07-31T14-10-22-516Z",
+  "testInput": "请帮我制作一个30秒左右的科普视频，介绍人工智能如何改变医疗诊断，要有科技感，背景音乐舒缓一些",
+  "evaluatedAt": "2026-07-31T14:11:49.570Z",
+  "stages": {
+    "proposal": {
+      "durationSec": 42,
+      "durationMs": 41987,
+      "model": "deepseek-v4-pro",
+      "tokenUsage": {
+        "prompt_tokens": 2734,
+        "completion_tokens": 1646,
+        "total_tokens": 4380,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 444
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 46
+      },
+      "cost": {
+        "inputCost": 0.00002975,
+        "outputCost": 0.00143202,
+        "totalCost": 0.00146177
+      },
+      "report": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "张医生",
+            "type": "protagonist",
+            "appearance": "35岁男性，短发干练，戴半框金属眼镜，眼神专注而温暖，身材匀称挺拔。身穿白大褂内搭浅蓝色衬衫，左胸口袋夹着一支激光笔，手腕佩戴智能手环。整体形象专业且富有科技感。",
+            "personality": "自信可靠，语速平和清晰，习惯用手势辅助讲解。面对患者时神情关切，讲解技术时眼中带光，常有轻微点头的肯定动作。",
+            "role": "AI辅助诊断专家，主导讲解AI如何改变医疗流程"
+          },
+          {
+            "characterId": "char-2",
+            "name": "李阿姨",
+            "type": "supporting",
+            "appearance": "60岁左右女性，花白齐耳卷发，面容和蔼，眼角有细纹，身着浅紫色开衫内搭米色毛衣，右手腕戴着住院信息手环。身形略显富态，步伐缓慢但精神状态良好。",
+            "personality": "起初略带不安，双手轻握放在膝上；看到诊断结果后眉头舒展，露出信任的微笑。温和寡言，通过表情传递情绪变化。",
+            "role": "就诊患者，代表普通人对AI医疗从疑虑到信任的转变"
+          }
+        ],
+        "blueprint": {
+          "title": "AI重塑医疗诊断",
+          "totalDuration": 30,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "一间明亮的高科技诊室，面积约25平米，白色主调搭配蓝色氛围灯带。中央偏左为白色哑光诊桌，桌面上放置嵌入式触控面板和全息投影生成器；北墙挂有120英寸柔性透明显示屏，可展示3D医学影像；西墙为落地窗，自然光柔和洒入；东墙为药品柜和智能洗手台，上方LED灯带提供辅助照明。天花板采用软膜天花，整体光线均匀且柔和，色温4000K。空间整洁，充满未来感。",
+            "visualHints": "Modern 25-square-meter high-tech consultation room, white matte desk center-left with embedded touch panel and holographic projector, 120-inch transparent flexible display on north wall showing 3D medical scans, floor-to-ceiling window on west wall with soft daylight, medicine cabinet and smart sink on east wall with LED light strips, soft membrane ceiling with uniform 4000K lighting, blue ambient light accents, clean futuristic medical interior.",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "中景镜头，张医生坐在诊桌旁，手指在触控面板上滑动，调出肺部CT影像。李阿姨坐在对面，双手轻握置于膝上，略带紧张地望着张医生。镜头缓慢前推至张医生近景，他抬头面向李阿姨，右手示意看向北墙大屏，屏幕上同步浮现三维肺部模型。画面左下角浮现半透明文字标签“AI辅助影像分析”。",
+                "duration": 8
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "过肩镜头从李阿姨身后拍摄大屏，屏幕中AI系统用蓝色光圈自动标记出微小结节，旁边弹出数据面板显示“检出率99.2%”。张医生起身，用激光笔指向标记处，转头对李阿姨微笑解释。李阿姨身体微微前倾，原本紧握的双手松开，露出安心的笑容。文字标签“精准识别”从右下角滑入。",
+                "duration": 8
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "中景，张医生和李阿姨并肩面向镜头。张医生右手轻搭李阿姨肩膀，两人面前浮现半透明的未来医疗数据流。李阿姨看向张医生，眼中充满感激。镜头缓缓向后拉远，诊室环境整体呈现，蓝白科技光感包围二人。底部中央浮现文字“AI，让诊断更温暖”。",
+                "duration": 6
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "抽象的科技概念空间，纯白背景上流动着发光的蓝色数据流和半透明医学图标（DNA双螺旋、心电图波形、大脑轮廓等）。画面深邃而无明显边界，光线从中心弥散，营造出无限延伸的未来感。",
+            "visualHints": "Abstract tech space, pure white background with flowing luminescent blue data streams and semi-transparent medical icons such as DNA helix, ECG waveforms, brain silhouette. Ethereal glow radiating from center, infinite depth sensation, minimal and futuristic aesthetic.",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "从诊室场景叠化至抽象空间，数据流从画面中央向外扩散，医学图标依次点亮。镜头缓慢推近中心光源，光晕越来越强，最终柔和地充满整个画面。底部浮现标语“智慧医疗，触手可及”，随后优雅淡出至纯白。",
+                "duration": 8
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "professional",
+          "visualStyle": "蓝白科技风医疗场景，干净通透",
+          "suggestedBGM": "舒缓电子氛围，带渐进律动"
+        }
+      },
+      "rawOutputLength": 3023
+    },
+    "script": {
+      "durationSec": 43.1,
+      "durationMs": 43059,
+      "model": "deepseek-v4-pro",
+      "tokenUsage": {
+        "prompt_tokens": 4399,
+        "completion_tokens": 2463,
+        "total_tokens": 6862,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 611
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 4399
+      },
+      "cost": {
+        "inputCost": 0.00191357,
+        "outputCost": 0.00214281,
+        "totalCost": 0.00405638
+      },
+      "report": {
+        "project": {
+          "title": "AI重塑医疗诊断",
+          "aspectRatio": "16:9",
+          "totalDuration": 30,
+          "outputResolution": "1920x1080",
+          "fps": 24
+        },
+        "scenes": [
+          {
+            "sceneId": "scene-1",
+            "visualSource": "visual-1",
+            "duration": 8,
+            "generation": {
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video",
+              "prompt": "Medium shot of Dr. Zhang, a 35-year-old Chinese male with neat short hair, wearing semi-rimless metal glasses, focused yet warm eyes, upright posture, dressed in a white lab coat over a light blue shirt, a laser pointer in his left chest pocket, a smart band on his wrist. He sits at a white matte desk with an embedded touch panel, his fingers swiping and tapping on it, causing a lung CT scan to load. Opposite him is Mrs. Li, a 60-year-old woman with short grey permed hair, kind face with fine wrinkles, wearing a light purple cardigan over a beige sweater, a hospital wristband on her right hand, hands gently clasped on her lap, looking slightly nervous at Dr. Zhang. The camera slowly pushes in from a medium shot to a close-up of Dr. Zhang as he looks up, raises his right hand to gesture toward the 120-inch transparent display on the north wall. The screen activates, displaying a 3D lung model that rotates slowly with a blue glow. Soft daylight pours in from the west floor-to-ceiling window, and blue LED strips add a futuristic touch to the clean white room. A semi-transparent text label 'AI辅助影像分析' appears at the bottom left. Cinematic, shallow depth of field, 8k.",
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, glasses removed, dark mood",
+              "seed": null,
+              "motion": 3,
+              "resolution": "1920x1080",
+              "fps": 24
+            },
+            "transition": {
+              "in": "fade-in",
+              "out": "cut",
+              "outDuration": 0
+            },
+            "audio": {
+              "bgm": "ambient electronic with gentle pulse, soft introduction",
+              "sfx": [
+                "soft touchscreen click",
+                "gentle hologram boot-up chime",
+                "quiet fabric rustle"
+              ],
+              "dialogue": "张医生：李阿姨，这是您的肺部CT，AI已经完成了初步筛查，我们来看看结果。"
+            }
+          },
+          {
+            "sceneId": "scene-2",
+            "visualSource": "visual-1",
+            "duration": 8,
+            "generation": {
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video",
+              "prompt": "Over-the-shoulder shot from behind Mrs. Li looking at the large transparent screen on the north wall. The AI system automatically marks a tiny nodule with a circling blue glow, and a data panel pops up showing '检出率99.2%'. Dr. Zhang rises from his chair, picks up a thin laser pointer, and directs a red dot at the marked area while turning his head to smile reassuringly at Mrs. Li. Mrs. Li leans slightly forward, her previously tightly clasped hands now relaxing and unclenching, a relieved smile spreading across her face as her tense expression softens. The room’s blue ambient lighting reflects gently on both faces. A text label '精准识别' slides in smoothly from the bottom right corner. Camera maintains a shallow depth of field, focusing on the interaction between Dr. Zhang and Mrs. Li. Modern high-tech clinic, clean white and blue tones, soft daylight, 8k cinematic.",
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, missing laser pointer, tense atmosphere",
+              "seed": null,
+              "motion": 4,
+              "resolution": "1920x1080",
+              "fps": 24
+            },
+            "transition": {
+              "in": "cut",
+              "out": "dissolve",
+              "outDuration": 0.5
+            },
+            "audio": {
+              "bgm": "ambient electronic with gentle build, hopeful undertone",
+              "sfx": [
+                "laser pointer click",
+                "soft AI analysis chime",
+                "data panel pop-up sound",
+                "fabric rustle"
+              ],
+              "dialogue": "张医生：您看这个位置，AI精准识别了一处微小结节，检出率高达99.2%，这意味着我们可以非常早期地发现病变。\n李阿姨：太好了，心里踏实多了。"
+            }
+          },
+          {
+            "sceneId": "scene-3",
+            "visualSource": "visual-1",
+            "duration": 6,
+            "generation": {
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video",
+              "prompt": "Medium shot of Dr. Zhang and Mrs. Li standing side by side, facing the camera. Dr. Zhang gently places his right hand on Mrs. Li’s shoulder. In front of them, semi-transparent futuristic medical data streams — charts, wave patterns, DNA strands — float and flow in the air. Mrs. Li looks up at Dr. Zhang with warm gratitude in her eyes. The camera slowly pulls back, revealing the entire consultation room bathed in a harmonious blend of blue technology glow and warm white light. Blue LED strips line the ceiling and east wall, while the west window admits soft natural light. The room feels clean, advanced, yet human. At the bottom center, Chinese text 'AI，让诊断更温暖' elegantly appears. Cinematic slow zoom out, hopeful and warm atmosphere, 8k shallow depth of field.",
+              "negativePrompt": "distorted faces, extra limbs, blurry, low quality, watermark, text overlays outside specified area, dark, cold atmosphere",
+              "seed": null,
+              "motion": 2,
+              "resolution": "1920x1080",
+              "fps": 24
+            },
+            "transition": {
+              "in": "dissolve",
+              "out": "cut",
+              "outDuration": 0
+            },
+            "audio": {
+              "bgm": "ambient electronic with warm synth layers, growing into an uplifting theme",
+              "sfx": [
+                "soft data stream whoosh",
+                "gentle atmospheric chime"
+              ],
+              "dialogue": "张医生：有了AI的辅助，诊断更准确，治疗也更及时。\n李阿姨：谢谢你，张医生，我现在觉得特别安心。"
+            }
+          },
+          {
+            "sceneId": "scene-4",
+            "visualSource": "visual-2",
+            "duration": 8,
+            "generation": {
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video",
+              "prompt": "Abstract futuristic space with a pure white background. Luminescent blue data streams flow outward from a bright central point, resembling digital rivers. Semi-transparent medical icons — a rotating DNA helix, a pulsing ECG waveform, a glowing brain silhouette — appear one by one, illuminating softly. The camera slowly pushes in toward the central light source, the glow becoming increasingly bright and soft. No characters. The composition is minimalist and infinite, conveying a sense of hope and advanced technology. In the final moments, the light gently fills the entire screen, transitioning into pure white. At the bottom, the slogan '智慧医疗，触手可及' fades in elegantly and then dissolves. Ethereal, clean, 8k cinematic motion graphics style.",
+              "negativePrompt": "people, faces, hands, text outside the specified area, dark, cluttered, low quality, blur, watermark, harsh shadows",
+              "seed": null,
+              "motion": 5,
+              "resolution": "1920x1080",
+              "fps": 24
+            },
+            "transition": {
+              "in": "cut",
+              "out": "fade-out",
+              "outDuration": 1.5
+            },
+            "audio": {
+              "bgm": "ambient electronic crescendo resolving into a peaceful, hopeful finale",
+              "sfx": [
+                "soft whoosh",
+                "digital chimes",
+                "distant shimmering"
+              ],
+              "dialogue": null
+            }
+          }
+        ]
+      },
+      "rawOutputLength": 7059
+    }
+  },
+  "summary": {
+    "totalDurationSec": 85,
+    "totalTokens": 11242,
+    "totalCost": 0.00551815,
+    "sceneCount": 4,
+    "spaceCount": 2,
+    "characterCount": 2
+  }
+}

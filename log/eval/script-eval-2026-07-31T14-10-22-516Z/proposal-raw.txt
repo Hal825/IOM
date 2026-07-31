@@ -1,0 +1,66 @@
+{
+  "characters": [
+    {
+      "characterId": "char-1",
+      "name": "张医生",
+      "type": "protagonist",
+      "appearance": "35岁男性，短发干练，戴半框金属眼镜，眼神专注而温暖，身材匀称挺拔。身穿白大褂内搭浅蓝色衬衫，左胸口袋夹着一支激光笔，手腕佩戴智能手环。整体形象专业且富有科技感。",
+      "personality": "自信可靠，语速平和清晰，习惯用手势辅助讲解。面对患者时神情关切，讲解技术时眼中带光，常有轻微点头的肯定动作。",
+      "role": "AI辅助诊断专家，主导讲解AI如何改变医疗流程"
+    },
+    {
+      "characterId": "char-2",
+      "name": "李阿姨",
+      "type": "supporting",
+      "appearance": "60岁左右女性，花白齐耳卷发，面容和蔼，眼角有细纹，身着浅紫色开衫内搭米色毛衣，右手腕戴着住院信息手环。身形略显富态，步伐缓慢但精神状态良好。",
+      "personality": "起初略带不安，双手轻握放在膝上；看到诊断结果后眉头舒展，露出信任的微笑。温和寡言，通过表情传递情绪变化。",
+      "role": "就诊患者，代表普通人对AI医疗从疑虑到信任的转变"
+    }
+  ],
+  "blueprint": {
+    "title": "AI重塑医疗诊断",
+    "totalDuration": 30,
+    "aspectRatio": "16:9"
+  },
+  "sceneVisuals": [
+    {
+      "visualId": "visual-1",
+      "description": "一间明亮的高科技诊室，面积约25平米，白色主调搭配蓝色氛围灯带。中央偏左为白色哑光诊桌，桌面上放置嵌入式触控面板和全息投影生成器；北墙挂有120英寸柔性透明显示屏，可展示3D医学影像；西墙为落地窗，自然光柔和洒入；东墙为药品柜和智能洗手台，上方LED灯带提供辅助照明。天花板采用软膜天花，整体光线均匀且柔和，色温4000K。空间整洁，充满未来感。",
+      "visualHints": "Modern 25-square-meter high-tech consultation room, white matte desk center-left with embedded touch panel and holographic projector, 120-inch transparent flexible display on north wall showing 3D medical scans, floor-to-ceiling window on west wall with soft daylight, medicine cabinet and smart sink on east wall with LED light strips, soft membrane ceiling with uniform 4000K lighting, blue ambient light accents, clean futuristic medical interior.",
+      "scenes": [
+        {
+          "sceneId": "scene-1",
+          "sceneDescription": "中景镜头，张医生坐在诊桌旁，手指在触控面板上滑动，调出肺部CT影像。李阿姨坐在对面，双手轻握置于膝上，略带紧张地望着张医生。镜头缓慢前推至张医生近景，他抬头面向李阿姨，右手示意看向北墙大屏，屏幕上同步浮现三维肺部模型。画面左下角浮现半透明文字标签“AI辅助影像分析”。",
+          "duration": 8
+        },
+        {
+          "sceneId": "scene-2",
+          "sceneDescription": "过肩镜头从李阿姨身后拍摄大屏，屏幕中AI系统用蓝色光圈自动标记出微小结节，旁边弹出数据面板显示“检出率99.2%”。张医生起身，用激光笔指向标记处，转头对李阿姨微笑解释。李阿姨身体微微前倾，原本紧握的双手松开，露出安心的笑容。文字标签“精准识别”从右下角滑入。",
+          "duration": 8
+        },
+        {
+          "sceneId": "scene-3",
+          "sceneDescription": "中景，张医生和李阿姨并肩面向镜头。张医生右手轻搭李阿姨肩膀，两人面前浮现半透明的未来医疗数据流。李阿姨看向张医生，眼中充满感激。镜头缓缓向后拉远，诊室环境整体呈现，蓝白科技光感包围二人。底部中央浮现文字“AI，让诊断更温暖”。",
+          "duration": 6
+        }
+      ]
+    },
+    {
+      "visualId": "visual-2",
+      "description": "抽象的科技概念空间，纯白背景上流动着发光的蓝色数据流和半透明医学图标（DNA双螺旋、心电图波形、大脑轮廓等）。画面深邃而无明显边界，光线从中心弥散，营造出无限延伸的未来感。",
+      "visualHints": "Abstract tech space, pure white background with flowing luminescent blue data streams and semi-transparent medical icons such as DNA helix, ECG waveforms, brain silhouette. Ethereal glow radiating from center, infinite depth sensation, minimal and futuristic aesthetic.",
+      "scenes": [
+        {
+          "sceneId": "scene-4",
+          "sceneDescription": "从诊室场景叠化至抽象空间，数据流从画面中央向外扩散，医学图标依次点亮。镜头缓慢推近中心光源，光晕越来越强，最终柔和地充满整个画面。底部浮现标语“智慧医疗，触手可及”，随后优雅淡出至纯白。",
+          "duration": 8
+        }
+      ]
+    }
+  ],
+  "styleProfile": {
+    "tone": "professional",
+    "visualStyle": "蓝白科技风医疗场景，干净通透",
+    "suggestedBGM": "舒缓电子氛围，带渐进律动"
+  }
+}

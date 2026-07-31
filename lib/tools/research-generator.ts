@@ -224,7 +224,8 @@ function parseAndValidateResearch(raw: string): ResearchReport {
 // ── LLM API 调用 ────────────────────────────────────
 
 async function callResearchLLM(
-  userPrompt: string
+  userPrompt: string,
+  systemPrompt?: string,
 ): Promise<{ content: string; usage?: TokenUsage }> {
   if (!RESEARCH_API_KEY || !RESEARCH_BASE_URL || !RESEARCH_LLM_MODEL) {
     throw new Error(
@@ -241,7 +242,7 @@ async function callResearchLLM(
     body: JSON.stringify({
       model: RESEARCH_LLM_MODEL,
       messages: [
-        { role: 'system', content: RESEARCH_SYSTEM },
+        { role: 'system', content: systemPrompt ?? RESEARCH_SYSTEM },
         { role: 'user', content: userPrompt },
       ],
       max_tokens: MAX_TOKENS,
@@ -300,14 +301,15 @@ async function withRetry<T>(
  * 零容错：API Key 未配置或调用失败直接抛异常。
  */
 export async function analyzeContent(
-  userPrompt: string
+  userPrompt: string,
+  systemPrompt?: string,
 ): Promise<ResearchResult> {
   if (!RESEARCH_API_KEY || !RESEARCH_BASE_URL || !RESEARCH_LLM_MODEL) {
     throw new Error('Research 环境变量未配置（RESEARCH_API_KEY / RESEARCH_BASE_URL / RESEARCH_LLM_MODEL）');
   }
 
   const { result, retries } = await withRetry(async () => {
-    const { content, usage } = await callResearchLLM(userPrompt);
+    const { content, usage } = await callResearchLLM(userPrompt, systemPrompt);
     const report = parseAndValidateResearch(content);
     return { ...report, usage };
   });

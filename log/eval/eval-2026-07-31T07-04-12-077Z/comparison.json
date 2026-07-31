@@ -1,0 +1,202 @@
+{
+  "jobId": "eval-2026-07-31T07-04-12-077Z",
+  "testInput": "请帮我制作一个30秒左右的科普视频，介绍人工智能如何改变医疗诊断，要有科技感，背景音乐舒缓一些",
+  "evaluatedAt": "2026-07-31T07:05:16.937Z",
+  "original": {
+    "systemPrompt": "\n##Role\n你是一个专业的视频内容策划分析师。根据用户提供的文本，进行深度内容分析，并输出结构化的调研报告。\n\n##Context\nProgramming introduce:该项目基于TypeScript和Next.js的网页版视频自动生成工具。它的核心功能是让用户通过输入文本，利用LangGraph构建的状态机自动化地完成视频制作的整个流程。\nLangGraph: 图拓扑\n  __start__\n      │\n    research              ← 分析用户文本 → researchReport（当前节点）\n      │\n  generate_proposal       ← 生成视频方案 + 角色设计 → proposal\n      │\n  script_generation       ← 逐镜头脚本生成 → videoScript\n      │\n  fanout_assets_tts (条件边，并行分发 Send)\n     ╱        ╲\n  asset_gen   tts         ← 并行：AI 图片生成 + 分段语音合成（SSML）\n     ╲        ╱\n  shot_video_sequential   ← 串行逐个生成视频片段（间隔 5s 防限流）\n      │\n  video_merge             ← FFmpeg 拼接 + 音轨合成\n      │\n     END\n\n## 分析任务\n\n### 1. 元数据提取\n- **topic**：提炼文本主题（15字以内）\n- **wordCount**：统计原文字数\n- **language**：识别语言（如 \"zh-CN\", \"en-US\"）\n- **contentType**：分析内容类型（如 \"科普\"、\"故事\"、\"教程\"、\"新闻\"）\n- **sceneTime**: 统计用户文本中出现的时间信息（如 \"2024年\"、\"下午3点\"、\"明天\"），并按时间顺序列出。\n- **sceneLocation**: 统计用户文本中出现的地点信息（如 \"北京\"、\"纽约\"、\"海边\"），并按出现顺序列出。\n- **userDemand**: 用户的要求（如 \"视频时长在15秒内、科技感\"），若未提及则为 null。\n\n### 2. 内容骨架\n判断文本的**逻辑流类型**（flow）：\n- \"chronological\" — 时间/步骤顺序\n- \"cause-effect\" — 因果分析\n- \"problem-solution\" — 问题→解决方案\n- \"narrative\" — 叙事/描述\n\n### 3. 角色需求检测\n- **hasCharacter**：布尔值。判断用户文本是否需要创建特定角色出镜：\n  - 用户明确描述了角色外貌、性别、年龄、服装等 → true\n  - 用户描述了故事/场景中的具体人物（如\"一个年轻医生\"、\"一位老者\"、\"小明\"）→ true\n  - 纯知识科普、无人物描述、仅抽象概念 → false\n- **characterHints**：字符串数组。从原文中提取的角色相关线索（外貌、身份、动作描述等），供下游提案节点设计角色时参考。如无则为空数组 []。**注意：仅提取线索片段，不要在此处做详细特征描述。**\n\n### 4. 内容就绪度评估\n- 评估用户输入文本在多大程度上满足高质量视频生成的条件，为下游提案节点的内容补全提供依据。\n- **overallScore**：综合就绪度评分（0-100），反映文本整体质量\n  - 0-49：内容严重不足，需要大量补全\n  - 50-69：基本可用，但存在明显短板\n  - 70-84：质量良好，仅需小幅润色\n  - 85-100：内容充分，可直接进入方案生成\n- **dimensions**：各维度独立评分（0-100），精确定位短板\n- **information**：信息量评估。文本是否包含足够的具体内容来支撑多个场景？是否存在大量空洞表述或简单重复？\n- **logic**：逻辑性评估。文本是否有清晰的叙事线索或论证结构？各信息点之间是否连贯，是否存在跳跃或断裂？\n- **visual**：视觉化程度评估。文本是否包含可转化为画面的具体元素（人物、物体、场景、动作）？还是纯抽象论述？\n- **emotion**：情感基调评估。文本是否传递了明确的情感色彩或态度倾向（紧迫感、乐观、严肃、温暖等）？\n- **completeness**：完整度评估。文本是否有完整的起承转合结构？是否有明确的开头引入和结尾收束？\n- **shortcomings**：具体短板描述\n  - 数组形式列出当前内容缺失的关键要素，如：[\"缺乏具体案例支撑\", \"缺少画面感描述\", \"没有明确的结尾总结\"]。若无明显短板则为空数组 []。\n- **expansionHints**：补全方向建议\n  - 针对检测到的短板，给出具体的补全指令，供提案节点执行内容扩充时使用。如：[\"请围绕主题补充 2-3 个具体应用场景\", \"请为每个场景增加视觉化细节描述\"]。若无补全需求则为空数组 []。\n- **canProceedDirectly**：布尔值\n  - 当整体就绪度达到阈值（如 70 分以上）且无严重短板时为 true\n  - 否则为 false，提案节点需启动补全模式\n\n严格按以下 JSON 格式输出，不要包含任何其他文字：\n\n{\n  \"metadata\": {\n    \"topic\": \"人工智能在医疗领域的应用\",\n    \"wordCount\": 350,\n    \"language\": \"zh-CN\",\n    \"contentType\": \"科普\",\n    \"sceneTime\": [\"2024年\", \"近年来\"],\n    \"sceneLocation\": [\"北京协和医院\", \"实验室\"],\n    \"userDemand\": \"视频时长在30秒内，科技感\"\n  },\n  \"contentSkeleton\": {\n    \"segments\": [\n      {\n        \"id\": \"seg-1\",\n        \"title\": \"AI医疗现状\",\n        \"originalText\": \"近年来，人工智能技术在医疗领域取得了显著进展...\",\n        \"summary\": \"AI在医疗影像诊断、药物研发等方面已取得突破性应用成果\",\n        \"keywords\": [\"人工智能\", \"医疗诊断\", \"深度学习\"]\n      }\n    ],\n    \"flow\": \"cause-effect\"\n  },\n  \"styleProfile\": {\n    \"tone\": \"professional\",\n    \"pace\": \"medium\",\n    \"visualStyle\": \"科技感蓝色调，干净现代\",\n    \"suggestedBGM\": \"科技感电子氛围\"\n  },\n注意：\n- tone 必须是以下之一：professional / lively / serious / inspirational / minimal\n- pace 必须是以下之一：slow / medium / fast\n- flow 必须是以下之一：chronological / cause-effect / problem-solution / narrative\n  \"characterAnalysis\": {\n    \"hasCharacter\": false,\n    \"characterHints\": []\n  },\n  \"readiness\": {\n    \"overallScore\": 75,\n    \"dimensions\": {\n      \"information\": 70,\n      \"logic\": 85,\n      \"visual\": 65,\n      \"emotion\": 60,\n      \"completeness\": 80\n    },\n    \"shortcomings\": [\"缺乏具体案例支撑\", \"画面感描述不足\"],\n    \"expansionHints\": [\"请围绕主题补充 2-3 个应用场景案例\"],\n    \"canProceedDirectly\": true\n  }\n}",
+    "durationSec": 44.9,
+    "model": "deepseek-v4-pro",
+    "retries": 1,
+    "tokenUsage": {
+      "prompt_tokens": 1575,
+      "completion_tokens": 1675,
+      "total_tokens": 3250,
+      "prompt_tokens_details": {
+        "cached_tokens": 1536
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1233
+      },
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 39
+    },
+    "cost": {
+      "inputCost": 0.00002253,
+      "outputCost": 0.00145725,
+      "totalCost": 0.00147978
+    },
+    "report": {
+      "metadata": {
+        "topic": "人工智能如何改变医疗诊断",
+        "wordCount": 46,
+        "language": "zh-CN",
+        "contentType": "科普",
+        "sceneTime": [],
+        "sceneLocation": [],
+        "userDemand": "视频时长在30秒内，科技感，背景音乐舒缓"
+      },
+      "contentSkeleton": {
+        "segments": [
+          {
+            "id": "seg-1",
+            "title": "用户需求",
+            "originalText": "请帮我制作一个30秒左右的科普视频，介绍人工智能如何改变医疗诊断，要有科技感，背景音乐舒缓一些",
+            "summary": "用户请求制作关于AI改变医疗诊断的科技感科普视频，要求时长30秒，背景音乐舒缓。",
+            "keywords": [
+              "人工智能",
+              "医疗诊断",
+              "科普视频",
+              "科技感",
+              "背景音乐"
+            ]
+          }
+        ],
+        "flow": "narrative"
+      },
+      "styleProfile": {
+        "tone": "professional",
+        "pace": "medium",
+        "visualStyle": "科技感蓝色调，数字粒子与数据流动画",
+        "suggestedBGM": "舒缓电子氛围音乐"
+      },
+      "characterAnalysis": {
+        "hasCharacter": false,
+        "characterHints": []
+      },
+      "readiness": {
+        "overallScore": 20,
+        "dimensions": {
+          "information": 10,
+          "logic": 10,
+          "visual": 5,
+          "emotion": 20,
+          "completeness": 10
+        },
+        "shortcomings": [
+          "缺少AI医疗诊断的具体内容",
+          "没有可转化为画面的视觉描述",
+          "缺乏案例或数据支撑"
+        ],
+        "expansionHints": [
+          "请补充人工智能在医疗诊断中的2-3个具体应用场景与案例",
+          "增加视觉化描述，如医生使用AI系统、数据可视化、影像分析界面等"
+        ],
+        "canProceedDirectly": false
+      }
+    }
+  },
+  "new": {
+    "systemPrompt": "\n##Role\n你是一个专业的视频内容策划分析师。根据用户提供的文本，进行深度内容分析，并输出结构化的调研报告。\n\n##Context\nProgramming introduce:该项目基于TypeScript和Next.js的网页版视频自动生成工具。它的核心功能是让用户通过输入文本，利用LangGraph构建的状态机自动化地完成视频制作的整个流程。\nLangGraph: 图拓扑\n  __start__\n      │\n    research              ← 分析用户文本 → researchReport（当前节点）\n      │\n  generate_proposal       ← 生成视频方案 + 角色设计 → proposal\n      │\n  script_generation       ← 逐镜头脚本生成 → videoScript\n      │\n  fanout_assets_tts (条件边，并行分发 Send)\n     ╱        ╲\n  asset_gen   tts         ← 并行：AI 图片生成 + 分段语音合成（SSML）\n     ╲        ╱\n  shot_video_sequential   ← 串行逐个生成视频片段（间隔 5s 防限流）\n      │\n  video_merge             ← FFmpeg 拼接 + 音轨合成\n      │\n     END\n\n##Task\n\n### 1. 用户文本 (user_text)\n原封不动地存储用户输入的完整文本内容。不做任何修改、截断或润色。\n\n### 2. 用户要求 (user_demand)\n从 user_text 中提取用户明确或隐含提出的要求，包括但不限于：\n- **时长要求**：如\"30秒内\"、\"1分钟左右\"、\"短视频\"\n- **风格要求**：如\"科技感\"、\"温馨\"、\"酷炫\"、\"严肃\"、\"幽默\"\n- **内容要求**：如\"介绍AI发展\"、\"讲一个故事\"、\"产品展示\"\n- **格式要求**：如\"横屏\"、\"竖屏\"、\"带字幕\"、\"16:9\"\n- **视觉要求**：如\"蓝色调\"、\"暗黑风\"、\"二次元\"、\"写实\"\n- **音频要求**：如\"背景音乐舒缓\"、\"男声旁白\"、\"快节奏\"\n- **其他特殊要求**：如\"包含对比\"、\"突出数据\"、\"第一人称\"\n\n若用户文本中未包含任何明确要求，则 hasExplicitDemand 为 false，demands 为空数组。\n\n### 3. 内容就绪度评估 (content_readiness_assessment)\n评估用户文本是否为一篇\"高质量、可直接用于视频生成\"的文本，输出 0-100 的综合评分。\n\n**评估维度（各维度 0-100 分）：**\n\n| 维度 | 名称 | 评估要点 |\n|------|------|----------|\n| information_sufficiency | 信息充分性 | 文本是否包含足够的具体内容（事实、数据、案例）来支撑视频制作？是否存在大量空洞表述或简单重复？ |\n| visual_convertibility | 画面可转化性 | 文本是否包含可转化为画面的具体元素（人物、物体、场景、动作、色彩）？还是偏抽象论述难以视觉化？ |\n| structural_integrity | 结构完整性 | 文本是否有清晰的起承转合结构？是否有明确的开头引入和结尾收束？ |\n| logical_fluency | 逻辑流畅性 | 文本的叙事线索或论证结构是否清晰？各信息点之间是否连贯，是否存在跳跃或断裂？ |\n| emotional_clarity | 情感明确性 | 文本是否传递了明确的情感色彩或态度倾向（紧迫感、乐观、严肃、温暖、幽默等）？ |\n| creativity_richness | 创意丰富度 | 文本是否包含独特的视角、新颖的比喻、生动的描述？还是平铺直叙、缺乏亮点？ |\n\n**评分等级映射：**\n- 85-100：ready — 文本质量高，可直接进入视频方案生成\n- 70-84：good — 基本可用，建议小幅润色或补充\n- 50-69：moderate — 存在明显短板，需要较多内容补全\n- 0-49：insufficient — 内容严重不足，需要大量补充或重新提供文本\n\n### 4. 输出 ResearchReport JSON\n\n严格按以下 JSON 格式输出，不要包含任何其他文字：\n\n{\n  \"user_text\": \"用户输入的原始文本，原封不动...\",\n  \"user_demand\": {\n    \"hasExplicitDemand\": true,\n    \"demands\": [\n      {\n        \"category\": \"duration\",\n        \"description\": \"视频时长控制在30秒以内\",\n        \"originalPhrase\": \"30秒内\"\n      },\n      {\n        \"category\": \"style\",\n        \"description\": \"整体风格要有科技感和未来感\",\n        \"originalPhrase\": \"科技感\"\n      },\n      {\n        \"category\": \"content\",\n        \"description\": \"介绍人工智能在医疗领域的应用现状\",\n        \"originalPhrase\": \"AI医疗应用\"\n      }\n    ],\n    \"summary\": \"用户要求制作一个30秒以内的科技感短视频，主题为AI医疗应用\"\n  },\n  \"content_readiness_assessment\": {\n    \"overallScore\": 68,\n    \"level\": \"moderate\",\n    \"dimensions\": {\n      \"information_sufficiency\": {\n        \"score\": 65,\n        \"comment\": \"文本包含基本事实信息，但缺乏具体数据和案例支撑，部分表述较为笼统\"\n      },\n      \"visual_convertibility\": {\n        \"score\": 55,\n        \"comment\": \"内容偏抽象论述，缺少可转化为画面的具体场景、人物或动作描述\"\n      },\n      \"structural_integrity\": {\n        \"score\": 80,\n        \"comment\": \"有明确的开头引入和结尾总结，中间结构清晰但略显平铺直叙\"\n      },\n      \"logical_fluency\": {\n        \"score\": 75,\n        \"comment\": \"整体逻辑清晰，因果关系明确，部分段落间过渡略显生硬\"\n      },\n      \"emotional_clarity\": {\n        \"score\": 60,\n        \"comment\": \"文本偏客观介绍风格，情感色彩较弱，缺乏情绪起伏\"\n      },\n      \"creativity_richness\": {\n        \"score\": 50,\n        \"comment\": \"内容为常规科普叙述，缺乏独特视角或生动的创意表达\"\n      }\n    },\n    \"strengths\": [\"结构完整，有明确的开头和结尾\", \"逻辑线索清晰\"],\n    \"weaknesses\": [\"缺乏画面感描述，难以视觉化\", \"创意不足，表述偏常规\", \"情感基调不够明确\"],\n    \"recommendation\": \"needs_enrichment\"\n  }\n}\n\n**字段约束说明：**\n- category 必须是以下之一：duration / style / content / format / visual / audio / other\n- level 必须是以下之一：ready / good / moderate / insufficient\n- recommendation 必须是以下之一：ready / needs_polish / needs_enrichment / needs_restructure\n- 各维度 score 为 0-100 的整数\n- strengths 列出 2-4 个文本的优点，weaknesses 列出 2-4 个短板，若无明显优缺点可为空数组 []\n- hasExplicitDemand 为 false 时，demands 为空数组，summary 为 \"用户未提出明确要求\"\n",
+    "durationSec": 18,
+    "model": "deepseek-v4-pro",
+    "retries": 0,
+    "tokenUsage": {
+      "prompt_tokens": 1570,
+      "completion_tokens": 1233,
+      "total_tokens": 2803,
+      "prompt_tokens_details": {
+        "cached_tokens": 1536
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 678
+      },
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 34
+    },
+    "cost": {
+      "inputCost": 0.00002036,
+      "outputCost": 0.00107271,
+      "totalCost": 0.00109307
+    },
+    "reportRaw": "{\n  \"user_text\": \"请帮我制作一个30秒左右的科普视频，介绍人工智能如何改变医疗诊断，要有科技感，背景音乐舒缓一些\",\n  \"user_demand\": {\n    \"hasExplicitDemand\": true,\n    \"demands\": [\n      {\n        \"category\": \"duration\",\n        \"description\": \"视频时长控制在30秒左右\",\n        \"originalPhrase\": \"30秒左右\"\n      },\n      {\n        \"category\": \"style\",\n        \"description\": \"整体风格要有科技感\",\n        \"originalPhrase\": \"科技感\"\n      },\n      {\n        \"category\": \"content\",\n        \"description\": \"介绍人工智能如何改变医疗诊断\",\n        \"originalPhrase\": \"人工智能如何改变医疗诊断\"\n      },\n      {\n        \"category\": \"audio\",\n        \"description\": \"背景音乐需舒缓\",\n        \"originalPhrase\": \"背景音乐舒缓一些\"\n      }\n    ],\n    \"summary\": \"用户要求制作一个30秒左右的科技感科普视频，介绍人工智能如何改变医疗诊断，并搭配舒缓的背景音乐\"\n  },\n  \"content_readiness_assessment\": {\n    \"overallScore\": 5,\n    \"level\": \"insufficient\",\n    \"dimensions\": {\n      \"information_sufficiency\": {\n        \"score\": 0,\n        \"comment\": \"文本仅为一句需求陈述，未提供任何关于AI医疗诊断的具体事实、数据或案例，信息几乎为零\"\n      },\n      \"visual_convertibility\": {\n        \"score\": 0,\n        \"comment\": \"完全没有可转化为画面的描述，缺少人物、场景、动作等视觉元素\"\n      },\n      \"structural_integrity\": {\n        \"score\": 0,\n        \"comment\": \"无任何叙事或论证结构，仅仅是视频制作的请求指令\"\n      },\n      \"logical_fluency\": {\n        \"score\": 0,\n        \"comment\": \"仅有一句话，不存在信息点之间的逻辑关系\"\n      },\n      \"emotional_clarity\": {\n        \"score\": 0,\n        \"comment\": \"文本为指令语气，未传递任何情感色彩或态度倾向\"\n      },\n      \"creativity_richness\": {\n        \"score\": 0,\n        \"comment\": \"无任何创意表达或独特视角\"\n      }\n    },\n    \"strengths\": [],\n    \"weaknesses\": [\n      \"文本仅为简短的需求陈述，缺乏实质性内容\",\n      \"无具体画面描述，难以视觉化\",\n      \"无脚本结构，无法直接用于视频生成\",\n      \"未提供任何支撑信息或案例\"\n    ],\n    \"recommendation\": \"needs_enrichment\"\n  }\n}",
+    "reportParsed": {
+      "user_text": "请帮我制作一个30秒左右的科普视频，介绍人工智能如何改变医疗诊断，要有科技感，背景音乐舒缓一些",
+      "user_demand": {
+        "hasExplicitDemand": true,
+        "demands": [
+          {
+            "category": "duration",
+            "description": "视频时长控制在30秒左右",
+            "originalPhrase": "30秒左右"
+          },
+          {
+            "category": "style",
+            "description": "整体风格要有科技感",
+            "originalPhrase": "科技感"
+          },
+          {
+            "category": "content",
+            "description": "介绍人工智能如何改变医疗诊断",
+            "originalPhrase": "人工智能如何改变医疗诊断"
+          },
+          {
+            "category": "audio",
+            "description": "背景音乐需舒缓",
+            "originalPhrase": "背景音乐舒缓一些"
+          }
+        ],
+        "summary": "用户要求制作一个30秒左右的科技感科普视频，介绍人工智能如何改变医疗诊断，并搭配舒缓的背景音乐"
+      },
+      "content_readiness_assessment": {
+        "overallScore": 5,
+        "level": "insufficient",
+        "dimensions": {
+          "information_sufficiency": {
+            "score": 0,
+            "comment": "文本仅为一句需求陈述，未提供任何关于AI医疗诊断的具体事实、数据或案例，信息几乎为零"
+          },
+          "visual_convertibility": {
+            "score": 0,
+            "comment": "完全没有可转化为画面的描述，缺少人物、场景、动作等视觉元素"
+          },
+          "structural_integrity": {
+            "score": 0,
+            "comment": "无任何叙事或论证结构，仅仅是视频制作的请求指令"
+          },
+          "logical_fluency": {
+            "score": 0,
+            "comment": "仅有一句话，不存在信息点之间的逻辑关系"
+          },
+          "emotional_clarity": {
+            "score": 0,
+            "comment": "文本为指令语气，未传递任何情感色彩或态度倾向"
+          },
+          "creativity_richness": {
+            "score": 0,
+            "comment": "无任何创意表达或独特视角"
+          }
+        },
+        "strengths": [],
+        "weaknesses": [
+          "文本仅为简短的需求陈述，缺乏实质性内容",
+          "无具体画面描述，难以视觉化",
+          "无脚本结构，无法直接用于视频生成",
+          "未提供任何支撑信息或案例"
+        ],
+        "recommendation": "needs_enrichment"
+      }
+    }
+  },
+  "comparison": {
+    "promptDiff": {
+      "originalLength": 3533,
+      "newLength": 3745,
+      "lengthDelta": "+212 (+6.0%)"
+    },
+    "duration": {
+      "original": 44.9,
+      "new": 18,
+      "delta": "▼ -26862.0s / -59.9%"
+    },
+    "tokens": {
+      "originalTotal": 3250,
+      "newTotal": 2803,
+      "delta": "▼ -447.0 / -13.8%"
+    },
+    "cost": {
+      "originalTotal": 0.00147978,
+      "newTotal": 0.00109307,
+      "delta": "$0.001093 vs $0.001480 (-26.1%)"
+    }
+  }
+}

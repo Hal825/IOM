@@ -54,7 +54,9 @@ const workflow = new StateGraph(VideoGenState)
 
   // 顺序链
   .addEdge('__start__', 'research')
-  .addEdge('research', 'generate_proposal')
+  // TODO: 临时 — 仅调试 research 节点，后续恢复为 generate_proposal
+  .addEdge('research', END)
+  // .addEdge('research', 'generate_proposal')
   .addEdge('generate_proposal', 'script_generation')
 
   // 并行：asset_gen + tts
