@@ -1,0 +1,66 @@
+{
+  "characters": [
+    {
+      "characterId": "char-1",
+      "name": "林医生",
+      "type": "protagonist",
+      "appearance": "30岁左右女性，齐肩黑发利落扎成低马尾，温润的琥珀色眼眸，五官清秀画淡妆，身材纤细挺拔。身穿白色医用白大褂内搭浅蓝衬衫，脖子上挂着听诊器，右腕佩戴银色智能手表。整体干练知性，有亲和力。",
+      "personality": "沉稳自信但不失温柔，语速适中娓娓道来，习惯性用指尖轻推眼镜，倾听时微微歪头，讲解时手势自然而精准。",
+      "role": "AI医学影像专家，主导全片诊断流程讲解"
+    },
+    {
+      "characterId": "char-2",
+      "name": "陈阿姨",
+      "type": "supporting",
+      "appearance": "60岁左右女性，花白短发微卷，眼角有温和的鱼尾纹，面容慈祥略显疲惫。身穿浅粉色病号服外披深灰开衫，左手腕戴住院手环。身形微胖，步态略缓。",
+      "personality": "最初略带疑虑和紧张，手指不安地绞在一起；看到AI诊断结果后眉头舒展，露出安心的微笑。沉默但通过表情传递情绪变化。",
+      "role": "就诊患者，代表普通人对AI医疗从疑虑到信任的转变"
+    }
+  ],
+  "blueprint": {
+    "title": "AI如何改变医疗诊断",
+    "totalDuration": 30,
+    "aspectRatio": "16:9"
+  },
+  "sceneVisuals": [
+    {
+      "visualId": "visual-1",
+      "description": "一间约25平米的现代化医院AI诊室。空间布局：中央偏左是白色烤漆诊桌，桌面摆放平板电脑和听诊器；北墙挂120寸全息投影屏幕；西墙是整面落地玻璃窗，自然光洒入；东墙是嵌入式药品柜和洗手台，上方LED柔光灯带；南面入口走廊。整体白色调，天花板四周蓝色氛围灯条，顶部4000K中性白光，全息屏蓝光与窗外日光形成冷暖对比。地面浅灰色防滑地胶。",
+      "visualHints": "Modern 25-square-meter hospital AI consultation room, white lacquer desk center-left with tablet and stethoscope, 120-inch holographic projection screen on north wall displaying brain scan, floor-to-ceiling glass window on west wall with natural daylight, embedded medicine cabinet with LED strips on east wall, white walls with blue ambient light strips along ceiling perimeter, 4000K neutral white ceiling lights, blue hologram glow contrasting with warm daylight, light grey non-slip flooring, clean professional medical aesthetic",
+      "scenes": [
+        {
+          "sceneId": "scene-1",
+          "sceneDescription": "中景镜头，林医生坐在诊桌后查看平板上的患者数据，陈阿姨坐在诊桌对面略显紧张。林医生抬头看向全息屏幕，手指在平板上向右滑动，屏幕随之切换显示脑部3D扫描影像。镜头从林医生正面缓慢推近至半身景别。屏幕右下角叠加半透明蓝色标签'AI辅助诊断'。",
+          "duration": 8
+        },
+        {
+          "sceneId": "scene-2",
+          "sceneDescription": "过肩镜头，从林医生背后拍摄全息屏幕。屏幕上AI分析结果以动态光圈圈出病灶区域，旁边弹出数据面板显示'检出率 98.7%'。陈阿姨看到结果后，原本紧握的双手缓缓松开，眼中闪过一丝惊喜。林医生手指在全息屏前做放大手势，影像随之放大，同时转头向陈阿姨温和地点头。文字标签'AI精准识别'从画面底部滑入。",
+          "duration": 7
+        },
+        {
+          "sceneId": "scene-3",
+          "sceneDescription": "侧面中景，林医生走到西窗前，自然光勾勒出她的轮廓剪影。陈阿姨站起身，望着全息屏幕上'康复预后良好'的诊断结论，眼眶微湿。林医生转身，向陈阿姨微笑伸出手。画面从冷蓝色调渐变至暖白色调。底部中央浮现文字'精准医疗，触手可及'。",
+          "duration": 9
+        }
+      ]
+    },
+    {
+      "visualId": "visual-2",
+      "description": "俯视视角的未来城市天际线。黄昏时分金色阳光洒满高楼群，城市街道呈几何网格状延伸。空中悬浮多个半透明全息数据面板。整体暖金色+深蓝暮色渐变。",
+      "visualHints": "Aerial view of futuristic city skyline at golden hour, sunlight spreading across skyscraper tops, geometric grid street layout below, translucent holographic data panels floating in mid-air, warm golden light transitioning to deep blue dusk sky, cinematic drone shot, hopeful and expansive atmosphere",
+      "scenes": [
+        {
+          "sceneId": "scene-4",
+          "sceneDescription": "俯视全景缓慢拉远，从诊室窗户视角过渡至城市天际线。全息医疗数据流从诊室屏幕飘升至城市上空。镜头继续拉远，城市全景渐显。画面优雅淡出至白。",
+          "duration": 6
+        }
+      ]
+    }
+  ],
+  "styleProfile": {
+    "tone": "professional",
+    "visualStyle": "白色+蓝色科技诊室，结尾暖金城市暮色",
+    "suggestedBGM": "舒缓电子氛围，尾声渐强"
+  }
+}

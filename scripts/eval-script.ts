@@ -116,29 +116,38 @@ async function main() {
     console.log(`总费用 : $${totalCost.toFixed(6)}`);
   }
 
-  // ── Script 输出 ──
-  console.log('\n═══ Script 输出 ════════════════════════════');
+  // ── Script 输出 (四子脚本) ──
+  console.log('\n═══ Script 输出 (四子脚本) ════════════════════');
   if (s.parsed) {
-    const proj = s.parsed.project;
-    console.log(`project: ${proj?.title} | ${proj?.aspectRatio} | ${proj?.totalDuration}s | ${proj?.outputResolution} | ${proj?.fps}fps`);
+    const story = (s.parsed.storyScript?.scenes ?? []) as any[];
+    const board = (s.parsed.storyboardScript?.scenes ?? []) as any[];
+    const audio = (s.parsed.audioScript?.scenes ?? []) as any[];
+    const pacing = (s.parsed.pacingScript?.scenes ?? []) as any[];
+    console.log(`storyScript: ${story.length} 镜 | storyboardScript: ${board.length} 镜 | audioScript: ${audio.length} 镜 | pacingScript: ${pacing.length} 镜`);
+    const totalDur = pacing.reduce((sum, p) => sum + (p.duration ?? 0), 0);
+    console.log(`duration 合计: ${totalDur}s`);
 
-    const scenes = s.parsed.scenes as Array<Record<string, unknown>> | undefined;
-    if (scenes) {
-      console.log(`scenes: ${scenes.length} 个镜头`);
-      for (const sc of scenes) {
-        const gen = sc.generation as Record<string, unknown> | undefined;
-        const trans = sc.transition as Record<string, unknown> | undefined;
-        const audio = sc.audio as Record<string, unknown> | undefined;
-        console.log(`\n  [${sc.sceneId}] ← ${sc.visualSource} | ${sc.duration}s | motion=${gen?.motion}`);
-        console.log(`    engine  : ${gen?.engine} | ${gen?.mode}`);
-        console.log(`    prompt  : ${safeStr(gen?.prompt, 120)}`);
-        console.log(`    neg     : ${safeStr(gen?.negativePrompt, 80)}`);
-        console.log(`    trans   : ${trans?.in} → ${trans?.out} (${trans?.outDuration}s)`);
-        console.log(`    bgm     : ${safeStr(audio?.bgm, 60)}`);
-        console.log(`    sfx     : ${Array.isArray(audio?.sfx) ? (audio!.sfx as string[]).join(', ') : 'N/A'}`);
-        if (audio?.dialogue) {
-          console.log(`    dialogue: ${safeStr(audio.dialogue, 120)}`);
-        }
+    const boardById = new Map(board.map((b) => [b.sceneId, b]));
+    const audioById = new Map(audio.map((a) => [a.sceneId, a]));
+    const pacingById = new Map(pacing.map((p) => [p.sceneId, p]));
+
+    for (const st of story) {
+      const b = boardById.get(st.sceneId) ?? {};
+      const a = audioById.get(st.sceneId) ?? {};
+      const pc = pacingById.get(st.sceneId) ?? {};
+      const shot = b.shot ?? {};
+      console.log(`\n  [${st.sceneId}] ← ${b.visualSource} | ${pc.duration}s | motion=${b.motionLevel}`);
+      console.log(`    story   : ${safeStr(st.narrative, 80)}`);
+      console.log(`    chars   : ${Array.isArray(st.characters) && st.characters.length ? st.characters.map((c: any) => c.characterId).join(', ') : '(无)'}`);
+      console.log(`    refs    : scene=${b.resourceRefs?.sceneImageRef} | char=[${(b.resourceRefs?.characterImageRefs ?? []).join(', ')}]`);
+      console.log(`    shot    : ${shot.type} / ${shot.angle} / ${shot.movement}`);
+      console.log(`    engine  : ${b.engine} | ${b.mode} | ${b.resolution} ${b.fps}fps`);
+      console.log(`    neg     : ${safeStr(b.negativePrompt, 80)}`);
+      console.log(`    trans   : ${pc.transitionIn?.type} → ${pc.transitionOut?.type} (${pc.transitionOut?.durationSec}s)`);
+      console.log(`    bgm     : ${safeStr(a.bgm?.style, 40)} / ${safeStr(a.bgm?.mood, 40)}`);
+      console.log(`    sfx     : ${Array.isArray(a.sfx) ? a.sfx.map((x: any) => x.type).join(', ') : 'N/A'}`);
+      if (a.dialogue) {
+        console.log(`    dialogue: ${a.dialogue.map((d: any) => `${d.characterId}:${safeStr(d.text, 50)}`).join(' | ')}`);
       }
     }
   } else {
@@ -147,7 +156,7 @@ async function main() {
   }
 
   // ── 持久化日志 ──
-  const scriptScenes = s.parsed?.scenes as Array<Record<string, unknown>> | undefined;
+  const scriptScenes = s.parsed?.storyScript?.scenes as Array<Record<string, unknown>> | undefined;
   const logReport = {
     jobId,
     testInput,

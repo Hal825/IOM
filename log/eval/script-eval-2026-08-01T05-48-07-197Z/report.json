@@ -1,0 +1,553 @@
+{
+  "jobId": "script-eval-2026-08-01T05-48-07-197Z",
+  "testInput": "请帮我制作一个30秒左右的科普视频,介绍人工智能如何改变医疗诊断,要有科技感,背景音乐舒缓一些",
+  "evaluatedAt": "2026-08-01T05:49:04.549Z",
+  "stages": {
+    "proposal": {
+      "durationSec": 16.7,
+      "durationMs": 16692,
+      "model": "deepseek-v4-pro",
+      "tokenUsage": {
+        "prompt_tokens": 2734,
+        "completion_tokens": 1329,
+        "total_tokens": 4063,
+        "prompt_tokens_details": {
+          "cached_tokens": 2688
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 106
+        },
+        "prompt_cache_hit_tokens": 2688,
+        "prompt_cache_miss_tokens": 46
+      },
+      "cost": {
+        "inputCost": 0.00002975,
+        "outputCost": 0.00115623,
+        "totalCost": 0.00118598
+      },
+      "report": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "林医生",
+            "type": "protagonist",
+            "appearance": "30岁左右女性，齐肩黑发利落扎成低马尾，温润的琥珀色眼眸，五官清秀画淡妆，身材纤细挺拔。身穿白色医用白大褂内搭浅蓝衬衫，脖子上挂着听诊器，右腕佩戴银色智能手表。整体干练知性，有亲和力。",
+            "personality": "沉稳自信但不失温柔，语速适中娓娓道来，习惯性用指尖轻推眼镜，倾听时微微歪头，讲解时手势自然而精准。",
+            "role": "AI医学影像专家，主导全片诊断流程讲解"
+          },
+          {
+            "characterId": "char-2",
+            "name": "陈阿姨",
+            "type": "supporting",
+            "appearance": "60岁左右女性，花白短发微卷，眼角有温和的鱼尾纹，面容慈祥略显疲惫。身穿浅粉色病号服外披深灰开衫，左手腕戴住院手环。身形微胖，步态略缓。",
+            "personality": "最初略带疑虑和紧张，手指不安地绞在一起；看到AI诊断结果后眉头舒展，露出安心的微笑。沉默但通过表情传递情绪变化。",
+            "role": "就诊患者，代表普通人对AI医疗从疑虑到信任的转变"
+          }
+        ],
+        "blueprint": {
+          "title": "AI如何改变医疗诊断",
+          "totalDuration": 30,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "一间约25平米的现代化医院AI诊室。空间布局：中央偏左是白色烤漆诊桌，桌面摆放平板电脑和听诊器；北墙挂120寸全息投影屏幕；西墙是整面落地玻璃窗，自然光洒入；东墙是嵌入式药品柜和洗手台，上方LED柔光灯带；南面入口走廊。整体白色调，天花板四周蓝色氛围灯条，顶部4000K中性白光，全息屏蓝光与窗外日光形成冷暖对比。地面浅灰色防滑地胶。",
+            "visualHints": "Modern 25-square-meter hospital AI consultation room, white lacquer desk center-left with tablet and stethoscope, 120-inch holographic projection screen on north wall displaying brain scan, floor-to-ceiling glass window on west wall with natural daylight, embedded medicine cabinet with LED strips on east wall, white walls with blue ambient light strips along ceiling perimeter, 4000K neutral white ceiling lights, blue hologram glow contrasting with warm daylight, light grey non-slip flooring, clean professional medical aesthetic",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "中景镜头，林医生坐在诊桌后查看平板上的患者数据，陈阿姨坐在诊桌对面略显紧张。林医生抬头看向全息屏幕，手指在平板上向右滑动，屏幕随之切换显示脑部3D扫描影像。镜头从林医生正面缓慢推近至半身景别。屏幕右下角叠加半透明蓝色标签'AI辅助诊断'。",
+                "duration": 8
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "过肩镜头，从林医生背后拍摄全息屏幕。屏幕上AI分析结果以动态光圈圈出病灶区域，旁边弹出数据面板显示'检出率 98.7%'。陈阿姨看到结果后，原本紧握的双手缓缓松开，眼中闪过一丝惊喜。林医生手指在全息屏前做放大手势，影像随之放大，同时转头向陈阿姨温和地点头。文字标签'AI精准识别'从画面底部滑入。",
+                "duration": 7
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "侧面中景，林医生走到西窗前，自然光勾勒出她的轮廓剪影。陈阿姨站起身，望着全息屏幕上'康复预后良好'的诊断结论，眼眶微湿。林医生转身，向陈阿姨微笑伸出手。画面从冷蓝色调渐变至暖白色调。底部中央浮现文字'精准医疗，触手可及'。",
+                "duration": 9
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "俯视视角的未来城市天际线。黄昏时分金色阳光洒满高楼群，城市街道呈几何网格状延伸。空中悬浮多个半透明全息数据面板。整体暖金色+深蓝暮色渐变。",
+            "visualHints": "Aerial view of futuristic city skyline at golden hour, sunlight spreading across skyscraper tops, geometric grid street layout below, translucent holographic data panels floating in mid-air, warm golden light transitioning to deep blue dusk sky, cinematic drone shot, hopeful and expansive atmosphere",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "俯视全景缓慢拉远，从诊室窗户视角过渡至城市天际线。全息医疗数据流从诊室屏幕飘升至城市上空。镜头继续拉远，城市全景渐显。画面优雅淡出至白。",
+                "duration": 6
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "professional",
+          "visualStyle": "白色+蓝色科技诊室，结尾暖金城市暮色",
+          "suggestedBGM": "舒缓电子氛围，尾声渐强"
+        }
+      },
+      "rawOutputLength": 3098
+    },
+    "script": {
+      "durationSec": 38.6,
+      "durationMs": 38646,
+      "model": "deepseek-v4-pro",
+      "tokenUsage": {
+        "prompt_tokens": 6783,
+        "completion_tokens": 3676,
+        "total_tokens": 10459,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 449
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 6783
+      },
+      "cost": {
+        "inputCost": 0.00295061,
+        "outputCost": 0.00319812,
+        "totalCost": 0.00614873
+      },
+      "report": {
+        "storyScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "sceneDescription": "中景镜头，林医生坐在诊桌后查看平板上的患者数据，陈阿姨坐在诊桌对面略显紧张。林医生抬头看向全息屏幕，手指在平板上向右滑动，屏幕随之切换显示脑部3D扫描影像。镜头从林医生正面缓慢推近至半身景别。屏幕右下角叠加半透明蓝色标签“AI辅助诊断”。",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "查看平板上的患者数据",
+                    "抬头看向全息屏幕",
+                    "向右滑动平板切换影像"
+                  ],
+                  "emotions": [
+                    "沉稳",
+                    "专注"
+                  ]
+                },
+                {
+                  "characterId": "char-2",
+                  "actions": [
+                    "坐在诊桌对面",
+                    "略显紧张地注视医生"
+                  ],
+                  "emotions": [
+                    "紧张",
+                    "疑虑"
+                  ]
+                }
+              ],
+              "narrative": "建立诊室场景与医患关系，引出AI辅助诊断主题"
+            },
+            {
+              "sceneId": "scene-2",
+              "sceneDescription": "过肩镜头，从林医生背后拍摄全息屏幕。屏幕上AI分析结果以动态光圈圈出病灶区域，旁边弹出数据面板显示“检出率 98.7%”。陈阿姨看到结果后，原本紧握的双手缓缓松开，眼中闪过一丝惊喜。林医生手指在全息屏前做放大手势，影像随之放大，同时转头向陈阿姨温和地点头。文字标签“AI精准识别”从画面底部滑入。",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "在全息屏前做放大手势",
+                    "转头向陈阿姨温和点头"
+                  ],
+                  "emotions": [
+                    "自信",
+                    "温和安抚"
+                  ]
+                },
+                {
+                  "characterId": "char-2",
+                  "actions": [
+                    "注视AI标注的病灶区域",
+                    "原本紧握的双手缓缓松开"
+                  ],
+                  "emotions": [
+                    "从紧张转为惊喜",
+                    "放松"
+                  ]
+                }
+              ],
+              "narrative": "展示AI精准识别病灶的能力，患者情绪由疑虑转向信任"
+            },
+            {
+              "sceneId": "scene-3",
+              "sceneDescription": "侧面中景，林医生走到西窗前，自然光勾勒出她的轮廓剪影。陈阿姨站起身，望着全息屏幕上“康复预后良好”的诊断结论，眼眶微湿。林医生转身，向陈阿姨微笑伸出手。画面从冷蓝色调渐变至暖白色调。底部中央浮现文字“精准医疗，触手可及”。",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "走到西窗前",
+                    "转身向陈阿姨微笑",
+                    "伸出手"
+                  ],
+                  "emotions": [
+                    "温暖",
+                    "鼓舞"
+                  ]
+                },
+                {
+                  "characterId": "char-2",
+                  "actions": [
+                    "站起身",
+                    "望着诊断结论眼眶微湿"
+                  ],
+                  "emotions": [
+                    "如释重负",
+                    "感动"
+                  ]
+                }
+              ],
+              "narrative": "情感高潮，传递精准医疗带来的人文温度"
+            },
+            {
+              "sceneId": "scene-4",
+              "sceneDescription": "俯视全景缓慢拉远，从诊室窗户视角过渡至城市天际线。全息医疗数据流从诊室屏幕飘升至城市上空。镜头继续拉远，城市全景渐显。画面优雅淡出至白。",
+              "characters": [],
+              "narrative": "升华主题，从诊室扩展到城市愿景，收束全片"
+            }
+          ]
+        },
+        "storyboardScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "visualSource": "visual-1",
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-1",
+                "characterImageRefs": [
+                  "char-1_default",
+                  "char-2_default"
+                ]
+              },
+              "shot": {
+                "type": "medium shot",
+                "angle": "eye-level",
+                "movement": "slow push-in to medium close-up",
+                "focus": "Dr. Lin and the holographic brain scan screen"
+              },
+              "composition": "rule of thirds, Dr. Lin left of frame, holographic screen on right",
+              "lighting": "4000K neutral white ceiling light with blue ambient strips, blue hologram glow contrasting warm daylight from west window",
+              "visualElements": [
+                "120-inch holographic brain scan with blue glow",
+                "tablet on white lacquer desk",
+                "stethoscope",
+                "semi-transparent blue UI label 'AI辅助诊断' at bottom right"
+              ],
+              "atmosphere": "clean professional medical, cinematic, shallow depth of field, 8k",
+              "motionLevel": 3,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, glasses",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            },
+            {
+              "sceneId": "scene-2",
+              "visualSource": "visual-1",
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-1",
+                "characterImageRefs": [
+                  "char-1_default",
+                  "char-2_default"
+                ]
+              },
+              "shot": {
+                "type": "over-the-shoulder shot",
+                "angle": "eye-level",
+                "movement": "static with subtle handheld breath",
+                "focus": "holographic screen with AI lesion annotation, Mrs. Chen's relaxing hands"
+              },
+              "composition": "over Dr. Lin's shoulder, screen dominates upper frame, Mrs. Chen opposite",
+              "lighting": "blue holographic light reflecting softly on faces, cool clinical ambient",
+              "visualElements": [
+                "glowing red circles highlighting lesion on 3D organ model",
+                "data panel reading '检出率 98.7%'",
+                "text label 'AI精准识别' sliding in from bottom"
+              ],
+              "atmosphere": "subtle tension turning to relief, cinematic, shallow depth of field, 8k",
+              "motionLevel": 3,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, glasses",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            },
+            {
+              "sceneId": "scene-3",
+              "visualSource": "visual-1",
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-1",
+                "characterImageRefs": [
+                  "char-1_default",
+                  "char-2_default"
+                ]
+              },
+              "shot": {
+                "type": "side medium shot",
+                "angle": "eye-level",
+                "movement": "subtle slow push-in as hands about to meet",
+                "focus": "the moment Dr. Lin and Mrs. Chen's hands are about to meet"
+              },
+              "composition": "Dr. Lin silhouetted against west window left, Mrs. Chen standing right",
+              "lighting": "warm natural daylight rim-light from window, palette shifting from cool blue to warm white and soft amber",
+              "visualElements": [
+                "holographic conclusion '康复预后良好' in elegant typography",
+                "text '精准医疗，触手可及' fading in at bottom center"
+              ],
+              "atmosphere": "hopeful emotional climax, cinematic lighting with lens flare from window, 8k",
+              "motionLevel": 2,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, glasses, excessive darkness",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            },
+            {
+              "sceneId": "scene-4",
+              "visualSource": "visual-2",
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-2",
+                "characterImageRefs": []
+              },
+              "shot": {
+                "type": "wide aerial shot",
+                "angle": "bird's eye",
+                "movement": "slow pull back and zoom out",
+                "focus": "futuristic city skyline with rising holographic data streams"
+              },
+              "composition": "expansive panoramic city grid, data streams rising from hospital window below",
+              "lighting": "warm golden sunset light transitioning to deep blue dusk sky with orange-tinted clouds",
+              "visualElements": [
+                "translucent holographic medical data streams (charts, DNA helices, ECG waveforms)",
+                "glowing city grid lights beginning to twinkle"
+              ],
+              "atmosphere": "epic cinematic drone shot, hopeful and expansive, elegant slow fade to white, 8k",
+              "motionLevel": 5,
+              "negativePrompt": "people, text, watermark, blurry, low quality, deformed buildings",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            }
+          ]
+        },
+        "audioScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "陈阿姨，AI已经完成了您的肺部CT影像预筛查，我们来一起看一下结果。",
+                  "emotion": "calm, reassuring"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "soft device beep",
+                  "timing": "at start"
+                },
+                {
+                  "type": "gentle whoosh",
+                  "timing": "when the screen switches to brain scan"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic",
+                "mood": "gentle, subtle heartbeat pulse",
+                "timing": "gradual from start"
+              }
+            },
+            {
+              "sceneId": "scene-2",
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "您看这个区域，AI检测到一处微小结节，恶性概率评估为低风险。这意味着我们可以在最早阶段进行干预。",
+                  "emotion": "confident, reassuring"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "hologram interaction chime",
+                  "timing": "when the pinch-to-zoom gesture happens"
+                },
+                {
+                  "type": "soft data processing whir",
+                  "timing": "as the data panel pops up"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic",
+                "mood": "subtle building tension",
+                "timing": "continuous, slightly rising"
+              }
+            },
+            {
+              "sceneId": "scene-3",
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "有了AI的辅助，我们可以为您制定最精准的治疗方案。",
+                  "emotion": "warm, inspiring"
+                },
+                {
+                  "characterId": "char-2",
+                  "text": "谢谢你，林医生……心里的石头总算落地了。",
+                  "emotion": "relieved, gentle"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "soft footsteps",
+                  "timing": "as Dr. Lin walks to the window"
+                },
+                {
+                  "type": "fabric rustle",
+                  "timing": "as Mrs. Chen stands up"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic with warm strings layer",
+                "mood": "building to hopeful crescendo",
+                "timing": "swell as hands are about to meet"
+              }
+            },
+            {
+              "sceneId": "scene-4",
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "distant city ambience",
+                  "timing": "throughout"
+                },
+                {
+                  "type": "soft wind",
+                  "timing": "throughout"
+                },
+                {
+                  "type": "data stream chime",
+                  "timing": "as data streams rise"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic",
+                "mood": "hopeful resolution",
+                "timing": "swells then fades gently to silence"
+              }
+            }
+          ]
+        },
+        "pacingScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "duration": 8,
+              "transitionIn": {
+                "type": "fade-in",
+                "durationSec": 1
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "诊室环境建立，医患入画"
+                },
+                {
+                  "time": 3,
+                  "event": "屏幕切换至脑部3D扫描"
+                }
+              ]
+            },
+            {
+              "sceneId": "scene-2",
+              "duration": 7,
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "keyMoments": [
+                {
+                  "time": 1,
+                  "event": "AI圈出病灶区域"
+                },
+                {
+                  "time": 3,
+                  "event": "数据面板弹出“检出率 98.7%”"
+                }
+              ]
+            },
+            {
+              "sceneId": "scene-3",
+              "duration": 9,
+              "transitionIn": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 2,
+                  "event": "陈阿姨起身望向诊断结论"
+                },
+                {
+                  "time": 6,
+                  "event": "林医生转身伸手，色调转暖"
+                }
+              ]
+            },
+            {
+              "sceneId": "scene-4",
+              "duration": 6,
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "fade-out",
+                "durationSec": 1.5
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "视角从诊室过渡至城市天际线"
+                },
+                {
+                  "time": 4,
+                  "event": "城市全景渐显，准备淡出"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rawOutputLength": 10871
+    }
+  },
+  "summary": {
+    "totalDurationSec": 55.3,
+    "totalTokens": 14522,
+    "totalCost": 0.0073347099999999995,
+    "sceneCount": 4,
+    "spaceCount": 2,
+    "characterCount": 2
+  }
+}
