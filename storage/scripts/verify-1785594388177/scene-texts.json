@@ -1,0 +1,54 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "建立AI医疗诊断中心场景,引出AI辅助诊断系统与医患关系",
+    "shotType": "full shot",
+    "dialogue": [
+      "陈阿姨,欢迎来到AI智能诊断中心.您看,这套AI辅助诊断系统,已经帮您完成了肺部CT影像的初步筛查."
+    ],
+    "sfx": [
+      "soft device beep",
+      "gentle whoosh"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 7,
+    "narrative": "展示AI精准识别病灶的能力,患者情绪由疑虑转向信任",
+    "shotType": "over-the-shoulder shot",
+    "dialogue": [
+      "您看这里,AI自动圈出了这个微小结节,检出率高达99.2%.这意味着,我们可以在它发展的最早阶段进行干预."
+    ],
+    "sfx": [
+      "holographic chime",
+      "soft data processing tone"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 8,
+    "narrative": "体现AI辅助下精准治疗方案的制定,传递智能医疗的人文温度",
+    "shotType": "side medium shot",
+    "dialogue": [
+      "结合康复趋势分析,AI可以帮助我们为您制定最精准的治疗方案.",
+      "太好了,林医生.有您和AI一起帮我,我这心里啊,就踏实多了."
+    ],
+    "sfx": [
+      "soft footsteps",
+      "gentle fabric rustle"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 7,
+    "narrative": "从诊室微观视角扩展到城市宏观愿景,点明主题并收束全片",
+    "shotType": "wide aerial shot",
+    "dialogue": [],
+    "sfx": [
+      "distant city ambience",
+      "soft wind",
+      "luminous data stream chime"
+    ]
+  }
+]

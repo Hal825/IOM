@@ -2,7 +2,12 @@
  * 阿里云 OSS 上传工具 — 将本地文件上传到 OSS 存储桶并返回公网 URL。
  *
  * 使用 OSS REST API + HMAC-SHA1 签名（不依赖第三方 SDK）。
- * 视频生成 API (happyhorse-1.1-i2v) 需要公网可访问的图片 URL 作为参考帧。
+ * 视频生成 API 需要公网可访问的图片 URL 作为参考帧。
+ *
+ * 设计要点：
+ * - OSS key 镜像 manifest 相对路径：`openmontage/{relPath}`
+ *   - `library/...`（库素材）key 跨任务稳定 → 公网 URL 可被 meta 缓存复用
+ *   - `assets/{jobId}/...`（任务产物）key 按任务隔离
  */
 
 import crypto from 'node:crypto';
@@ -24,6 +29,12 @@ function getOssEndpoint(): string {
 /** 上传后文件的公网访问 URL */
 function getPublicUrl(objectKey: string): string {
   return `${getOssEndpoint()}/${objectKey}`;
+}
+
+/** 由 manifest 相对路径推导 OSS 对象 key（镜像相对路径） */
+export function relToOssKey(relPath: string): string {
+  const normalized = relPath.replace(/\\/g, '/').replace(/^\/+/, '');
+  return `openmontage/${normalized}`;
 }
 
 // ── 签名 ────────────────────────────────────────────
@@ -65,10 +76,15 @@ export interface OssUploadResult {
   publicUrl: string;
 }
 
+/** 检查 OSS 是否已配置（本管线为硬依赖，未配置时应 fail fast） */
+export function isOssConfigured(): boolean {
+  return !!(OSS_ACCESS_KEY_ID && OSS_ACCESS_KEY_SECRET && OSS_BUCKET && OSS_REGION);
+}
+
 /**
  * 将本地文件上传到 OSS。
  * @param localPath 本地文件路径
- * @param remoteKey OSS 对象 key（如 "openmontage/characters/char-1/front.jpeg"）
+ * @param remoteKey OSS 对象 key（如 "openmontage/34/scenes/scene_visual-1.png"）
  * @returns 上传结果（含公网 URL）
  */
 export async function uploadFile(localPath: string, remoteKey: string): Promise<OssUploadResult> {
@@ -105,31 +121,6 @@ export async function uploadFile(localPath: string, remoteKey: string): Promise<
   return { objectKey: remoteKey, publicUrl };
 }
 
-/**
- * 批量上传同一角色的四视图到 OSS。
- * @param localViews 本地四视图路径 { front, back, left, right }
- * @param jobId 任务 ID
- * @param characterId 角色 ID
- * @returns 四视图的公网 URL
- */
-export async function uploadCharacterViews(
-  localViews: { front: string; back: string; left: string; right: string },
-  jobId: string,
-  characterId: string,
-): Promise<{ front: string; back: string; left: string; right: string }> {
-  const views = ['front', 'back', 'left', 'right'] as const;
-  const results: Record<string, string> = {};
-
-  for (const view of views) {
-    const ext = path.extname(localViews[view]) || '.jpeg';
-    const remoteKey = `openmontage/${jobId}/characters/${characterId}/${view}${ext}`;
-    const result = await uploadFile(localViews[view], remoteKey);
-    results[view] = result.publicUrl;
-  }
-
-  return results as { front: string; back: string; left: string; right: string };
-}
-
 // ── 工具函数 ──────────────────────────────────────────
 
 function getContentType(filePath: string): string {
@@ -140,11 +131,8 @@ function getContentType(filePath: string): string {
     '.png': 'image/png',
     '.webp': 'image/webp',
     '.gif': 'image/gif',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
   };
   return mime[ext] ?? 'application/octet-stream';
-}
-
-/** 检查 OSS 是否已配置 */
-export function isOssConfigured(): boolean {
-  return !!(OSS_ACCESS_KEY_ID && OSS_ACCESS_KEY_SECRET && OSS_BUCKET && OSS_REGION);
 }

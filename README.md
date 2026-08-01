@@ -97,19 +97,17 @@ __start__
     │
 research              ← LLM 文本分析：语义分段 + 风格识别 + 角色检测
     │
-generate_proposal     ← LLM 分镜提案：镜头脚本 + 角色设计 + 风格指南
+generate_proposal     ← LLM 分镜提案：角色设计 + 场景分组 + 风格指南
     │
-script_generation     ← LLM 逐镜头脚本：视频 prompt + 音频脚本 + 字幕
+script_generation     ← LLM 逐镜头脚本：四子脚本（含 appearCharId / sceneImageRef）
     │
-fanout (Send)         ← 并行分派
+fanout (Send)         ← 并行分派（带 jobId）
   ╱       ╲
-asset_gen   tts       ← 并发：AI 素材生成 ∥ 分段语音合成
+asset_gen   tts       ← 并发：素材生成（本地库引用 + AI 生成）∥ 分段语音合成
   ╲       ╱
-shot_video_sequential ← 串行逐镜头视频生成（DashScope，间隔 5s 防限流）
+scene_json_assembler  ← 组装单镜头完整视频生成 JSON（素材公网 URL + 音频路径）
     │
-video_merge           ← FFmpeg 拼接视频 + 合成音轨
-    │
-   END → 下载 MP4
+   END
 ```
 
 ## 项目结构
@@ -131,27 +129,28 @@ video_merge           ← FFmpeg 拼接视频 + 合成音轨
 │   │   ├── research-generator.ts      # Research 节点实现
 │   │   ├── proposal-generator.ts      # Proposal 节点实现
 │   │   ├── script-generator.ts        # Script 节点实现
-│   │   ├── asset-generator.ts         # AI 素材生成（场景 + 角色四视图）
+│   │   ├── asset-generator.ts         # 素材生成（本地库引用 + AI 生成，产出 AssetManifest）
+│   │   ├── oss-uploader.ts            # OSS 上传（REST+HMAC，公网 URL）
 │   │   ├── tts-generator.ts           # AI 语音合成
-│   │   ├── shot-video-generator.ts    # 单镜头视频生成（DashScope 异步）
-│   │   └── oss-uploader.ts            # 阿里云 OSS 上传
+│   │   └── shot-video-generator.ts    # 单镜头视频生成（保留，未接线）
+│   ├── store/                 # 存储层
+│   │   └── asset-store.ts             # AssetStore：存储 / 库访问 / OSS 发布
 │   ├── prompts/               # LLM 提示词模板
 │   │   ├── research.ts                # 文本分析
-│   │   ├── proposal.ts                # 分镜提案
+│   │   ├── proposal.ts                # 分镜提案（scene 含 appearCharId）
 │   │   ├── script-generation.ts       # 脚本生成
-│   │   ├── asset-generation.ts        # 素材生成
 │   │   └── tts.ts                     # TTS SSML 构建
 │   └── log/
 │       └── procedure.ts               # TokenUsage 类型定义
 ├── workers/video-worker.ts    # BullMQ Worker 独立进程
-├── storage/                   # 生成产物（assets/ audio/ scenes/ scripts/ output/，已 gitignore）
+├── storage/                   # 生成产物（library/ 素材库 + assets/ audio/ scenes/ scripts/ output/，已 gitignore）
 └── docker-compose.yml         # Redis 容器
 ```
 
 ## 架构决策
 
 - **零容错**：所有 AI 节点不进行自动重试，任何错误直接抛出使任务失败（`attempts: 1`）。保持简单，避免隐式成本。
-- **串行视频生成**：`shot_video_sequential` 节点逐镜头串行调用 DashScope，镜头间间隔 5 秒，防止 API 限流。
+- **图只到素材组装**：图目前止于 `scene_json_assembler`（产出 `SceneVideoSpec[]`），`shot_video` / `video_merge` 节点保留在 nodes.ts 但未接线。
 - **单 Worker**：`concurrency: 1`，一次只处理一个任务。视频生成本身已是异步轮询，并发不会显著提速。
 - **无数据库**：任务状态直接存储在 BullMQ (Redis) 中，完成/失败记录各保留最近 100 条。
 - **无用户系统**：任务全局可见，MVP 阶段不引入认证。

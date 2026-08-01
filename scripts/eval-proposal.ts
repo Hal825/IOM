@@ -10,9 +10,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { generateProposal } from '../lib/tools/proposal-generator';
 import { NEW_PROPOSAL_SYSTEM } from '../new_prompts/proposal';
-import { PROPOSAL_SYSTEM } from '../lib/prompts/proposal';
+import { PROPOSAL_SYSTEM as OLD_PROPOSAL_SYSTEM } from '../old_prompts/proposal/proposal';
 import { calculateCost, formatDurationSec } from '../lib/log/procedure';
 
 // ── CLI 参数解析 ────────────────────────────────────
@@ -66,14 +65,55 @@ async function main() {
   console.log(`测试文本: "${testInput.slice(0, 80)}${testInput.length > 80 ? '...' : ''}" (${testInput.length}字)`);
   console.log('');
 
-  // ── 原始 proposal ──
-  console.log('▶ 运行原始 proposal...');
+  // ── 原始 proposal（归档旧版，裸调 LLM）──
+  console.log('▶ 运行原始 proposal（归档旧版，裸调）...');
+  const ORIG_API_KEY = process.env.PROPOSAL_API_KEY;
+  const ORIG_BASE_URL = process.env.PROPOSAL_BASE_URL;
+  const ORIG_MODEL = process.env.PROPOSAL_LLM_MODEL;
+
+  if (!ORIG_API_KEY || !ORIG_BASE_URL || !ORIG_MODEL) {
+    throw new Error('Proposal 环境变量未配置');
+  }
+
   const t0 = Date.now();
-  const origResult = await generateProposal(null, testInput);
+  const origResp = await fetch(`${ORIG_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${ORIG_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: ORIG_MODEL,
+      messages: [
+        { role: 'system', content: OLD_PROPOSAL_SYSTEM },
+        { role: 'user', content: `用户原始文本：\n${testInput}\n\n请基于以上文本直接生成视频制作方案。` },
+      ],
+      max_tokens: 20000,
+      temperature: 0.6,
+    }),
+  });
+
+  if (!origResp.ok) {
+    const errText = await origResp.text().catch(() => '');
+    throw new Error(`原始 proposal API 返回 ${origResp.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const origData = await origResp.json();
+  const origRawContent: string = origData.choices?.[0]?.message?.content ?? '(空)';
+  const origTokenUsage = origData.usage ?? null;
   const origDurationMs = Date.now() - t0;
-  const origCost = origResult.tokenUsage
-    ? calculateCost(origResult.model, origResult.tokenUsage)
+  const origCost = origTokenUsage
+    ? calculateCost(ORIG_MODEL, origTokenUsage)
     : null;
+  const origModel = ORIG_MODEL;
+
+  let origParsedReport: Record<string, unknown> | null = null;
+  try {
+    const jsonMatch = origRawContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) origParsedReport = JSON.parse(jsonMatch[0]);
+  } catch {
+    // 忽略解析错误
+  }
 
   // 两轮之间有间隔，避免 API 限流
   console.log('  等待 2s...');
@@ -139,13 +179,14 @@ async function main() {
     testInput,
     evaluatedAt: new Date().toISOString(),
     original: {
-      systemPrompt: PROPOSAL_SYSTEM,
+      systemPrompt: OLD_PROPOSAL_SYSTEM,
       durationSec: formatDurationSec(origDurationMs),
-      model: origResult.model,
-      retries: origResult.retries,
-      tokenUsage: origResult.tokenUsage ?? null,
+      model: origModel,
+      retries: 0,
+      tokenUsage: origTokenUsage ?? null,
       cost: origCost,
-      report: origResult.proposal,
+      reportRaw: origRawContent,
+      reportParsed: origParsedReport,
     },
     new: {
       systemPrompt: NEW_PROPOSAL_SYSTEM,
@@ -159,9 +200,9 @@ async function main() {
     },
     comparison: {
       promptDiff: {
-        originalLength: PROPOSAL_SYSTEM.length,
+        originalLength: OLD_PROPOSAL_SYSTEM.length,
         newLength: NEW_PROPOSAL_SYSTEM.length,
-        lengthDelta: `${NEW_PROPOSAL_SYSTEM.length - PROPOSAL_SYSTEM.length >= 0 ? '+' : ''}${NEW_PROPOSAL_SYSTEM.length - PROPOSAL_SYSTEM.length} (${pct(NEW_PROPOSAL_SYSTEM.length, PROPOSAL_SYSTEM.length)})`,
+        lengthDelta: `${NEW_PROPOSAL_SYSTEM.length - OLD_PROPOSAL_SYSTEM.length >= 0 ? '+' : ''}${NEW_PROPOSAL_SYSTEM.length - OLD_PROPOSAL_SYSTEM.length} (${pct(NEW_PROPOSAL_SYSTEM.length, OLD_PROPOSAL_SYSTEM.length)})`,
       },
       duration: {
         original: formatDurationSec(origDurationMs),
@@ -169,9 +210,9 @@ async function main() {
         delta: deltaStr(origDurationMs, newDurationMs, 's'),
       },
       tokens: {
-        originalTotal: origResult.tokenUsage?.total_tokens ?? 0,
+        originalTotal: origTokenUsage?.total_tokens ?? 0,
         newTotal: newTokenUsage?.total_tokens ?? 0,
-        delta: deltaStr(origResult.tokenUsage?.total_tokens ?? 0, newTokenUsage?.total_tokens ?? 0),
+        delta: deltaStr(origTokenUsage?.total_tokens ?? 0, newTokenUsage?.total_tokens ?? 0),
       },
       cost: {
         originalTotal: origCost?.totalCost ?? 0,
@@ -191,7 +232,7 @@ async function main() {
   console.log('═══════════════════════════════════════════');
 
   console.log('\n─── Prompt 差异 ───────────────────────────');
-  console.log(`原始: ${PROPOSAL_SYSTEM.length} 字符`);
+  console.log(`原始: ${OLD_PROPOSAL_SYSTEM.length} 字符`);
   console.log(`新版本: ${NEW_PROPOSAL_SYSTEM.length} 字符 (${report.comparison.promptDiff.lengthDelta})`);
 
   console.log('\n─── 耗时 ──────────────────────────────────');
@@ -199,7 +240,7 @@ async function main() {
   console.log(`新版本: ${formatDurationSec(newDurationMs)}s (${report.comparison.duration.delta})`);
 
   console.log('\n─── Token 消耗 ────────────────────────────');
-  const ou = origResult.tokenUsage;
+  const ou = origTokenUsage;
   const nu = newTokenUsage;
   console.log('          原始        新版本');
   console.log(`输入:     ${String(ou?.prompt_tokens ?? 'N/A').padEnd(11)}${nu?.prompt_tokens ?? 'N/A'}`);
@@ -219,18 +260,27 @@ async function main() {
   console.log(`新版本: $${newCost?.totalCost.toFixed(6) ?? 'N/A'} (${report.comparison.cost.delta})`);
 
   // ── 输出对比（新旧格式不同，分开展示）──
-  console.log('\n═══ 原始 Proposal 输出 ═════════════════════');
-  const op = origResult.proposal;
-  console.log(`blueprint.title       : ${op.blueprint.title}`);
-  console.log(`blueprint.totalDuration: ${op.blueprint.totalDuration}s`);
-  console.log(`blueprint.sceneCount  : ${op.blueprint.sceneCount}`);
-  console.log(`shotScript 镜头数     : ${op.shotScript.length}`);
-  console.log(`styleGuide.globalTone : ${op.styleGuide.globalTone}`);
-  console.log(`feasibility.riskLevel : ${op.feasibility.riskLevel}`);
-  if (op.characters) {
-    console.log(`characters            : ${op.characters.length} 个角色`);
+  console.log('\n═══ 原始 Proposal 输出（归档旧版）══════════');
+  if (origParsedReport) {
+    const bp = origParsedReport.blueprint as Record<string, unknown> | undefined;
+    const shotScript = origParsedReport.shotScript as unknown[] | undefined;
+    const sg = origParsedReport.styleGuide as Record<string, unknown> | undefined;
+    const feas = origParsedReport.feasibility as Record<string, unknown> | undefined;
+    const chars = origParsedReport.characters as unknown[] | undefined;
+
+    console.log(`blueprint.title        : ${safeStr(bp?.title)}`);
+    console.log(`blueprint.totalDuration: ${bp?.totalDuration ?? 'N/A'}s`);
+    console.log(`blueprint.sceneCount   : ${bp?.sceneCount ?? 'N/A'}`);
+    console.log(`shotScript 镜头数      : ${shotScript?.length ?? 'N/A'}`);
+    console.log(`styleGuide.globalTone  : ${safeStr(sg?.globalTone)}`);
+    console.log(`feasibility.riskLevel  : ${safeStr(feas?.riskLevel)}`);
+    if (chars) {
+      console.log(`characters             : ${chars.length} 个角色`);
+    }
+  } else {
+    console.log('(JSON 解析失败，原始输出如下)');
+    console.log(origRawContent.slice(0, 500));
   }
-  console.log(`_expansionApplied     : ${op._expansionApplied ? '有补全' : '无'}`);
 
   console.log('\n═══ 新 Proposal 输出 ═════════════════════════');
   if (newParsedReport) {

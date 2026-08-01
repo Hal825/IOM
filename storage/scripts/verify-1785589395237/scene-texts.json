@@ -1,0 +1,56 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "建立智慧诊室场景与医患关系,引出AI辅助诊断的主题",
+    "shotType": "medium shot",
+    "dialogue": [
+      "王阿姨,别紧张。AI已经把您的检查影像重建成了3D人体模型,我们一起来看一下。"
+    ],
+    "sfx": [
+      "soft device beep",
+      "gentle holographic whoosh"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 8,
+    "narrative": "展示AI诊断的高效与精准,患者由紧张转为惊叹",
+    "shotType": "close-up",
+    "dialogue": [
+      "您看,AI在0.4秒内就完成了筛查,检出率达到98.7%。这种微小结节,传统方法很难早期发现。"
+    ],
+    "sfx": [
+      "hologram chime",
+      "data panel pop-up whoosh",
+      "soft futuristic sweep"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 7,
+    "narrative": "情感转折,呈现AI个性化诊疗的人文温度,建立医患信任",
+    "shotType": "medium shot",
+    "dialogue": [
+      "AI还为您制定了个性化治疗方案,只要按照这条康复路径坚持治疗,预后会非常理想。",
+      "太好了,林医生,我这心里总算踏实了,谢谢您。"
+    ],
+    "sfx": [
+      "soft warm chime",
+      "gentle fabric rustle"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 7,
+    "narrative": "主题升华,从诊室扩展至城市愿景,温暖收束全片",
+    "shotType": "wide aerial shot",
+    "dialogue": [],
+    "sfx": [
+      "rising data stream whoosh",
+      "distant city ambience",
+      "soft wind",
+      "gentle low drone resolve"
+    ]
+  }
+]

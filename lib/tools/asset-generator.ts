@@ -1,27 +1,26 @@
 /**
- * 素材生成工具 — 角色使用预置素材 + 场景 AI 生成。
+ * 素材生成工具 — 两个来源接口，向下交付统一 AssetManifest。
  *
- * - 角色：从 storage/assets/char_userd_1/{male,female}/ 复制预设四视图
- * - 场景：调用 DashScope qwen-image-2.0 生成背景图，按 sceneImageRef 去重
+ * 来源接口：
+ * 1. 本地库（library）：选角占位取「最新库组」，四视图一组拿（后续专门设计匹配逻辑）
+ * 2. AI 生成（ai）：角色四视图 + 场景背景图（按 sceneImageRef 去重，共享一张）
+ *
+ * 产物：
+ * - AI 生成文件 → storage/assets/{jobId}/…
+ * - 库素材      → 引用 storage/library/…（不复制）
+ * - 交付物      → storage/assets/{jobId}/manifest.json（AssetManifest，全部相对路径）
  *
  * 零容错：任何异常直接抛出。
  */
 
-import path from 'node:path';
-import fs from 'node:fs/promises';
-import type { Proposal, VideoScript, CharacterAsset, SceneAsset, AssetManifest } from '@/lib/types';
-import { buildSceneBackgroundPrompt } from '@/lib/prompts/asset-generation';
-import { uploadCharacterViews, isOssConfigured } from '@/lib/tools/oss-uploader';
+import { AssetStore, VIEW_ORDER, type CharacterViews } from '@/lib/store/asset-store';
+import type { Proposal, VideoScript, AssetManifest } from '@/lib/types';
 
-// ── 配置 ────────────────────────────────────────────
+// ── 配置（全部来自环境变量）─────────────────────────
 
-const AI_ASSET_API_KEY = process.env.AI_ASSET_API_KEY!;
-const AI_ASSET_BASE_URL = process.env.AI_ASSET_BASE_URL!;
-const AI_ASSET_MODEL = process.env.AI_ASSET_MODEL!;
-
-export const ASSET_STORE_DIR = path.resolve('./storage/assets');
-
-// ── API 调用 ─────────────────────────────────────────
+const AI_ASSET_API_KEY = process.env.AI_ASSET_API_KEY;
+const AI_ASSET_BASE_URL = process.env.AI_ASSET_BASE_URL;
+const AI_ASSET_MODEL = process.env.AI_ASSET_MODEL;
 
 interface ImageGenResponse {
   output?: {
@@ -33,6 +32,7 @@ interface ImageGenResponse {
   };
 }
 
+/** 调用 DashScope 图片生成 API，返回图片 URL */
 async function callImageAPI(prompt: string): Promise<string> {
   if (!AI_ASSET_API_KEY || !AI_ASSET_BASE_URL || !AI_ASSET_MODEL) {
     throw new Error('AI 图片生成环境变量未配置（AI_ASSET_API_KEY / AI_ASSET_BASE_URL / AI_ASSET_MODEL）');
@@ -53,7 +53,7 @@ async function callImageAPI(prompt: string): Promise<string> {
       },
       parameters: { size: '1280*720', n: 1 },
     }),
-    });
+  });
 
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
@@ -63,185 +63,122 @@ async function callImageAPI(prompt: string): Promise<string> {
   const data = (await resp.json()) as ImageGenResponse;
   const imageUrl = data.output?.choices?.[0]?.message?.content?.[0]?.image;
   if (!imageUrl) throw new Error('图片生成响应中未找到图片 URL');
-
   return imageUrl;
 }
 
-// ── 本地存储 ─────────────────────────────────────────
+// ── Prompt 构建 ─────────────────────────────────────
 
-async function downloadToLocal(url: string, localPath: string): Promise<string> {
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`下载图片失败: HTTP ${resp.status}`);
-
-  const buffer = Buffer.from(await resp.arrayBuffer());
-  await fs.mkdir(path.dirname(localPath), { recursive: true });
-  await fs.writeFile(localPath, buffer);
-  return localPath;
+function buildSceneBackgroundPrompt(visualHints: string): string {
+  return `cinematic landscape, 16:9 wide angle, high quality, photorealistic, no characters, no people, empty scene — ${visualHints}`;
 }
 
-// ── 预置角色素材 ────────────────────────────────────
-
-const CHAR_PRESET_DIR = path.resolve('./storage/assets/char_userd_1');
-const VIEW_ORDER: Array<keyof CharacterAsset['views']> = ['front', 'back', 'left', 'right'];
-
-/** 从 appearance 文本中检测性别（英文描述） */
-function detectGender(appearance: string): 'male' | 'female' {
-  const lower = appearance.toLowerCase();
-  if (/\b(female|woman|girl|lady|her|she)\b/.test(lower)) return 'female';
-  return 'male'; // 默认男性
+function buildCharacterViewPrompt(appearance: string, view: string): string {
+  return `character concept art, full body ${view} view, consistent character design, high quality, photorealistic — ${appearance}`;
 }
 
-/**
- * 使用预置角色素材，不再调用 AI 生成。
- * 1. 从 storage/assets/char_userd_1/{male|female}/ 复制四视图到任务目录
- * 2. 上传到 OSS 获取公网 URL（供视频生成 API 引用）
- */
-async function usePresetCharacter(
-  character: { characterId: string; name: string; appearance: string },
-  jobId: string
-): Promise<CharacterAsset> {
-  const gender = detectGender(character.appearance);
-  const presetDir = path.join(CHAR_PRESET_DIR, gender);
-
-  const charDir = path.join(ASSET_STORE_DIR, jobId, 'characters', character.characterId);
-  await fs.mkdir(charDir, { recursive: true });
-
-  const views: CharacterAsset['views'] = { front: '', back: '', left: '', right: '' };
-
-  for (const view of VIEW_ORDER) {
-    const srcPath = path.join(presetDir, `${view}.jpeg`);
-    const destPath = path.join(charDir, `${view}.jpeg`);
-    try {
-      await fs.copyFile(srcPath, destPath);
-      views[view] = destPath;
-    } catch {
-      throw new Error(`预置角色素材缺失: ${srcPath}`);
-    }
-  }
-
-  // 上传到 OSS（供视频 API 作为 character_image 引用）
-  let remoteViews: CharacterAsset['remoteViews'] = null;
-  if (isOssConfigured()) {
-    try {
-      const urls = await uploadCharacterViews(views, jobId, character.characterId);
-      remoteViews = urls;
-    } catch (err) {
-      console.warn(`[asset-gen] OSS 上传失败（视频中将无角色参考图）: ${(err as Error).message}`);
-    }
-  } else {
-    console.warn('[asset-gen] OSS 未配置，角色图无公网 URL（视频中将无角色参考图）');
-  }
-
-  console.log(`[asset-gen] 角色 ${character.name} → ${gender} 预设素材` +
-    (remoteViews ? ' + OSS' : ''));
-  return { characterId: character.characterId, views, remoteViews, prompt: `preset:${gender}` };
-}
-
-// ── 场景背景生成（去重）───────────────────────────────
-
-async function generateSceneBackground(
-  sceneImageRef: string,
-  summary: string,
-  jobId: string
-): Promise<{ imageUrl: string; remoteUrl: string; prompt: string }> {
-  const prompt = buildSceneBackgroundPrompt(summary);
-  const imageUrl = await callImageAPI(prompt);
-  const localPath = path.join(
-    ASSET_STORE_DIR, jobId, 'scenes',
-    `${sceneImageRef.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`
-  );
-  const saved = await downloadToLocal(imageUrl, localPath);
-
-  return { imageUrl: saved, remoteUrl: imageUrl, prompt };
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 // ── 公开 API ────────────────────────────────────────
 
 export interface AssetGenResult {
   manifest: AssetManifest;
+  manifestPath: string;
   characterCount: number;
+  /** 唯一场景数（去重后） */
   sceneCount: number;
 }
 
 /**
- * 生成角色素材 + 场景背景图。
- * 场景图按 videoScript.sceneScripts[].resourceRefs.sceneImageRef 去重：
- * 相同 sceneImageRef 只生成一次，所有引用该 ref 的 shot 共用同一张图。
+ * 生成角色素材 + 场景背景图，产出 AssetManifest。
+ * - 角色：优先本地库（选角占位取最新组），库为空则 AI 生成四视图
+ * - 场景：按 storyboard.resourceRefs.sceneImageRef 去重，同一 ref 只生成一次
  */
 export async function generateAssets(
   proposal: Proposal,
   videoScript: VideoScript,
-  jobId: string
+  jobId: string,
 ): Promise<AssetGenResult> {
-  const characters = proposal.characters ?? [];
-  const shots = proposal.shotScript;
+  const store = new AssetStore();
 
-  // ── 构建 sceneImageRef → 唯一场景 的映射 ──
-  const sceneRefMap = new Map<string, { summary: string; sceneIds: string[] }>();
+  const storyboardScenes = videoScript.storyboardScript.scenes;
+  const storyScenes = videoScript.storyScript.scenes;
 
-  for (const shot of shots) {
-    const sceneScript = videoScript.sceneScripts.find((s) => s.sceneId === shot.sceneId);
-    const ref = sceneScript?.resourceRefs.sceneImageRef ?? shot.sceneId;
+  // ── 角色素材：选角占位（最新库组 / AI 生成）──
+  const characters: AssetManifest['characters'] = {};
+  const latestGroup = await store.getLatestCharacterGroup();
 
-    const entry = sceneRefMap.get(ref);
-    if (entry) {
-      entry.sceneIds.push(shot.sceneId);
+  for (const char of proposal.characters) {
+    if (latestGroup) {
+      const group = await store.getCharacterGroup(latestGroup.groupId);
+      characters[char.characterId] = {
+        source: 'library',
+        sourceRef: `library/characters/${latestGroup.groupId}`,
+        views: group.views,
+      };
+      console.log(`[asset-gen] 角色 ${char.name} → 库组 ${latestGroup.groupId}`);
     } else {
-      sceneRefMap.set(ref, { summary: shot.summary, sceneIds: [shot.sceneId] });
+      // AI 生成四视图（占位实现，4 次独立调用；角色一致性后续专门设计）
+      const dir = `assets/${jobId}/characters/${char.characterId}`;
+      const views = {} as CharacterViews;
+      for (let i = 0; i < VIEW_ORDER.length; i++) {
+        const view = VIEW_ORDER[i];
+        if (i > 0) await sleep(1000);
+        const url = await callImageAPI(buildCharacterViewPrompt(char.appearance, view));
+        views[view] = await store.storeFromUrl(url, `${dir}/${view}.png`);
+      }
+      characters[char.characterId] = { source: 'ai', views };
+      console.log(`[asset-gen] 角色 ${char.name} → AI 生成四视图`);
     }
   }
 
-  const uniqueSceneCount = sceneRefMap.size;
-  console.log(
-    `[asset-gen] 开始生成素材: ${characters.length} 个角色, ` +
-    `${shots.length} 个镜头 → ${uniqueSceneCount} 个唯一场景（去重后）`
-  );
+  // ── 场景素材：按 sceneImageRef 去重，AI 生成共享背景 ──
+  const refMap = new Map<string, { hints: string; sceneIds: string[] }>();
+  const sceneRefs: Record<string, string> = {};
 
-  // ── 角色素材（预置，不调 AI）──
-  const characterAssets: CharacterAsset[] = [];
-  for (const char of characters) {
-    const asset = await usePresetCharacter(
-      { characterId: char.characterId, name: char.name, appearance: char.appearance },
-      jobId
-    );
-    characterAssets.push(asset);
+  for (const sb of storyboardScenes) {
+    const ref = sb.resourceRefs.sceneImageRef || sb.sceneId;
+    sceneRefs[sb.sceneId] = ref;
+
+    const visual = proposal.sceneVisuals.find((sv) => sv.visualId === sb.visualSource);
+    const hints =
+      visual?.visualHints ||
+      storyScenes.find((s) => s.sceneId === sb.sceneId)?.sceneDescription ||
+      ref;
+
+    const entry = refMap.get(ref);
+    if (entry) {
+      entry.sceneIds.push(sb.sceneId);
+    } else {
+      refMap.set(ref, { hints, sceneIds: [sb.sceneId] });
+    }
   }
 
-  // ── 场景素材（每个唯一 sceneImageRef 只生成一次，间隔 2s 避免限流）──
-  const refToAsset = new Map<string, { imageUrl: string; remoteUrl: string; prompt: string }>();
-
+  const scenes: AssetManifest['scenes'] = {};
   let first = true;
-  for (const [ref, info] of sceneRefMap) {
-    if (!first) {
-      await new Promise((r) => setTimeout(r, 2000)); // 请求间隔 2s
-    }
+  for (const [ref, info] of refMap) {
+    if (!first) await sleep(2000); // 请求间隔 2s 避免限流
     first = false;
+    const url = await callImageAPI(buildSceneBackgroundPrompt(info.hints));
+    const relPath = `assets/${jobId}/scenes/${ref.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+    await store.storeFromUrl(url, relPath);
+    scenes[ref] = { source: 'ai', image: relPath };
     console.log(`[asset-gen] 场景 "${ref}": 覆盖 ${info.sceneIds.length} 个镜头`);
-    const asset = await generateSceneBackground(ref, info.summary, jobId);
-    refToAsset.set(ref, asset);
   }
 
-  // ── 展开为 SceneAsset[]（每个 shot 一条记录，共用同一张图的 shot 共享 URL）──
-  const sceneAssets: SceneAsset[] = [];
-  for (const shot of shots) {
-    const sceneScript = videoScript.sceneScripts.find((s) => s.sceneId === shot.sceneId);
-    const ref = sceneScript?.resourceRefs.sceneImageRef ?? shot.sceneId;
-    const asset = refToAsset.get(ref);
-    if (!asset) throw new Error(`场景 "${ref}" 未能生成`);
-
-    sceneAssets.push({
-      sceneId: shot.sceneId,
-      imageUrl: asset.imageUrl,
-      remoteUrl: asset.remoteUrl,
-      prompt: asset.prompt,
-    });
-  }
-
-  const manifest: AssetManifest = { characters: characterAssets, scenes: sceneAssets };
+  const manifest: AssetManifest = { jobId, characters, scenes, sceneRefs };
+  const manifestPath = await store.writeManifest(manifest);
 
   console.log(
-    `[asset-gen] 完成: ${characterAssets.length} 角色, ` +
-    `${uniqueSceneCount} 个唯一场景（${sceneAssets.length} 条引用）`
+    `[asset-gen] 完成: ${Object.keys(characters).length} 角色, ` +
+    `${refMap.size} 个唯一场景 → ${manifestPath}`
   );
-  return { manifest, characterCount: characterAssets.length, sceneCount: uniqueSceneCount };
+
+  return {
+    manifest,
+    manifestPath,
+    characterCount: Object.keys(characters).length,
+    sceneCount: refMap.size,
+  };
 }

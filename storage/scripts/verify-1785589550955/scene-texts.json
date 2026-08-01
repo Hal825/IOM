@@ -1,0 +1,54 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "建立AI医疗诊室场景与医患关系,引出'AI如何改变医疗诊断'的核心主题",
+    "shotType": "medium shot",
+    "dialogue": [
+      "张阿姨,AI已经完成您CT影像的初步筛查,接下来我们一起看看结果。"
+    ],
+    "sfx": [
+      "soft device beep",
+      "gentle holographic whoosh"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 9,
+    "narrative": "通过具体影像与数据展示AI精准识别病灶的能力,强化医患对AI诊断的信任感",
+    "shotType": "over-the-shoulder shot",
+    "dialogue": [
+      "您看,AI在这里自动圈出了可疑结节,检出率98.7%,整个过程只用了3.2秒。"
+    ],
+    "sfx": [
+      "hologram touch chime",
+      "soft data processing whir"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 7,
+    "narrative": "情感高潮,展现AI医疗背后的人文温度与医患之间的信任",
+    "shotType": "close-up",
+    "dialogue": [
+      "您放心,早发现就能早干预。",
+      "谢谢林医生,我安心多了。"
+    ],
+    "sfx": [
+      "gentle fabric rustle",
+      "soft emotional string swell"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 6,
+    "narrative": "从诊室扩展至城市未来的宏大愿景,升华主题,收束全片",
+    "shotType": "wide aerial shot",
+    "dialogue": [],
+    "sfx": [
+      "distant city ambience",
+      "soft wind",
+      "rising data stream chime"
+    ]
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "建立AI医疗诊断场景,引出'AI如何改变医疗诊断'的主题",
+    "shotType": "medium shot",
+    "dialogue": [
+      "陈阿姨,您的脑部CT影像已经上传到AI系统,分析结果马上就能看到."
+    ],
+    "sfx": [
+      "soft device startup beep",
+      "gentle holographic whoosh",
+      "subtle data processing hum"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 8,
+    "narrative": "用数据对比直观展示AI辅助诊断的速度与精度",
+    "shotType": "over-the-shoulder shot",
+    "dialogue": [
+      "您看,AI已经自动圈出了这个肺结节,检出率99.2%,只用了0.8秒.而传统人工阅片,平均要15分钟."
+    ],
+    "sfx": [
+      "hologram targeting chime",
+      "soft UI confirm pop"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 7,
+    "narrative": "展现医患温情互动,患者从疑虑转为信任",
+    "shotType": "medium shot",
+    "dialogue": [
+      "哪怕3毫米的微小结节,AI也能第一时间发现.早发现,就能早治疗.",
+      "太好了,我这心里踏实多了."
+    ],
+    "sfx": [
+      "light UI notification ding"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 7,
+    "narrative": "从个体诊室升华到城市图景,收束全片主题",
+    "shotType": "wide aerial shot",
+    "dialogue": [],
+    "sfx": [
+      "distant city ambience",
+      "soft wind",
+      "ethereal data stream chime"
+    ]
+  }
+]

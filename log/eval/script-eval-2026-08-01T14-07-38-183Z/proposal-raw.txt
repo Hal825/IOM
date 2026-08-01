@@ -1,0 +1,70 @@
+{
+  "characters": [
+    {
+      "characterId": "char-1",
+      "name": "林医生",
+      "type": "protagonist",
+      "appearance": "32岁左右男性，黑色短发后梳露出饱满额头，剑眉星目，鼻梁高挺，下巴线条分明，面部轮廓理性而温和。身穿合体的深蓝色医用刷手服外白大褂，左胸口袋插两只笔和一个智能终端，右手腕佩戴银灰色智能手环。体态挺拔，走动时自带精英气场。",
+      "personality": "自信从容，语速平稳清晰，逻辑感极强。讲解时习惯用右手在空中划出全息界面，讲到关键结论时会短暂停顿直视镜头，给观众一种值得信赖的专业感。",
+      "role": "AI医疗诊断专家，主导讲解AI如何辅助医生做出精准诊断"
+    },
+    {
+      "characterId": "char-2",
+      "name": "刘女士",
+      "type": "supporting",
+      "appearance": "45岁左右女性，深棕色及肩发自然垂落，面容柔和但略带疲态，眼下有浅淡黑眼圈。身穿米白色休闲上衣，颈间系浅绿色丝巾，左腕戴着医院检查手环。身形匀称，双手自然交叠放在膝上，体态略显拘谨。",
+      "personality": "细腻敏感，初始眼神漂浮、带着病患特有的忐忑；当看到AI分析结果时，嘴角放松扬起、眼眶微微发红，双手逐渐松开握紧的衣角，整个人变得安心舒展。",
+      "role": "就诊患者，通过她从紧张到安心的表情变化展现AI诊断的人性化温度"
+    }
+  ],
+  "blueprint": {
+    "title": "AI如何改变医疗诊断",
+    "totalDuration": 30,
+    "aspectRatio": "16:9"
+  },
+  "sceneVisuals": [
+    {
+      "visualId": "visual-1",
+      "description": "约28平米的未来感智能诊室。空间布局：中央稍偏右是一张浅木色弧形诊桌，桌面嵌着发光触控屏和脉搏监测仪；北墙安装120寸超薄LED诊断大屏，屏幕待机时呈现流动的蓝紫光斑；西侧为半透明磨砂玻璃隔断，隔断后透出淡蓝色光晕；天花板采用环形灯带，白色冷光为主，四周蓝色氛围灯条；地面是浅灰色带白色导光线条的智能地胶，随使用状态微微亮起。整体呈现洁净、高效、科技与温暖交融的医疗新生态。",
+      "visualHints": "Futuristic smart consultation room, 28 square meters, light wood curved consultation desk with embedded glowing touchscreen and pulse monitor, 120-inch ultra-thin LED diagnostic screen on north wall with flowing blue-violet light pattern, frosted glass partition on west side with soft blue glow behind, white cold ceiling lights with blue ambient strips around perimeter, light grey smart flooring with white light-conducting lines gently illuminating, high-tech clean medical environment blending warmth and precision",
+      "scenes": [
+        {
+          "sceneId": "scene-1",
+          "sceneDescription": "全景缓缓推向诊室内部，林医生站在大屏前，刘女士坐在诊桌旁的灰色人体工学椅上。林医生轻触左腕智能手环，北墙大屏瞬间亮起，显示出患者的全息身体数据模型。镜头从门口低位推进至医生半身位，屏幕冷蓝光映照在医生脸上。屏幕左上角显示'AI智能诊断系统 v3.0'字样。",
+          "appearCharId": ["char-1", "char-2"],
+          "duration": 8
+        },
+        {
+          "sceneId": "scene-2",
+          "sceneDescription": "过肩镜头从刘女士背后拍摄，大屏上AI正在实时分析肺部CT影像，一道蓝色光围动态圈出微小结节区域，右侧弹出数据面板显示'病灶检出率 99.2% 早期肺癌筛查阳性'。林医生侧身指着屏幕，同时看向刘女士，语气平稳地解释。刘女士双手紧握衣角，眉头微皱盯着屏幕。屏幕下方浮现文字'早发现，早干预'。",
+          "appearCharId": ["char-1", "char-2"],
+          "duration": 7
+        },
+        {
+          "sceneId": "scene-3",
+          "sceneDescription": "近景特写，刘女士脸部表情从紧张逐渐变为舒缓，紧握衣角的手松开，嘴角微微上扬，眼角有些湿润，朝林医生轻轻点头。林医生将手搭在全息投影上向中间捏合，三维肺叶模型旋转后逐渐缩小化为一个绿色的'已核验'盖章图标，背景大屏上浮现'诊断结论：良性结节，建议随访观察'的绿色文字。画面右下角显示'AI+医生双重确认'标签。",
+          "appearCharId": ["char-1", "char-2"],
+          "duration": 8
+        }
+      ]
+    },
+    {
+      "visualId": "visual-2",
+      "description": "未来智慧医院的俯瞰宏观空镜。画面主体为夜幕降临的城市，医院大楼外立面攀附着发光的科技脉络，周围街道上路灯光流线型汇聚成数据洪流，城市天际线上悬浮着全息医疗图标和神经网络连线，远景群山轮廓静谧。灯光为深蓝底+暖金点缀，象征科技与生命的交融。",
+      "visualHints": "Aerial view of futuristic smart hospital at dusk, hospital building facade with luminous scientific circuit patterns, city streets with light trails flowing like data streams, glowing holographic medical icons and neural network lines floating above the skyline, quiet mountain silhouettes in distance, deep blue night tone with warm golden lights, futuristic medical atmosphere, cinematic and ethereal",
+      "scenes": [
+        {
+          "sceneId": "scene-4",
+          "sceneDescription": "从诊室窗户向外快速拉伸至城市高空，镜头穿过一层薄薄的光雾，俯视整座未来医院与城市连接的网络。全息医疗图标沿街道灯光轨迹向上飘升，汇聚到屏幕中央形成一颗跳动的蓝色光之心，随后化为'AI医疗 护航生命'六个发光大字，画面在暖金色光芒中淡出至深蓝色。",
+          "appearCharId": [],
+          "duration": 7
+        }
+      ]
+    }
+  ],
+  "styleProfile": {
+    "tone": "professional",
+    "visualStyle": "冷调蓝紫科技光影，穿插暖色人性温度",
+    "suggestedBGM": "舒缓电子氛围，低频律动渐强"
+  }
+}

@@ -1,0 +1,600 @@
+{
+  "jobId": "script-eval-2026-08-01T14-07-38-183Z",
+  "testInput": "请帮我制作一个30秒左右的科普视频,介绍人工智能如何改变医疗诊断,要有科技感,背景音乐舒缓一些",
+  "evaluatedAt": "2026-08-01T14:08:42.065Z",
+  "stages": {
+    "proposal": {
+      "durationSec": 18.5,
+      "durationMs": 18518,
+      "model": "deepseek-v4-flash",
+      "tokenUsage": {
+        "prompt_tokens": 2937,
+        "completion_tokens": 1616,
+        "total_tokens": 4553,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 164
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 2937
+      },
+      "cost": {
+        "inputCost": 0.00041118,
+        "outputCost": 0.00045248,
+        "totalCost": 0.00086366
+      },
+      "report": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "林医生",
+            "type": "protagonist",
+            "appearance": "32岁左右男性，黑色短发后梳露出饱满额头，剑眉星目，鼻梁高挺，下巴线条分明，面部轮廓理性而温和。身穿合体的深蓝色医用刷手服外白大褂，左胸口袋插两只笔和一个智能终端，右手腕佩戴银灰色智能手环。体态挺拔，走动时自带精英气场。",
+            "personality": "自信从容，语速平稳清晰，逻辑感极强。讲解时习惯用右手在空中划出全息界面，讲到关键结论时会短暂停顿直视镜头，给观众一种值得信赖的专业感。",
+            "role": "AI医疗诊断专家，主导讲解AI如何辅助医生做出精准诊断"
+          },
+          {
+            "characterId": "char-2",
+            "name": "刘女士",
+            "type": "supporting",
+            "appearance": "45岁左右女性，深棕色及肩发自然垂落，面容柔和但略带疲态，眼下有浅淡黑眼圈。身穿米白色休闲上衣，颈间系浅绿色丝巾，左腕戴着医院检查手环。身形匀称，双手自然交叠放在膝上，体态略显拘谨。",
+            "personality": "细腻敏感，初始眼神漂浮、带着病患特有的忐忑；当看到AI分析结果时，嘴角放松扬起、眼眶微微发红，双手逐渐松开握紧的衣角，整个人变得安心舒展。",
+            "role": "就诊患者，通过她从紧张到安心的表情变化展现AI诊断的人性化温度"
+          }
+        ],
+        "blueprint": {
+          "title": "AI如何改变医疗诊断",
+          "totalDuration": 30,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "约28平米的未来感智能诊室。空间布局：中央稍偏右是一张浅木色弧形诊桌，桌面嵌着发光触控屏和脉搏监测仪；北墙安装120寸超薄LED诊断大屏，屏幕待机时呈现流动的蓝紫光斑；西侧为半透明磨砂玻璃隔断，隔断后透出淡蓝色光晕；天花板采用环形灯带，白色冷光为主，四周蓝色氛围灯条；地面是浅灰色带白色导光线条的智能地胶，随使用状态微微亮起。整体呈现洁净、高效、科技与温暖交融的医疗新生态。",
+            "visualHints": "Futuristic smart consultation room, 28 square meters, light wood curved consultation desk with embedded glowing touchscreen and pulse monitor, 120-inch ultra-thin LED diagnostic screen on north wall with flowing blue-violet light pattern, frosted glass partition on west side with soft blue glow behind, white cold ceiling lights with blue ambient strips around perimeter, light grey smart flooring with white light-conducting lines gently illuminating, high-tech clean medical environment blending warmth and precision",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "全景缓缓推向诊室内部，林医生站在大屏前，刘女士坐在诊桌旁的灰色人体工学椅上。林医生轻触左腕智能手环，北墙大屏瞬间亮起，显示出患者的全息身体数据模型。镜头从门口低位推进至医生半身位，屏幕冷蓝光映照在医生脸上。屏幕左上角显示'AI智能诊断系统 v3.0'字样。",
+                "appearCharId": [
+                  "char-1",
+                  "char-2"
+                ],
+                "duration": 8
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "过肩镜头从刘女士背后拍摄，大屏上AI正在实时分析肺部CT影像，一道蓝色光围动态圈出微小结节区域，右侧弹出数据面板显示'病灶检出率 99.2% 早期肺癌筛查阳性'。林医生侧身指着屏幕，同时看向刘女士，语气平稳地解释。刘女士双手紧握衣角，眉头微皱盯着屏幕。屏幕下方浮现文字'早发现，早干预'。",
+                "appearCharId": [
+                  "char-1",
+                  "char-2"
+                ],
+                "duration": 7
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "近景特写，刘女士脸部表情从紧张逐渐变为舒缓，紧握衣角的手松开，嘴角微微上扬，眼角有些湿润，朝林医生轻轻点头。林医生将手搭在全息投影上向中间捏合，三维肺叶模型旋转后逐渐缩小化为一个绿色的'已核验'盖章图标，背景大屏上浮现'诊断结论：良性结节，建议随访观察'的绿色文字。画面右下角显示'AI+医生双重确认'标签。",
+                "appearCharId": [
+                  "char-1",
+                  "char-2"
+                ],
+                "duration": 8
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "未来智慧医院的俯瞰宏观空镜。画面主体为夜幕降临的城市，医院大楼外立面攀附着发光的科技脉络，周围街道上路灯光流线型汇聚成数据洪流，城市天际线上悬浮着全息医疗图标和神经网络连线，远景群山轮廓静谧。灯光为深蓝底+暖金点缀，象征科技与生命的交融。",
+            "visualHints": "Aerial view of futuristic smart hospital at dusk, hospital building facade with luminous scientific circuit patterns, city streets with light trails flowing like data streams, glowing holographic medical icons and neural network lines floating above the skyline, quiet mountain silhouettes in distance, deep blue night tone with warm golden lights, futuristic medical atmosphere, cinematic and ethereal",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "从诊室窗户向外快速拉伸至城市高空，镜头穿过一层薄薄的光雾，俯视整座未来医院与城市连接的网络。全息医疗图标沿街道灯光轨迹向上飘升，汇聚到屏幕中央形成一颗跳动的蓝色光之心，随后化为'AI医疗 护航生命'六个发光大字，画面在暖金色光芒中淡出至深蓝色。",
+                "appearCharId": [],
+                "duration": 7
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "professional",
+          "visualStyle": "冷调蓝紫科技光影，穿插暖色人性温度",
+          "suggestedBGM": "舒缓电子氛围，低频律动渐强"
+        }
+      },
+      "rawOutputLength": 3620
+    },
+    "script": {
+      "durationSec": 43.3,
+      "durationMs": 43347,
+      "model": "deepseek-v4-flash",
+      "tokenUsage": {
+        "prompt_tokens": 7072,
+        "completion_tokens": 7653,
+        "total_tokens": 14725,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 3827
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 7072
+      },
+      "cost": {
+        "inputCost": 0.00099008,
+        "outputCost": 0.00214284,
+        "totalCost": 0.00313292
+      },
+      "report": {
+        "storyScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "sceneDescription": "全景缓缓推向诊室内部，林医生站在大屏前，刘女士坐在诊桌旁的灰色人体工学椅上。林医生轻触左腕智能手环，北墙大屏瞬间亮起，显示出患者的全息身体数据模型。镜头从门口低位推进至医生半身位，屏幕冷蓝光映照在医生脸上。屏幕左上角显示'AI智能诊断系统 v3.0'字样。",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "站在大屏前",
+                    "轻触左腕智能手环",
+                    "大屏亮起后看向全息身体数据模型"
+                  ],
+                  "emotions": [
+                    "沉稳",
+                    "专注",
+                    "自信从容"
+                  ]
+                },
+                {
+                  "characterId": "char-2",
+                  "actions": [
+                    "坐在诊桌旁的灰色人体工学椅上",
+                    "看向亮起的大屏"
+                  ],
+                  "emotions": [
+                    "紧张",
+                    "忐忑"
+                  ]
+                }
+              ],
+              "narrative": "建立未来智能诊室场景，引出AI智能诊断系统，展现医患初见时的氛围"
+            },
+            {
+              "sceneId": "scene-2",
+              "sceneDescription": "过肩镜头从刘女士背后拍摄，大屏上AI正在实时分析肺部CT影像，一道蓝色光围动态圈出微小结节区域，右侧弹出数据面板显示'病灶检出率 99.2% 早期肺癌筛查阳性'。林医生侧身指着屏幕，同时看向刘女士，语气平稳地解释。刘女士双手紧握衣角，眉头微皱盯着屏幕。屏幕下方浮现文字'早发现，早干预'。",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "侧身指着屏幕",
+                    "看向刘女士",
+                    "平稳地解释AI分析结果"
+                  ],
+                  "emotions": [
+                    "专业",
+                    "沉稳",
+                    "安抚"
+                  ]
+                },
+                {
+                  "characterId": "char-2",
+                  "actions": [
+                    "双手紧握衣角",
+                    "眉头微皱盯着屏幕",
+                    "聆听医生解释"
+                  ],
+                  "emotions": [
+                    "紧张",
+                    "忧虑",
+                    "专注"
+                  ]
+                }
+              ],
+              "narrative": "展示AI精准分析肺部CT影像的能力，同时表现患者面对筛查结果时的紧张情绪"
+            },
+            {
+              "sceneId": "scene-3",
+              "sceneDescription": "近景特写，刘女士脸部表情从紧张逐渐变为舒缓，紧握衣角的手松开，嘴角微微上扬，眼角有些湿润，朝林医生轻轻点头。林医生将手搭在全息投影上向中间捏合，三维肺叶模型旋转后逐渐缩小化为一个绿色的'已核验'盖章图标，背景大屏上浮现'诊断结论：良性结节，建议随访观察'的绿色文字。画面右下角显示'AI+医生双重确认'标签。",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "将手搭在全息投影上向中间捏合",
+                    "将三维肺叶模型旋转缩小",
+                    "向刘女士传达诊断结论"
+                  ],
+                  "emotions": [
+                    "笃定",
+                    "温和",
+                    "令人安心"
+                  ]
+                },
+                {
+                  "characterId": "char-2",
+                  "actions": [
+                    "表情从紧张逐渐变为舒缓",
+                    "紧握衣角的手松开",
+                    "嘴角微微上扬",
+                    "眼角湿润朝林医生轻轻点头"
+                  ],
+                  "emotions": [
+                    "从紧张转为如释重负",
+                    "安心",
+                    "感激"
+                  ]
+                }
+              ],
+              "narrative": "情感转折点，AI与医生双重确认缓解患者焦虑，体现科技的人性化温度"
+            },
+            {
+              "sceneId": "scene-4",
+              "sceneDescription": "从诊室窗户向外快速拉伸至城市高空，镜头穿过一层薄薄的光雾，俯视整座未来医院与城市连接的网络。全息医疗图标沿街道灯光轨迹向上飘升，汇聚到屏幕中央形成一颗跳动的蓝色光之心，随后化为'AI医疗 护航生命'六个发光大字，画面在暖金色光芒中淡出至深蓝色。",
+              "characters": [],
+              "narrative": "从个体诊室升华至城市宏观视野，以视觉意象点明AI医疗守护生命的主题，收束全片"
+            }
+          ]
+        },
+        "storyboardScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "visualSource": "visual-1",
+              "appearCharId": [
+                "char-1",
+                "char-2"
+              ],
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-1"
+              },
+              "shot": {
+                "type": "wide establishing shot",
+                "angle": "low angle",
+                "movement": "slow push-in from doorway to medium shot",
+                "focus": "Dr. Lin and the north wall diagnostic screen"
+              },
+              "composition": "symmetrical interior framing, Dr. Lin centered before the big screen, Mrs. Liu seated at the curved desk on the right",
+              "lighting": "cool white ceiling ring lights with blue ambient strips, cold blue screen glow reflecting on Dr. Lin's face",
+              "visualElements": [
+                "120-inch LED diagnostic screen with full-body holographic patient data model",
+                "system label 'AI智能诊断系统 v3.0' top left on screen",
+                "silver-grey smart wristband on Dr. Lin's left wrist",
+                "light wood curved desk with embedded glowing touchscreen"
+              ],
+              "atmosphere": "clean futuristic medical, cinematic, precise and professional, 8k",
+              "motionLevel": 3,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, glasses, cluttered office",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            },
+            {
+              "sceneId": "scene-2",
+              "visualSource": "visual-1",
+              "appearCharId": [
+                "char-1",
+                "char-2"
+              ],
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-1"
+              },
+              "shot": {
+                "type": "over-the-shoulder shot",
+                "angle": "eye-level",
+                "movement": "static with subtle handheld breath",
+                "focus": "lung CT scan on the big screen with blue light circling the nodule, Mrs. Liu's anxious expression"
+              },
+              "composition": "over Mrs. Liu's shoulder, big screen dominating the frame, Dr. Lin pointing from the side",
+              "lighting": "cool blue clinical light from the diagnostic screen, soft white ambient from ceiling, blue glow on faces",
+              "visualElements": [
+                "lung CT scan with dynamic blue light ring circling a micro nodule",
+                "data panel '病灶检出率 99.2% 早期肺癌筛查阳性' on the right",
+                "text '早发现，早干预' at bottom of screen"
+              ],
+              "atmosphere": "tense professional medical focus, cinematic, shallow depth of field, 8k",
+              "motionLevel": 2,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, glasses, excessive gore",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            },
+            {
+              "sceneId": "scene-3",
+              "visualSource": "visual-1",
+              "appearCharId": [
+                "char-1",
+                "char-2"
+              ],
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-1"
+              },
+              "shot": {
+                "type": "close-up",
+                "angle": "eye-level",
+                "movement": "slow push-in on Mrs. Liu's face then slight pull to include hologram",
+                "focus": "Mrs. Liu's face transitioning from tension to relief, and the green verified stamp hologram"
+              },
+              "composition": "Mrs. Liu's face in left foreground, holographic lung model and green verification icon on the right",
+              "lighting": "soft cool screen light mixed with warm accent light, gentle blue-to-warm transition, natural skin tones",
+              "visualElements": [
+                "holographic 3D lung lobe model rotating and shrinking",
+                "green '已核验' verified stamp icon",
+                "green diagnosis text '诊断结论：良性结节，建议随访观察' on background screen",
+                "label 'AI+医生双重确认' bottom right"
+              ],
+              "atmosphere": "relieving emotional turning point, warm and reassuring, cinematic shallow depth of field, 8k",
+              "motionLevel": 2,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, crying tears",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            },
+            {
+              "sceneId": "scene-4",
+              "visualSource": "visual-2",
+              "appearCharId": [],
+              "resourceRefs": {
+                "sceneImageRef": "scene_visual-2"
+              },
+              "shot": {
+                "type": "wide aerial shot",
+                "angle": "bird's eye",
+                "movement": "fast pull-back from hospital window to high altitude, then upward drift",
+                "focus": "futuristic smart hospital and city network, glowing holographic medical icons rising upward"
+              },
+              "composition": "expansive city grid below, vertical rising composition, glowing heart icon converging at center",
+              "lighting": "deep blue night tone with warm golden city lights, thin luminous fog layer, warm golden glow at fade-out",
+              "visualElements": [
+                "future hospital building with luminous circuit patterns",
+                "street light trails flowing like data streams",
+                "holographic medical icons and neural network lines in the sky",
+                "beating blue light heart converging at center",
+                "glowing text 'AI医疗 护航生命'"
+              ],
+              "atmosphere": "epic cinematic ethereal drone shot, hopeful and uplifting, 8k",
+              "motionLevel": 5,
+              "negativePrompt": "people, text artifacts, watermark, blurry, low quality, deformed buildings, flickering lights",
+              "resolution": "1920x1080",
+              "fps": 24,
+              "engine": "happyhorse-1.1-r2v",
+              "mode": "text-to-video"
+            }
+          ]
+        },
+        "audioScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "刘女士您好，我是林医生。这位是AI智能诊断系统，接下来，我用它来辅助您做一个全面的肺健康筛查。",
+                  "emotion": "calm, confident, welcoming"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "soft device beep",
+                  "timing": "at start"
+                },
+                {
+                  "type": "screen power-on whoosh",
+                  "timing": "when the big screen lights up"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic",
+                "mood": "subtle professional pulse, neutral with a hint of technology",
+                "timing": "gradual from start, gentle throughout"
+              }
+            },
+            {
+              "sceneId": "scene-2",
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "您看，AI已经在您的CT影像里发现了一处微小结节。检出率是99.2%，属于早期肺癌筛查阳性。不过请别担心，这正是我们做早期筛查的意义，一切还来得及。",
+                  "emotion": "professional, steady, reassuring"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "soft data processing whir",
+                  "timing": "as the AI analysis panel appears"
+                },
+                {
+                  "type": "subtle alert chime",
+                  "timing": "when the blue light circles the nodule"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic",
+                "mood": "slightly tense but controlled, understated gravity",
+                "timing": "continuous, gentle tension, not alarming"
+              }
+            },
+            {
+              "sceneId": "scene-3",
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "好消息，经过双重确认，这个结节是良性的。只要保持随访观察就可以了，您完全可以放心。",
+                  "emotion": "warm, reassuring, confident"
+                },
+                {
+                  "characterId": "char-2",
+                  "text": "太好了，谢谢您林医生……我这一路都悬着的心，总算放下了。",
+                  "emotion": "relieved, tearful, grateful"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "soft hologram chime",
+                  "timing": "when the green verified stamp appears"
+                },
+                {
+                  "type": "gentle exhale",
+                  "timing": "as Mrs. Liu relaxes"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic with warm soft pad layer",
+                "mood": "reassuring, warm, optimistic resolution",
+                "timing": "softens and warms as the diagnosis turns positive"
+              }
+            },
+            {
+              "sceneId": "scene-4",
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "distant city ambience",
+                  "timing": "throughout"
+                },
+                {
+                  "type": "soft wind rush",
+                  "timing": "as camera pulls back through light fog"
+                },
+                {
+                  "type": "rising data stream chimes",
+                  "timing": "as holographic icons rise upward"
+                },
+                {
+                  "type": "warm resonance swell",
+                  "timing": "when the glowing heart forms and text appears"
+                }
+              ],
+              "bgm": {
+                "style": "ambient electronic with orchestral swells",
+                "mood": "hopeful, grand, uplifting",
+                "timing": "swells to emotional peak then fades out with warm golden glow"
+              }
+            }
+          ]
+        },
+        "pacingScript": {
+          "scenes": [
+            {
+              "sceneId": "scene-1",
+              "duration": 8,
+              "transitionIn": {
+                "type": "fade-in",
+                "durationSec": 1
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "诊室全景建立，医生与患者入画"
+                },
+                {
+                  "time": 3,
+                  "event": "林医生轻触手环，大屏亮起显示全息身体数据模型"
+                },
+                {
+                  "time": 5,
+                  "event": "镜头推进至林医生半身位，屏幕冷蓝光映照在脸上"
+                }
+              ]
+            },
+            {
+              "sceneId": "scene-2",
+              "duration": 7,
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 1,
+                  "event": "AI实时分析肺部CT影像，蓝色光围动态圈出微小结节"
+                },
+                {
+                  "time": 3,
+                  "event": "数据面板弹出'病灶检出率 99.2% 早期肺癌筛查阳性'"
+                },
+                {
+                  "time": 5,
+                  "event": "屏幕下方浮现'早发现，早干预'"
+                }
+              ]
+            },
+            {
+              "sceneId": "scene-3",
+              "duration": 8,
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "keyMoments": [
+                {
+                  "time": 2,
+                  "event": "刘女士表情从紧张逐渐转为舒缓，紧握衣角的手松开"
+                },
+                {
+                  "time": 4,
+                  "event": "林医生捏合全息投影，三维肺叶模型缩小化为绿色'已核验'图标"
+                },
+                {
+                  "time": 6,
+                  "event": "大屏浮现绿色诊断结论'良性结节，建议随访观察'"
+                }
+              ]
+            },
+            {
+              "sceneId": "scene-4",
+              "duration": 7,
+              "transitionIn": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "transitionOut": {
+                "type": "fade-out",
+                "durationSec": 1.5
+              },
+              "keyMoments": [
+                {
+                  "time": 1,
+                  "event": "镜头从诊室窗户快速拉伸至城市高空，穿过光雾"
+                },
+                {
+                  "time": 3,
+                  "event": "全息医疗图标沿街道灯光轨迹向上飘升"
+                },
+                {
+                  "time": 5,
+                  "event": "蓝色光之心汇聚成形，化为'AI医疗 护航生命'大字"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rawOutputLength": 12494
+    }
+  },
+  "summary": {
+    "totalDurationSec": 61.9,
+    "totalTokens": 19278,
+    "totalCost": 0.00399658,
+    "sceneCount": 4,
+    "spaceCount": 2,
+    "characterCount": 2
+  }
+}

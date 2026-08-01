@@ -1,0 +1,15 @@
+{
+  "groupId": "char_userd_1_female",
+  "name": "女主角",
+  "type": "protagonist",
+  "views": ["front", "back", "left", "right"],
+  "description": "优雅年轻的东方女法师。银色长发如瀑,发梢泛淡蓝色渐变;额头缀水晶泪滴状额饰,戴珍珠耳坠。身穿多层月白丝绸长袍,长袖、裙摆与上背部以金线绣散落星子与弯月纹;纤细金色腰带系玉坠。右手持短巧法杖,杖身浅色木雕,杖首镶发光天蓝色蓝宝石;左手轻垂于身前。姿态优雅,头微侧,神情温柔慈悲。",
+  "tags": ["女法师", "仙侠", "奇幻", "古风", "女主", "预设"],
+  "applicable": "仙侠/奇幻题材视频的女主角,适合站立、施法、行走镜头",
+  "remoteViews": {
+    "front": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+    "back": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+    "left": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+    "right": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+  }
+}

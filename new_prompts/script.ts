@@ -39,7 +39,7 @@ LangGraph: 图拓扑
       │
   fanout_assets_tts (条件边,并行分发 Send)
      ╱        ╲
-  asset_gen   tts         ← asset_gen 读 storyboardScript.resourceRefs;tts 读 audioScript
+  asset_gen   tts         ← asset_gen 读 storyboardScript.appearCharId;tts 读 audioScript
      ╲        ╱
   shot_video_sequential   ← 读 storyboardScript(视觉) + audioScript(音频指令) 组装最终 prompt
       │
@@ -79,9 +79,9 @@ LangGraph: 图拓扑
 
 - **sceneId**:与 Proposal 对应
 - **visualSource**:对应 Proposal 中该镜头所属的 visualId
+- **appearCharId**:string[],本镜头出镜角色的 ID 列表,直接沿用 Proposal 对应 scene 的 appearCharId.无角色则为 [].
 - **resourceRefs**:
   - **sceneImageRef**:场景图引用 ID,由 visualSource 派生(格式 "scene_{visualId}",如 "scene_visual-1").**同一 visualId 的多个镜头必须复用同一个 sceneImageRef**(下游据此去重生成背景图).
-  - **characterImageRefs**:string[],本镜头出镜角色的图片引用 ID 列表.将 sceneDescription 中出现的角色名与 Proposal characters[].name 匹配,命中者取其引用 ID,格式 "{characterId}_default"(如 "char-1_default").无角色则为 [].
 - **shot**:
   - **type**:景别(英文),如 "medium shot", "medium close-up", "over-the-shoulder", "wide aerial shot"
   - **angle**:机位角度(英文),如 "eye-level", "low angle", "high angle", "bird's eye"
@@ -197,9 +197,9 @@ LangGraph: 图拓扑
       {
         "sceneId": "scene-1",
         "visualSource": "visual-1",
+        "appearCharId": ["char-1", "char-2"],
         "resourceRefs": {
-          "sceneImageRef": "scene_visual-1",
-          "characterImageRefs": ["char-1_default", "char-2_default"]
+          "sceneImageRef": "scene_visual-1"
         },
         "shot": {
           "type": "medium shot",
@@ -221,9 +221,9 @@ LangGraph: 图拓扑
       {
         "sceneId": "scene-2",
         "visualSource": "visual-1",
+        "appearCharId": ["char-1", "char-2"],
         "resourceRefs": {
-          "sceneImageRef": "scene_visual-1",
-          "characterImageRefs": ["char-1_default", "char-2_default"]
+          "sceneImageRef": "scene_visual-1"
         },
         "shot": {
           "type": "over-the-shoulder shot",
@@ -245,9 +245,9 @@ LangGraph: 图拓扑
       {
         "sceneId": "scene-3",
         "visualSource": "visual-1",
+        "appearCharId": ["char-1", "char-2"],
         "resourceRefs": {
-          "sceneImageRef": "scene_visual-1",
-          "characterImageRefs": ["char-1_default", "char-2_default"]
+          "sceneImageRef": "scene_visual-1"
         },
         "shot": {
           "type": "side medium shot",
@@ -269,9 +269,9 @@ LangGraph: 图拓扑
       {
         "sceneId": "scene-4",
         "visualSource": "visual-2",
+        "appearCharId": [],
         "resourceRefs": {
-          "sceneImageRef": "scene_visual-2",
-          "characterImageRefs": []
+          "sceneImageRef": "scene_visual-2"
         },
         "shot": {
           "type": "wide aerial shot",
@@ -424,7 +424,7 @@ LangGraph: 图拓扑
 - storyScript.characters:纯视觉镜头为 [],有角色时 characterId 必须在 Proposal characters 中定义
 - storyboardScript.visualSource:等于该镜头所属的 visualId
 - storyboardScript.resourceRefs.sceneImageRef:格式 "scene_{visualId}",同一 visualId 必须复用
-- storyboardScript.resourceRefs.characterImageRefs:格式 "{characterId}_default",与场景内角色名匹配,无角色为 []
+- storyboardScript.appearCharId:与 Proposal 对应 scene 的 appearCharId 完全一致,无角色为 []
 - storyboardScript.shot/composition/lighting/visualElements/atmosphere/negativePrompt:英文
 - storyboardScript.motionLevel:1-5 的整数
 - storyboardScript.resolution:16:9→"1920x1080",9:16→"1080x1920",1:1→"1080x1080"

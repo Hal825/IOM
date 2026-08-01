@@ -1,5 +1,5 @@
 import { Annotation } from '@langchain/langgraph';
-import type { ResearchReport, Proposal, VideoScript, AssetManifest } from '@/lib/types';
+import type { ResearchReport, Proposal, VideoScript, SceneVideoSpec, AssetManifest } from '@/lib/types';
 
 // ── 新增辅助类型 ────────────────────────────────────
 
@@ -33,7 +33,16 @@ export const VideoGenState = Annotation.Root({
   videoScript: Annotation<VideoScript | null>,
 
   // === 素材生成 ===
+  /** 素材清单（asset_gen 节点输出，含角色四视图 + 场景图 + sceneId→ref 映射） */
   assetManifest: Annotation<AssetManifest | null>,
+
+  // === 单镜头视频生成完整规格（scene_json_assembler 节点输出）===
+  /** 每镜头的完整视频生成 JSON（含素材/音频产物），可直接交付视频引擎 */
+  sceneSpecs: Annotation<SceneVideoSpec[]>({
+    reducer: (_current: SceneVideoSpec[], update: SceneVideoSpec[]): SceneVideoSpec[] =>
+      update ?? [],
+    default: () => [],
+  }),
 
   // === 视频输出 ===
   /** 最终视频时长（秒），由 video_merge 节点写入 */

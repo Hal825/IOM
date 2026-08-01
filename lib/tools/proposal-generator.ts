@@ -6,9 +6,8 @@ import type { TokenUsage } from '@/lib/log/procedure';
  * Proposal 工具 — 基于 ResearchReport 调用 LLM 生成视频制作提案。
  *
  * 策略：
- * 1. 调用 AI API，要求返回 Proposal JSON
+ * 1. 调用 AI API，要求返回 Proposal JSON（新版结构：characters / blueprint / sceneVisuals / styleProfile）
  * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
- * 3. 全部失败时回退到规则生成（fallbackProposal）
  */
 
 // ── 配置（全部来自环境变量）─────────────────────────
@@ -41,29 +40,9 @@ function isValidAspectRatio(v: unknown): v is Proposal['blueprint']['aspectRatio
   return typeof v === 'string' && ['16:9', '9:16', '1:1'].includes(v);
 }
 
-function isValidTextPosition(v: unknown): v is 'center' | 'top' | 'bottom' {
-  return typeof v === 'string' && ['center', 'top', 'bottom'].includes(v);
-}
-
-function isValidAnimation(v: unknown): v is 'fade' | 'slide' | 'typing' | 'none' {
-  return typeof v === 'string' && ['fade', 'slide', 'typing', 'none'].includes(v);
-}
-
-function isValidTransitions(v: unknown): v is 'smooth' | 'cut' | 'zoom' {
-  return typeof v === 'string' && ['smooth', 'cut', 'zoom'].includes(v);
-}
-
-function isValidRiskLevel(v: unknown): v is 'low' | 'medium' | 'high' {
-  return typeof v === 'string' && ['low', 'medium', 'high'].includes(v);
-}
-
-function isValidTransitionType(v: unknown): v is 'none' | 'fade' | 'zoom' | 'pan' | 'slide' | 'cut' {
+function isValidTone(v: unknown): v is Proposal['styleProfile']['tone'] {
   return typeof v === 'string' &&
-    ['none', 'fade', 'zoom', 'pan', 'slide', 'cut'].includes(v);
-}
-
-function toTransitionType(v: unknown): 'none' | 'fade' | 'zoom' | 'pan' | 'slide' | 'cut' {
-  return isValidTransitionType(v) ? v : 'cut';
+    ['professional', 'lively', 'serious', 'inspirational', 'minimal'].includes(v);
 }
 
 function parseAndValidateProposal(raw: string): Proposal {
@@ -94,228 +73,130 @@ function parseAndValidateProposal(raw: string): Proposal {
   if (typeof blueprint.totalDuration !== 'number') {
     throw new Error('[proposal] blueprint.totalDuration 缺失');
   }
-  if (typeof blueprint.sceneCount !== 'number') {
-    throw new Error('[proposal] blueprint.sceneCount 缺失');
-  }
   if (!isValidAspectRatio(blueprint.aspectRatio)) {
     throw new Error(`[proposal] blueprint.aspectRatio 无效: ${blueprint.aspectRatio}`);
   }
 
-  // ── shotScript 校验 ──
-  const shotScript = obj.shotScript as unknown[];
-  if (!Array.isArray(shotScript) || shotScript.length === 0) {
-    throw new Error('[proposal] shotScript 缺失或为空');
+  // ── characters 校验（可为空数组）──
+  const characters: Character[] = [];
+  if (obj.characters !== undefined && !Array.isArray(obj.characters)) {
+    throw new Error('[proposal] characters 必须为数组');
   }
-
-  for (let i = 0; i < shotScript.length; i++) {
-    const shot = shotScript[i] as Record<string, unknown> | undefined;
-    if (!shot) throw new Error(`[proposal] shotScript[${i}] 无效`);
-
-    if (typeof shot.sceneId !== 'string' || !shot.sceneId.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].sceneId 缺失`);
+  const charsRaw = Array.isArray(obj.characters) ? (obj.characters as unknown[]) : [];
+  for (let i = 0; i < charsRaw.length; i++) {
+    const c = charsRaw[i] as Record<string, unknown> | undefined;
+    if (!c) continue;
+    if (typeof c.characterId !== 'string' || !c.characterId.trim()) {
+      throw new Error(`[proposal] characters[${i}].characterId 缺失`);
     }
-    if (typeof shot.duration !== 'number') {
-      throw new Error(`[proposal] shotScript[${i}].duration 缺失`);
+    if (typeof c.name !== 'string' || !c.name.trim()) {
+      throw new Error(`[proposal] characters[${i}].name 缺失`);
     }
-    // summary 校验（新字段，替代 visualDescription）
-    if (typeof shot.summary !== 'string' || !shot.summary.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].summary 缺失`);
+    if (typeof c.type !== 'string' || !['protagonist', 'supporting'].includes(c.type)) {
+      throw new Error(`[proposal] characters[${i}].type 无效: ${c.type}`);
     }
-    if (typeof shot.subtitleText !== 'string' || !shot.subtitleText.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].subtitleText 缺失`);
+    if (typeof c.appearance !== 'string' || !c.appearance.trim()) {
+      throw new Error(`[proposal] characters[${i}].appearance 缺失`);
     }
-
-    // transition 校验（新字段，必需）
-    const transition = shot.transition as Record<string, unknown> | undefined;
-    if (!transition) throw new Error(`[proposal] shotScript[${i}].transition 缺失`);
-
-    // layout 校验
-    const layout = shot.layout as Record<string, unknown> | undefined;
-    if (!layout) throw new Error(`[proposal] shotScript[${i}].layout 缺失`);
-    if (!isValidTextPosition(layout.textPosition)) {
-      throw new Error(`[proposal] shotScript[${i}].layout.textPosition 无效`);
-    }
-    if (typeof layout.backgroundColor !== 'string' || !layout.backgroundColor.trim()) {
-      throw new Error(`[proposal] shotScript[${i}].layout.backgroundColor 缺失`);
-    }
-    if (!isValidAnimation(layout.animation)) {
-      throw new Error(`[proposal] shotScript[${i}].layout.animation 无效`);
-    }
+    characters.push({
+      characterId: c.characterId as string,
+      name: c.name as string,
+      type: c.type as 'protagonist' | 'supporting',
+      appearance: c.appearance as string,
+      personality: (typeof c.personality === 'string' ? c.personality : '') as string,
+      role: (typeof c.role === 'string' ? c.role : '') as string,
+    });
   }
 
-  // ── styleGuide 校验 ──
-  const styleGuide = obj.styleGuide as Record<string, unknown> | undefined;
-  if (!styleGuide) throw new Error('[proposal] styleGuide 缺失');
-  if (typeof styleGuide.globalTone !== 'string' || !styleGuide.globalTone.trim()) {
-    throw new Error('[proposal] styleGuide.globalTone 缺失');
-  }
-  if (!Array.isArray(styleGuide.colorPalette)) {
-    throw new Error('[proposal] styleGuide.colorPalette 缺失');
-  }
-  if (typeof styleGuide.fontFamily !== 'string' || !styleGuide.fontFamily.trim()) {
-    throw new Error('[proposal] styleGuide.fontFamily 缺失');
-  }
-  const bgMusic = styleGuide.backgroundMusic as Record<string, unknown> | undefined;
-  if (!bgMusic || typeof bgMusic.style !== 'string' || !bgMusic.style.trim()) {
-    throw new Error('[proposal] styleGuide.backgroundMusic 缺失');
-  }
-  if (!isValidTransitions(styleGuide.transitions)) {
-    throw new Error(`[proposal] styleGuide.transitions 无效: ${styleGuide.transitions}`);
+  // ── sceneVisuals 校验 ──
+  const sceneVisuals = obj.sceneVisuals as unknown[];
+  if (!Array.isArray(sceneVisuals) || sceneVisuals.length === 0) {
+    throw new Error('[proposal] sceneVisuals 缺失或为空');
   }
 
-  // ── feasibility 校验 ──
-  const feasibility = obj.feasibility as Record<string, unknown> | undefined;
-  if (!feasibility) throw new Error('[proposal] feasibility 缺失');
-  if (!isValidRiskLevel(feasibility.riskLevel)) {
-    throw new Error(`[proposal] feasibility.riskLevel 无效: ${feasibility.riskLevel}`);
-  }
-  if (typeof feasibility.estimatedRenderTime !== 'number') {
-    throw new Error('[proposal] feasibility.estimatedRenderTime 缺失');
-  }
-  if (!Array.isArray(feasibility.suggestions)) {
-    throw new Error('[proposal] feasibility.suggestions 缺失');
-  }
-
-  // ── characters 校验（可选）──
-  let characters: Character[] | undefined;
-  if (obj.characters && Array.isArray(obj.characters)) {
-    const chars = obj.characters as unknown[];
-    characters = [];
-    for (let i = 0; i < chars.length; i++) {
-      const c = chars[i] as Record<string, unknown> | undefined;
-      if (!c) continue;
-      if (typeof c.characterId !== 'string' || !c.characterId.trim()) continue;
-      if (typeof c.name !== 'string' || !c.name.trim()) continue;
-      if (typeof c.appearance !== 'string' || !c.appearance.trim()) continue;
-
-      characters.push({
-        characterId: c.characterId as string,
-        name: c.name as string,
-        appearance: c.appearance as string,
-        role: (typeof c.role === 'string' ? c.role : '角色') as string,
-        appearsInScenes: (Array.isArray(c.appearsInScenes)
-          ? c.appearsInScenes.filter((s): s is string => typeof s === 'string')
-          : []) as string[],
+  const parsedSceneVisuals: Proposal['sceneVisuals'] = [];
+  for (let i = 0; i < sceneVisuals.length; i++) {
+    const sv = sceneVisuals[i] as Record<string, unknown> | undefined;
+    if (!sv) throw new Error(`[proposal] sceneVisuals[${i}] 无效`);
+    if (typeof sv.visualId !== 'string' || !sv.visualId.trim()) {
+      throw new Error(`[proposal] sceneVisuals[${i}].visualId 缺失`);
+    }
+    if (typeof sv.description !== 'string' || !sv.description.trim()) {
+      throw new Error(`[proposal] sceneVisuals[${i}].description 缺失`);
+    }
+    const scenes = Array.isArray(sv.scenes) ? (sv.scenes as unknown[]) : [];
+    if (scenes.length === 0) {
+      throw new Error(`[proposal] sceneVisuals[${i}].scenes 为空`);
+    }
+    const parsedScenes: Proposal['sceneVisuals'][number]['scenes'] = [];
+    for (let j = 0; j < scenes.length; j++) {
+      const sc = scenes[j] as Record<string, unknown> | undefined;
+      if (!sc) throw new Error(`[proposal] sceneVisuals[${i}].scenes[${j}] 无效`);
+      if (typeof sc.sceneId !== 'string' || !sc.sceneId.trim()) {
+        throw new Error(`[proposal] sceneVisuals[${i}].scenes[${j}].sceneId 缺失`);
+      }
+      if (typeof sc.sceneDescription !== 'string' || !sc.sceneDescription.trim()) {
+        throw new Error(`[proposal] sceneVisuals[${i}].scenes[${j}].sceneDescription 缺失`);
+      }
+      if (typeof sc.duration !== 'number') {
+        throw new Error(`[proposal] sceneVisuals[${i}].scenes[${j}].duration 缺失`);
+      }
+      if (!Array.isArray(sc.appearCharId)) {
+        throw new Error(`[proposal] sceneVisuals[${i}].scenes[${j}].appearCharId 缺失`);
+      }
+      parsedScenes.push({
+        sceneId: sc.sceneId as string,
+        sceneDescription: sc.sceneDescription as string,
+        appearCharId: sc.appearCharId as string[],
+        duration: sc.duration as number,
       });
     }
-    if (characters.length === 0) characters = undefined;
+    parsedSceneVisuals.push({
+      visualId: sv.visualId as string,
+      description: sv.description as string,
+      visualHints: (typeof sv.visualHints === 'string' ? sv.visualHints : '') as string,
+      scenes: parsedScenes,
+    });
   }
 
-  // ── videoGen 校验（可选）──
-  let videoGen: Proposal['videoGen'] | undefined;
-  if (obj.videoGen && typeof obj.videoGen === 'object') {
-    const vg = obj.videoGen as Record<string, unknown>;
-    videoGen = {
-      style: (typeof vg.style === 'string' ? vg.style : 'cinematic documentary') as string,
-      duration: (typeof vg.duration === 'number' ? vg.duration : blueprint.totalDuration) as number,
-    };
+  // ── styleProfile 校验 ──
+  const styleProfile = obj.styleProfile as Record<string, unknown> | undefined;
+  if (!styleProfile) throw new Error('[proposal] styleProfile 缺失');
+  if (!isValidTone(styleProfile.tone)) {
+    throw new Error(`[proposal] styleProfile.tone 无效: ${styleProfile.tone}`);
+  }
+  if (typeof styleProfile.visualStyle !== 'string' || !styleProfile.visualStyle.trim()) {
+    throw new Error('[proposal] styleProfile.visualStyle 缺失');
+  }
+  if (typeof styleProfile.suggestedBGM !== 'string' || !styleProfile.suggestedBGM.trim()) {
+    throw new Error('[proposal] styleProfile.suggestedBGM 缺失');
   }
 
-  // ── extraction 校验（新字段，兼容旧格式）──
-  const extraction: Proposal['extraction'] = (() => {
-    const extr = obj.extraction as Record<string, unknown> | undefined;
-    const rawScenes = Array.isArray(extr?.rawScenes)
-      ? extr.rawScenes.map((r) => {
-          const rs = r as Record<string, unknown>;
-          return {
-            id: (rs.id as string) ?? '',
-            content: (rs.content as string) ?? '',
-          };
-        }).filter((r) => r.id && r.content)
-      : [];
-    return { rawScenes };
-  })();
-
-  // ── optimizationLog 校验（新字段，兼容旧格式）──
-  const optimizationLog: Proposal['optimizationLog'] = Array.isArray(obj.optimizationLog)
-    ? obj.optimizationLog.map((o) => {
-        const entry = o as Record<string, unknown>;
-        const result: Proposal['optimizationLog'][number] = {
-          action: ((entry.action as string) ?? 'keep') as Proposal['optimizationLog'][number]['action'],
-        };
-        if (entry.sourceId) result.sourceId = entry.sourceId as string;
-        if (entry.sourceIds && Array.isArray(entry.sourceIds)) {
-          result.sourceIds = (entry.sourceIds as unknown[]).filter((s): s is string => typeof s === 'string');
-        }
-        if (entry.mergedContent) result.mergedContent = entry.mergedContent as string;
-        if (entry.revisedContent) result.revisedContent = entry.revisedContent as string;
-        if (entry.addedContent) result.addedContent = entry.addedContent as string;
-        if (entry.reason) result.reason = entry.reason as string;
-        return result;
-      })
-    : [];
-
-  // ── _expansionApplied 校验（新字段，兼容旧格式）──
-  const _expansionApplied: Proposal['_expansionApplied'] = (() => {
-    const ea = obj._expansionApplied as Record<string, unknown> | null | undefined;
-    if (!ea) return null;
-    return {
-      expansions: Array.isArray(ea.expansions)
-        ? ea.expansions.filter((e): e is string => typeof e === 'string')
-        : [],
-      reason: (ea.reason as string) ?? '',
-    };
-  })();
+  // ── 时长一致性校验 ──
+  const totalSceneDuration = parsedSceneVisuals.reduce(
+    (sum, sv) => sum + sv.scenes.reduce((s, sc) => s + sc.duration, 0),
+    0
+  );
+  if (Math.abs(totalSceneDuration - (blueprint.totalDuration as number)) > 1) {
+    throw new Error(
+      `[proposal] scenes 时长合计 ${totalSceneDuration}s ≠ blueprint.totalDuration ${blueprint.totalDuration}s`
+    );
+  }
 
   // ── 构建并返回 ──
   return {
+    characters,
     blueprint: {
       title: blueprint.title as string,
       totalDuration: blueprint.totalDuration as number,
-      sceneCount: blueprint.sceneCount as number,
       aspectRatio: blueprint.aspectRatio as Proposal['blueprint']['aspectRatio'],
     },
-    shotScript: shotScript.map((s) => {
-      const shot = s as Record<string, unknown>;
-      const layout = shot.layout as Record<string, unknown>;
-      const transition = shot.transition as Record<string, unknown> | undefined;
-      return {
-        sceneId: shot.sceneId as string,
-        duration: shot.duration as number,
-        summary: shot.summary as string,
-        layout: {
-          textPosition: layout.textPosition as 'center' | 'top' | 'bottom',
-          backgroundColor: layout.backgroundColor as string,
-          animation: layout.animation as 'fade' | 'slide' | 'typing' | 'none',
-        },
-        subtitleText: shot.subtitleText as string,
-        transition: {
-          from: {
-            sceneId: (transition?.from as Record<string, unknown> | null)?.sceneId as string | null ?? null,
-            type: toTransitionType((transition?.from as Record<string, unknown> | null)?.type),
-            visualLink: ((transition?.from as Record<string, unknown> | null)?.visualLink as string) ?? '',
-          },
-          to: {
-            sceneId: (transition?.to as Record<string, unknown> | null)?.sceneId as string | null ?? null,
-            type: toTransitionType((transition?.to as Record<string, unknown> | null)?.type),
-            visualLink: ((transition?.to as Record<string, unknown> | null)?.visualLink as string) ?? '',
-          },
-        },
-        cast: Array.isArray(shot.cast)
-          ? shot.cast.filter((c): c is string => typeof c === 'string')
-          : [],
-      };
-    }),
-    extraction,
-    optimizationLog,
-    styleGuide: {
-      globalTone: styleGuide.globalTone as string,
-      colorPalette: styleGuide.colorPalette as string[],
-      fontFamily: styleGuide.fontFamily as string,
-      backgroundMusic: {
-        style: (bgMusic.style as string) ?? 'ambient',
-        source: bgMusic.source as string | undefined,
-      },
-      transitions: styleGuide.transitions as 'smooth' | 'cut' | 'zoom',
+    sceneVisuals: parsedSceneVisuals,
+    styleProfile: {
+      tone: styleProfile.tone as Proposal['styleProfile']['tone'],
+      visualStyle: styleProfile.visualStyle as string,
+      suggestedBGM: styleProfile.suggestedBGM as string,
     },
-    feasibility: {
-      riskLevel: feasibility.riskLevel as 'low' | 'medium' | 'high',
-      estimatedRenderTime: feasibility.estimatedRenderTime as number,
-      suggestions: feasibility.suggestions as string[],
-    },
-    characters,
-    videoGen,
-    _expansionApplied,
   };
 }
 
@@ -425,28 +306,24 @@ export async function generateProposal(
     return { ...proposal, usage };
   });
 
-  const charInfo = result.characters?.length
+  const sceneCount = result.sceneVisuals.reduce((sum, sv) => sum + sv.scenes.length, 0);
+  const charInfo = result.characters.length
     ? `, ${result.characters.length} 个角色`
     : '';
 
   console.log(
     `[proposal] ${PROPOSAL_LLM_MODEL} 生成完成：` +
-      `${result.blueprint.sceneCount} 个镜头，` +
+      `${result.sceneVisuals.length} 个空间，${sceneCount} 个镜头，` +
       `${result.blueprint.totalDuration}s${charInfo}` +
       (retries > 0 ? `（重试 ${retries} 次）` : '')
   );
 
   return {
     proposal: {
-      blueprint: result.blueprint,
-      shotScript: result.shotScript,
-      extraction: result.extraction,
-      optimizationLog: result.optimizationLog,
-      styleGuide: result.styleGuide,
-      feasibility: result.feasibility,
       characters: result.characters,
-      videoGen: result.videoGen,
-      _expansionApplied: result._expansionApplied,
+      blueprint: result.blueprint,
+      sceneVisuals: result.sceneVisuals,
+      styleProfile: result.styleProfile,
     },
     model: PROPOSAL_LLM_MODEL,
     retries,

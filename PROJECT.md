@@ -2,7 +2,7 @@
 
 ## 一、项目概述
 
-OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自动生成工具。用户输入文本后，系统通过 **LangGraph** 状态图编排 6 个 AI 节点，全自动完成从文本分析到最终视频输出的完整管线。
+OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自动生成工具。用户输入文本后，系统通过 **LangGraph** 状态图编排多个 AI 节点，从文本分析到素材组装，产出每镜头的完整视频生成规格（`SceneVideoSpec[]`）。
 
 ### 技术栈
 
@@ -11,48 +11,44 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 | Web 框架 | Next.js (App Router) |
 | 编排引擎 | `@langchain/langgraph` (StateGraph + Send API) |
 | 任务队列 | BullMQ (Redis 后端) |
-| AI 图片 | DashScope qwen-image-2.0 |
-| AI 视频 | DashScope happyhorse-1.1-i2v |
-| AI 语音 | DashScope qwen3-tts-flash |
-| LLM (调研/提案/脚本) | DeepSeek v4-pro (兼容 OpenAI API) |
+| LLM (调研/提案/脚本) | 兼容 OpenAI API 的 chat/completions（`RESEARCH_/PROPOSAL_/SCRIPT_*` 配置） |
+| AI 图片（素材生成） | DashScope 图片 API（`AI_ASSET_*` 配置） |
+| AI 语音 | DashScope qwen3-tts-flash（SSML） |
+| 对象存储 | 阿里云 OSS（REST + HMAC-SHA1，公网 URL） |
 | Worker 进程 | 独立 `workers/video-worker.ts` |
-| 存储 | 本地文件系统 (`storage/`) |
+| 存储 | 本地文件系统（`storage/`）+ OSS（公网） |
 
 ---
 
 ## 二、全局架构
 
 ```
-┌─────────────┐  POST /api/tasks   ┌──────────────────────────┐
-│   Frontend   │ ────────────────► │  Next.js API Route        │
-│  (page.tsx)  │                   │  videoGraph.invoke()      │
-└──────┬───────┘                   │  (同步执行整个 LangGraph)   │
-       │                           └──────────┬───────────────┘
-       │  GET /api/tasks (3s 轮询)             │ videoUrl 写回
-       │                           ┌──────────┴───────────────┐
-       │                           │  BullMQ Queue             │
-       │                           │  (video_gen 入队结果)      │
-       │                           └──────────┬───────────────┘
-       │                                      │
-       │                           ┌──────────┴───────────────┐
-       │                           │  Video Worker (独立进程)   │
-       │                           │  · 有 videoUrl → 仅归档    │
-       ▼                           │  · 无 videoUrl → 兜底执行  │
-  GET /download              ┌──────────────┐
-  (流式传输 MP4)               │  本地存储     │
-                              │  storage/     │
-                              └──────────────┘
+┌─────────────┐  POST /api/tasks   ┌──────────────────────┐
+│   Frontend   │ ────────────────► │  Next.js API Route    │
+│  (page.tsx)  │                   │  · 校验 text          │
+└──────┬───────┘                   │  · 入队 BullMQ         │
+       │  GET /api/tasks (轮询)     └──────────┬───────────┘
+       │                                      │ job.data = { text }
+       │                           ┌──────────┴───────────┐
+       │                           │  Worker (独立进程)     │
+       │                           │  executeTask()         │
+       │                           │  → videoGraph.invoke() │
+       │                           └──────────┬───────────┘
+       │                                      │ mergedVideoUrl 写回 job
+       │                           ┌──────────┴───────────┐
+       ▼  GET /api/tasks/[id]/download │  本地存储 storage/ │
+       (流式传输 MP4 / 307 重定向)      └──────────────────┘
 ```
 
-**关键架构决策：LangGraph 管线在 API 请求中同步运行**（非 Worker）。Worker 负责日志归档和兜底模式。
+**关键架构决策**：LangGraph 管线在 **Worker 进程**中运行（非 API 请求内）。API 只负责校验 + 入队，前端通过轮询拿状态。
 
 ### 核心流程
 
-1. **用户提交文本** → `POST /api/tasks` 直接调用 `videoGraph.invoke()`
-2. **6 个节点在 API 进程中同步执行** → 节点间通过 StateGraph state 传递数据
-3. **video_gen 完成后入队 BullMQ** → 作为状态追踪，供前端轮询
-4. **前端 3s 轮询** `GET /api/tasks` → 拿到进度 + 下载链接
-5. **Worker 双模式**：已有 `videoUrl` 则仅归档日志；否则兜底执行完整管线
+1. **用户提交文本** → `POST /api/tasks` 校验后入队 BullMQ
+2. **Worker 消费任务** → `executeTask()` → `videoGraph.invoke({ userPrompt, jobId })`
+3. **图并行执行**：`asset_gen` 和 `tts` 通过 `Send` 并行分发，`scene_json_assembler` 汇聚
+4. **前端轮询** `GET /api/tasks` → 任务状态 + 下载链接
+5. **下载**：远程 URL → 307 重定向；本地文件 → 流式传输
 
 ---
 
@@ -61,63 +57,57 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 ```
 openmontage/
 ├── app/                          # Next.js App Router
-│   ├── page.tsx                  # 主页面（单文件 SPA，无 components/）
-│   ├── layout.tsx                # 根布局（Geist 字体，zh-CN）
-│   ├── globals.css               # Tailwind v4 + CSS 自定义属性
-│   ├── api/tasks/
-│   │   ├── route.ts              # POST 创建 / GET 列表
-│   │   └── [id]/
-│   │       ├── route.ts          # GET 单个任务状态
-│   │       └── download/
-│   │           └── route.ts      # GET 流式下载 MP4
-│   └── lib/agent/
-│       └── nodes.ts              # 节点实现（较新：含 audioUrl 透传）
-├── lib/                          # 核心库
+│   ├── page.tsx                  # 主页面（单文件 SPA）
+│   ├── layout.tsx / globals.css
+│   └── api/tasks/
+│       ├── route.ts              # POST 创建(入队) / GET 列表
+│       └── [id]/
+│           ├── route.ts          # GET 单个任务状态
+│           └── download/route.ts # GET 流式下载 MP4
+├── workers/
+│   └── video-worker.ts           # BullMQ Worker（执行 LangGraph）
+├── lib/
+│   ├── types.ts                  # 全部公共类型（TaskData/Proposal/VideoScript/AssetManifest…）
+│   ├── queue.ts                  # BullMQ 队列单例 + Redis 连接
+│   ├── tasks.ts                  # jobToSummary + STORAGE_DIR
+│   ├── orchestrator.ts           # executeTask()：图调用入口
 │   ├── agent/
-│   │   ├── graph.ts              # LangGraph 状态图定义
-│   │   ├── state.ts              # 状态通道定义 (Annotation.Root)
-│   │   └── nodes.ts              # 节点实现（被 graph.ts 引用）
+│   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派）
+│   │   ├── state.ts              # 状态通道定义 (Annotation.Root + 自定义 reducer)
+│   │   └── nodes.ts              # 节点实现（6 接线 + video_merge 保留未接线）
 │   ├── tools/
-│   │   ├── research-generator.ts # 调研工具 (DeepSeek LLM)
-│   │   ├── proposal-generator.ts # 提案工具 (DeepSeek LLM)
-│   │   ├── script-generator.ts   # 脚本生成工具 (DeepSeek LLM) ★
-│   │   ├── asset-generator.ts    # 素材生成 (DashScope 图片)
-│   │   ├── tts-generator.ts      # 语音合成 (DashScope TTS)
-│   │   └── video-generator.ts    # 视频生成 (DashScope 视频)
+│   │   ├── research-generator.ts # 调研工具
+│   │   ├── proposal-generator.ts # 提案工具
+│   │   ├── script-generator.ts   # 四子脚本生成 + 结构校验 ★
+│   │   ├── asset-generator.ts    # 素材生成（本地库引用 + AI 生成，产出 AssetManifest）
+│   │   ├── oss-uploader.ts       # OSS 上传（REST+HMAC，公网 URL）
+│   │   ├── tts-generator.ts      # 语音合成 (Edge-TTS)
+│   │   └── shot-video-generator.ts # 逐镜头视频生成（保留，未接线）
+│   ├── store/
+│   │   └── asset-store.ts        # AssetStore：存储 / 库访问 / OSS 发布
 │   ├── prompts/
 │   │   ├── research.ts           # 调研 system prompt
-│   │   ├── proposal.ts           # 提案 system prompt
-│   │   ├── script-generation.ts  # 脚本生成 system prompt ★
-│   │   ├── asset-generation.ts   # 图片生成 prompt 构建器
-│   │   ├── tts.ts                # TTS 文本构建器 + 默认参数
-│   │   └── video-generation.ts   # 视频生成 system prompt
-│   ├── log/
-│   │   └── procedure.ts          # 全流程日志 (ProcedureLog)
-│   ├── queue.ts                  # BullMQ 队列单例
-│   ├── tasks.ts                  # jobToSummary 辅助 + STORAGE_DIR
-│   ├── orchestrator.ts           # executeTask() 入口
-│   ├── orchestrator.test.ts      # 编排器单元测试
-│   ├── queue.test.ts             # 队列单元测试
-│   └── types.ts                  # 全部公共类型
-├── workers/
-│   └── video-worker.ts           # BullMQ Worker (双模式)
-├── docs/
-│   ├── ARCHITECTURE.md           # 架构文档
-│   ├── bugs/README.md            # 已知 bug 日志
-│   ├── parse1.md, parse2.md      # 解析设计笔记
+│   │   ├── proposal.ts           # 提案 system prompt（scene 含 appearCharId）
+│   │   ├── script-generation.ts  # 四子脚本 system prompt ★
+│   │   └── tts.ts                # TTS SSML 构建 + 默认参数
+│   └── log/
+│       └── procedure.ts          # 阶段审计日志 + 费用计算
+├── new_prompts/                  # 新 prompt 迭代区（评测用，落地后进 lib/prompts）
+├── old_prompts/                  # 历史 prompt 归档
+├── scripts/
+│   ├── eval-*.ts                 # 评测脚本（eval-proposal/eval-research/eval-script…）
+│   └── verify-graph-to-scene-specs.ts  # 跑图到 assembler 的验证脚本
 ├── storage/                      # 输出产物 (gitignored)
-│   ├── assets/<jobId>/           # 角色图 + 场景图
+│   ├── library/                  # 素材库（本地已有资源，跨任务复用）
+│   │   └── characters/<组>/      # 一组主角：四视图 + meta.json
+│   ├── assets/<jobId>/           # 任务素材产物（AI 生成 + manifest.json）
 │   ├── audio/<jobId>/            # TTS 音频
+│   ├── scripts/<jobId>/          # 脚本文本快照 (scene-texts.json)
+│   ├── scenes/<jobId>/           # 逐镜头视频（未接线阶段的产物）
 │   └── output/<jobId>.mp4        # 最终视频
-├── log/procedure/                # 流程日志 (gitignored)
-│   └── job-<N>/procedure.json
+├── log/procedure/                # 流程审计日志 (gitignored)
 ├── docker-compose.yml            # Redis 7 Alpine
-├── vitest.config.ts              # 测试配置
-├── vitest.setup.ts
-├── .env                          # 活跃配置
-├── .env.example                  # 模板
-├── package.json
-└── tsconfig.json
+└── .env / .env.example
 ```
 
 ---
@@ -129,79 +119,59 @@ openmontage/
 ```
 __start__
     │
-    ▼
-┌──────────┐
-│ research │   ← 节点 1：文本内容分析与结构识别
-│  调研    │     输入: userPrompt
-└────┬─────┘     输出: researchReport
-     │
-     ▼
-┌──────────────────┐
-│ generate_proposal│ ← 节点 2：视频分镜方案 + 角色设计
-│   提案           │     输入: researchReport + userPrompt
-└────┬─────────────┘     输出: proposal
-     │
-     ▼
-┌──────────────────┐
-│ script_generation│ ← 节点 3：逐镜头生产脚本 ★NEW★
-│   脚本生成       │     输入: proposal + researchReport
-└────┬─────────────┘     输出: videoScript
-     │
-     ▼
-┌──────────────────────┐
-│     fanout (Send)    │ ← 条件边：并行分发
-│    ┌──────┐ ┌─────┐ │
-└────┤asset ├─┤ tts ├─┘
-     │_gen  │ │     │
-     └──┬───┘ └──┬──┘
-        │        │        ← 节点 4a/4b：并行执行
-        ▼        ▼           asset_gen: proposal → assetManifest
-     ┌──────────────┐        tts: proposal → audioUrl
-     │  video_gen   │    ← 节点 5：汇聚点
-     │  视频生成    │      输入: proposal + videoScript + assetManifest + audioUrl
-     └──────┬───────┘      输出: videoUrl + durationSec
-            │
-            ▼
-           END
+research              ← 节点 1：文本分析 → researchReport
+    │
+generate_proposal     ← 节点 2：角色设计 + 场景分组 → proposal
+    │
+script_generation     ← 节点 3：逐镜头四子脚本 → videoScript
+    │
+fanout_assets_tts     ← 条件边：并行分发（带 jobId）
+  ╱        ╲
+asset_gen  tts        ← 节点 4/5：素材生成 ∥ 分段语音合成
+  ╲        ╱
+scene_json_assembler  ← 节点 6：组装 SceneVideoSpec[]（素材公网 URL + 音频路径）
+    │
+   END
+
+# shot_video / video_merge 节点保留在 nodes.ts 但未接线
 ```
 
 ### 状态通道（VideoGenState）
 
-所有通道使用 `LastValue` reducer 策略，`_procedureLog` 使用自定义 deep-merge reducer：
-
-| 通道 | 类型 | 来源节点 |
-|------|------|----------|
-| `userPrompt` | `string` | 输入 |
-| `style` | `string` | 输入 |
-| `researchReport` | `ResearchReport \| null` | research |
-| `proposal` | `Proposal \| null` | generate_proposal |
-| `videoScript` | `VideoScript \| null` | script_generation ★ |
-| `assetManifest` | `AssetManifest \| null` | asset_gen |
-| `audioUrl` | `string` | tts |
-| `audioDuration` | `number` | tts |
-| `videoUrl` | `string` | video_gen |
-| `durationSec` | `number` | video_gen |
-| `videoGenStatus` | `string` | video_gen |
-| `jobId` | `string` | 输入 / video_gen |
-| `error` | `string` | 异常时 |
-| `_procedureLog` | `unknown` (custom) | 所有节点累积 |
+| 通道 | 类型 | 来源节点 | reducer |
+|------|------|----------|---------|
+| `userPrompt` | `string` | 输入 | LastValue |
+| `style` | `string` | 输入 | LastValue |
+| `researchReport` | `ResearchReport \| null` | research | LastValue |
+| `proposal` | `Proposal \| null` | generate_proposal | LastValue |
+| `videoScript` | `VideoScript \| null` | script_generation | LastValue |
+| `assetManifest` | `AssetManifest \| null` | asset_gen | LastValue |
+| `audioSegments` | `SceneAudioSegment[]` | tts | 自定义覆盖 |
+| `sceneSpecs` | `SceneVideoSpec[]` | scene_json_assembler | 自定义覆盖 |
+| `scriptTextSnapshot` | `string \| null` | script_generation | LastValue |
+| `sceneVideos` | `SceneVideoResult[]` | shot_video（未接线） | 按 sceneId 合并 |
+| `mergedVideoUrl` | `string \| null` | video_merge（未接线） | LastValue |
+| `mergeLog` | `string \| null` | video_merge（未接线） | LastValue |
+| `durationSec` | `number` | video_merge（未接线） | LastValue |
+| `jobId` | `string` | 输入 | LastValue |
+| `error` | `string` | 异常时 | LastValue |
 
 ### Fanout 路由（Send API）
 
 ```typescript
-function fanout(state): Send[] {
+function fanoutAssetsTts(state): Send[] {
   return [
-    new Send('asset_gen', { proposal, videoScript }),
-    new Send('tts',       { proposal, videoScript }),
+    new Send('asset_gen', { proposal, videoScript, jobId }),
+    new Send('tts',       { proposal, videoScript, jobId }),
   ];
 }
 ```
 
-两个分支并行执行，互不依赖。汇聚点 `video_gen` 等待两者完成。
+`asset_gen` 与 `tts` 无相互依赖，并行执行；`scene_json_assembler` 等待两者完成。
 
 ---
 
-## 五、6 个节点详解
+## 五、节点详解
 
 ### 节点 1：Research（调研）
 
@@ -209,24 +179,15 @@ function fanout(state): Send[] {
 |------|-----|
 | 工具 | `analyzeContent()` |
 | Prompt | `lib/prompts/research.ts` |
-| LLM | `RESEARCH_LLM_MODEL` (DeepSeek v4-pro) |
-| 超时 | 30s |
-| 重试 | 3 次，指数退避 |
+| LLM | `RESEARCH_LLM_MODEL` |
 
-**输入**: `userPrompt`（用户原始文本）
+**输入**: `userPrompt`
 
-**输出** (`ResearchReport`):
-```
-metadata         → topic, wordCount, language, contentType,
-                   sceneTime[], sceneLocation[], userDemand
-contentSkeleton  → segments[] (id/title/originalText/summary/keywords), flow
-styleProfile     → tone, pace, visualStyle, suggestedBGM
-characterAnalysis→ hasCharacter, characterHints[]
-readiness        → overallScore, dimensions{info/logic/visual/emotion/completeness},
-                   shortcomings[], expansionHints[], canProceedDirectly
-```
+**输出** (`ResearchReport`): `user_text` + `user_demand` + `content_readiness_assessment`
 
-**容错**: LLM 调用失败 → 3 次重试 → 规则兜底（`fallbackResearch`），基于标点分段 + 角色关键词检测
+**日志**: 若返回 tokenUsage → `saveStageLog(jobId, 'research', …)` 写 procedure.json
+
+**容错**: LLM 调用失败 → 3 次指数退避重试 → 仍失败则抛异常（零容错）
 
 ---
 
@@ -236,129 +197,158 @@ readiness        → overallScore, dimensions{info/logic/visual/emotion/complete
 |------|-----|
 | 工具 | `generateProposal()` |
 | Prompt | `lib/prompts/proposal.ts` |
-| LLM | `PROPOSAL_LLM_MODEL` (DeepSeek v4-pro) |
-| 超时 | 30s |
-| 重试 | 3 次 |
+| LLM | `PROPOSAL_LLM_MODEL` |
 
 **输入**: `researchReport` + `userPrompt` + `style`
 
 **输出** (`Proposal`):
 ```
-blueprint       → title, totalDuration, sceneCount, aspectRatio
-extraction      → rawScenes[]        (步骤一中间结果)
-optimizationLog → action log[]        (步骤二中间结果)
-shotScript[]    → sceneId, duration, summary, layout, subtitleText,
-                  transition{from/to}, cast[]
-styleGuide      → globalTone, colorPalette[], fontFamily, backgroundMusic, transitions
-feasibility     → riskLevel, estimatedRenderTime, suggestions[]
-characters[]?   → characterId, name, appearance(EN), role, appearsInScenes[]
-videoGen?       → style, duration
-_expansionApplied → 补全记录 | null
+characters[]  → characterId/name/type/appearance/personality/role
+blueprint     → title/totalDuration/aspectRatio
+sceneVisuals[]→ visualId + description + visualHints + scenes[]
+                scenes[] 每项: sceneId / sceneDescription / appearCharId / duration
+styleProfile  → tone / visualStyle / suggestedBGM
 ```
 
-**容错**: LLM 失败 → 规则兜底（基于 research segments 构建分镜）
+**容错**: 零容错（校验缺失字段直接抛错）
 
 ---
 
-### 节点 3：Script Generation（脚本生成）★NEW★
+### 节点 3：Script Generation（脚本生成）★
 
 | 属性 | 值 |
 |------|-----|
 | 工具 | `generateScript()` |
 | Prompt | `lib/prompts/script-generation.ts` |
-| LLM | `SCRIPT_LLM_MODEL` (DeepSeek v4-pro) |
-| 超时 | 60s |
-| 重试 | 3 次 |
+| LLM | `SCRIPT_LLM_MODEL` |
+| 重试 | 最多 3 次，指数退避 |
 
 **输入**: `proposal` + `researchReport` + `userPrompt`
 
-**输出** (`VideoScript`):
+**输出** (`VideoScript`)：四子脚本，`scenes[]` 长度一致、sceneId 顺序一致：
 ```
-narrativeDesign → hook, emotionalArc[], pacingMap{tempo, accelerationAt[]}
-sceneScripts[]  → 为每个 proposal shot 扩展：
-  ├── sceneId, duration
-  ├── resourceRefs { characterImageRef, sceneImageRef }
-  ├── videoGenPrompt { motionDescription(EN), negativePrompt, styleStrength }
-  ├── audio { narration?, dialogues[], soundEffects[], musicOverride? }
-  ├── textOverlays[] { content, position, style, animation, timing }
-  └── transition { transitionType, visualLink, fromPrevious, toNext }
+storyScript      剧情脚本（sceneDescription + characters[] + narrative）
+storyboardScript 分镜脚本（appearCharId + resourceRefs.sceneImageRef + shot/构图/参数）
+audioScript      音频脚本（dialogue + sfx + bgm）
+pacingScript     节奏脚本（duration + transitionIn/Out + keyMoments）
 ```
 
-**容错**: LLM 失败 → 基于 proposal.shotScript 生成最小脚本
+**结构校验**：`parseAndValidateScript` 检查四子脚本长度一致、sceneId 一致、`appearCharId` 数组存在、各子脚本必填字段，不合法即重试。
+
+**快照**: 写 `storage/scripts/{jobId}/scene-texts.json`（按 sceneId 对齐的关键文本），并写回 `scriptTextSnapshot`。
 
 ---
 
-### 节点 4a：Asset Generation（素材生成）
+### 节点 4：Asset Generation（素材生成）
 
 | 属性 | 值 |
 |------|-----|
 | 工具 | `generateAssets()` |
-| API | DashScope qwen-image-2.0 |
-| 超时 | 120s |
+| 来源接口 | 本地库引用 + AI 生成（DashScope 图片） |
+| 产物 | `AssetManifest` → `storage/assets/{jobId}/manifest.json` |
 
-**输入**: `proposal.characters` + `proposal.shotScript`
+**输入**: `proposal` + `videoScript`（storyboard 的 `appearCharId` + `resourceRefs.sceneImageRef`）
 
 **输出** (`AssetManifest`):
 ```
-characters[] → 每个角色生成 4 视图 (front/back/left/right)
-scenes[]     → 每个镜头生成场景背景图
+characters → Record<charId, { source: library|ai, sourceRef?, views: {front,back,left,right} }>
+scenes     → Record<ref, { source, image }>      （按 sceneImageRef 去重，共享一张背景）
+sceneRefs  → Record<sceneId, ref>                （sceneId → ref 显式映射）
 ```
 
 **流程**:
-1. 每个角色 → 1 次 API 调用 → 批量生成 4 张独立图片
-2. 每个镜头 → 并行调用 → 生成场景背景（基于 `shot.summary`）
-3. 下载到本地 `storage/assets/<jobId>/`
-4. API 失败 → 纯色兜底
+1. 角色素材：按唯一 charId 生成（不是每场景）——选角占位取最新库组，无库则 AI 生成四视图
+2. 场景素材：按 `resourceRefs.sceneImageRef` 去重，每个 ref 只 AI 生成一次背景图
+3. 写本地 `storage/assets/{jobId}/`（AI 产物）+ manifest.json（全部相对路径）
+4. 公网 URL 由 `AssetStore.publish()` 在组装时按需生成
+
+**零容错**：任何异常直接抛出，不降级。
 
 ---
 
-### 节点 4b：TTS（语音合成）
+### 节点 5：TTS（分段语音合成）
 
 | 属性 | 值 |
 |------|-----|
-| 工具 | `synthesizeSpeech()` |
-| API | DashScope qwen3-tts-flash |
-| 音色 | `AI_TTS_VOICE` (默认 Cherry) |
+| 工具 | `synthesizeSpeech()`（DashScope qwen3-tts-flash） |
+| SSML | `buildShotSSML()`（含停顿 + 情感语速映射） |
+| 对齐 | FFmpeg `apad` 对齐到镜头时长；纯视觉镜头生成静音 |
 
-**输入**: `proposal.shotScript`
+**输入**: `videoScript.audioScript`（对齐 `pacingScript`）
 
-**输出**: `audioUrl`（本地路径）+ `audioDuration`
+**输出**: `audioSegments[]` = `{ sceneId, audioUrl, durationSec }`
 
 **流程**:
-1. 将 `shotScript[].subtitleText` 串联为 TTS 文本
-2. 调用 DashScope TTS API
-3. 下载音频到 `storage/audio/<jobId>/`
-4. API 失败 → 占位标记
+1. 逐镜头取 dialogue，首句情感作语气，构建 SSML
+2. 有台词 → TTS 合成；无台词 → FFmpeg 生成静音
+3. 对齐时长 → `storage/audio/{jobId}/{sceneId}_aligned.mp3`
 
 ---
 
-### 节点 5：Video Generation（视频生成）
+### 节点 6：Scene JSON Assembler（组装）
 
 | 属性 | 值 |
 |------|-----|
-| 工具 | `generateVideo()` |
-| API | DashScope happyhorse-1.1-i2v |
-| 模式 | 异步（X-DashScope-Async: enable） |
-| 超时 | 10 分钟轮询 |
-| 轮询间隔 | 5s |
+| 工具 | `AssetStore.publishManifest()` |
 
-**输入**: `proposal` + `assetManifest` + `audioUrl`
+**输入**: `videoScript` + `assetManifest` + `audioSegments`
 
-**输出**: `videoUrl` + `durationSec` + `videoGenStatus`
+**输出**: `sceneSpecs: SceneVideoSpec[]`（每镜头一条完整视频生成 JSON）
 
 **流程**:
-1. 构建 video prompt（从 `shot.summary` + `subtitleText` + `cast` 组装）
-2. POST 创建异步任务
-3. 轮询任务状态 → SUCCEEDED → 获取 video_url
-4. 下载到 `storage/output/<jobId>.mp4`
-5. 入队 BullMQ（供前端轮询）
-6. 持久化 `procedure.json` 日志
+1. `publishManifest(assetManifest)` → 全部素材发布为公网 URL（库素材查 meta 缓存，任务素材上传）
+2. 按 `pacingScript` 顺序组装，`sceneRefs[sceneId]` 取场景图，`appearCharId` 取角色四视图
 
-**容错**: API 未配置 / 任务失败 → 占位 JSON 文件
+**`SceneVideoSpec` 结构**（`lib/types.ts`）:
+```
+sceneId / duration / engine / mode / resolution / fps
+assets    → { sceneImageUrl, characterImageUrls[], audioFilePath }
+story     → { sceneDescription, narrative, characters }
+storyboard→ { shot, composition, lighting, visualElements, atmosphere, motionLevel, negativePrompt }
+audio     → { dialogue, sfx, bgm }
+pacing    → { transitionIn, transitionOut, keyMoments }
+```
 
 ---
 
-## 六、核心类型体系
+### 节点 7（保留未接线）：Video Merge
+
+`videoMergeNode` 保留在 nodes.ts 但不在图中：FFmpeg 拼接逐镜头视频 + 合成音轨。待 shot_video 接入后恢复。
+
+---
+
+## 六、素材系统
+
+### 素材库（本地已有资源）
+
+```
+storage/library/characters/{groupId}/
+├── front.jpeg / back.jpeg / left.jpeg / right.jpeg   # 一组 = 一个角色
+└── meta.json                                          # description/tags/applicable + remoteViews
+```
+
+当前已有 `char_userd_1_male`（男剑客）、`char_userd_1_female`（女法师）两对主角。
+
+### 交付契约：AssetManifest
+
+**asset_gen 向下只交付一份 `AssetManifest`，全部为相对路径**。两个来源接口（本地库 / AI 生成）产出同一结构，下游消费无感知差异。
+
+### AssetStore（`lib/store/asset-store.ts`）
+
+| 方法 | 作用 |
+|------|------|
+| `store(relPath, buffer)` | 写本地文件 |
+| `resolve(relPath)` | 本地绝对路径（预览/本地消费） |
+| `getCharacterGroup(groupId)` | 库角色「一组拿」：meta + 四视图 |
+| `getLatestCharacterGroup()` | 选角占位：取最新库组 |
+| `publish(relPath)` | 本地路径 → OSS 公网 URL；库素材回填 meta 缓存，跨任务复用 |
+| `publishManifest(manifest)` | 整份 manifest 解析为公网 URL |
+
+**OSS key 镜像相对路径**：`assets/34/scenes/scene_visual-1.png` → `openmontage/assets/34/scenes/scene_visual-1.png`；`library/...` key 跨任务稳定 → 首传后永久复用。
+
+---
+
+## 七、核心类型体系
 
 ### 数据流类型链
 
@@ -371,54 +361,46 @@ ResearchReport
     ▼ [generate_proposal]
 Proposal
     │
-    ▼ [script_generation]  ★NEW★
-VideoScript
+    ▼ [script_generation]
+VideoScript（四子脚本）
     │
-    ├─► [asset_gen] → AssetManifest (CharacterAsset[] + SceneAsset[])
-    ├─► [tts]       → audioUrl + audioDuration
+    ├─► [asset_gen] → AssetManifest（Record<charId> + Record<ref> + sceneRefs）
+    ├─► [tts]       → audioSegments[]
     │
-    ▼ [video_gen]
-VideoUrl + durationSec → BullMQ Queue → 前端
+    ▼ [scene_json_assembler]
+SceneVideoSpec[]（每镜头完整视频生成规格，素材公网 URL + 音频路径）
 ```
 
-### 辅助类型
+### 关键类型
 
 | 类型 | 用途 |
 |------|------|
-| `Character` | 角色定义 (id/name/appearance/role/appearsInScenes) |
-| `CharacterAsset` | 角色素材 (4 视图 + prompt) |
-| `SceneAsset` | 场景素材 (背景图 + prompt) |
-| `AssetManifest` | 素材清单 |
-| `TaskData` | BullMQ 任务数据 |
-| `TaskResult` | 任务返回结果 |
-| `TaskStage` | 任务阶段枚举 |
-| `TaskSummary` | 前端任务摘要 |
-| `ProcedureLog` | 全流程日志 |
-| `TokenUsage` | LLM token 统计 |
-| `ProposalResult` | Proposal 工具返回 |
-| `ResearchResult` | Research 工具返回 |
-| `ScriptResult` | Script 工具返回 |
-| `AssetGenResult` | Asset 工具返回 |
-| `TtsResult` | TTS 工具返回 |
-| `VideoGenResult` | Video 工具返回 |
+| `TaskData` / `TaskResult` / `TaskSummary` | BullMQ 任务数据 / 返回 / 摘要 |
+| `ResearchReport` | 调研报告（需求提取 + 就绪度评估） |
+| `Character` | 角色定义（appearance/personality/role） |
+| `Proposal` | 角色 + 蓝图 + sceneVisuals（scenes 含 appearCharId） |
+| `VideoScript` | 四子脚本（story/storyboard/audio/pacing） |
+| `StoryboardScriptScene` | 分镜（appearCharId + resourceRefs.sceneImageRef + 视觉参数） |
+| `CharacterAsset` / `SceneAsset` | 素材条目（source/sourceRef/views 或 image） |
+| `AssetManifest` | 素材清单（交付契约） |
+| `SceneVideoSpec` | 单镜头视频生成完整规格（assembler 输出） |
 
 ---
 
-## 七、API 路由
+## 八、API 路由
 
-### `POST /api/tasks` — 创建任务 ★ 核心入口
+### `POST /api/tasks` — 创建任务
 
 ```typescript
-// 请求体: { text: string }
-// 流程: videoGraph.invoke({ userPrompt: text }) — 同步执行整个 LangGraph 管线
-// 响应: 201 { id, status: 'waiting' }
+// 请求体: { text: string }（≤2000 字）
+// 流程: 校验 → BullMQ 入队 → 返回 { id, status: 'waiting' }
+// 响应: 201 { id, status: 'waiting' }；队列不可用 → 503
 ```
-**注意**：整个 AI 管线在此 HTTP 请求内同步完成，非异步 Worker 模式。
 
 ### `GET /api/tasks` — 任务列表
 
 ```typescript
-// 查询 BullMQ 中最近 50 个任务，按 createdAt 降序
+// 查询最近 50 个任务（所有状态），按 createdAt 降序
 // 响应: { tasks: TaskSummary[] }
 ```
 
@@ -428,152 +410,94 @@ VideoUrl + durationSec → BullMQ Queue → 前端
 // 响应: TaskSummary | 404
 ```
 
-### `GET /api/tasks/[id]/download` — 下载视频 ★
+### `GET /api/tasks/[id]/download` — 下载视频
 
 ```typescript
-// 远程 URL → 307 重定向
-// 本地文件 → 流式传输 (Content-Type: video/mp4, Content-Disposition: attachment)
-// 路径校验: 确保不越出 STORAGE_DIR
+// 未完成 → 409；远程 URL → 307 重定向；本地文件 → 流式传输
+// 路径校验: 确保不越出 STORAGE_DIR；文件缺失 → 410
 ```
 
 ---
 
-## 八、BullMQ 队列系统
+## 九、BullMQ 队列系统
 
 ### 队列配置
 
 ```typescript
 // lib/queue.ts
 const QUEUE_NAME = 'video-generation';
-// 连接: localhost:6379 (Redis)
+// 连接: REDIS_HOST:REDIS_PORT（默认 localhost:6379）
 ```
 
-### Worker 进程 (`workers/video-worker.ts`)
+### Worker 进程（`workers/video-worker.ts`）
 
-**双模式行为**：
+- 消费 `video-generation` 队列，`concurrency: 1`
+- 每任务调用 `executeTask(job, STORAGE_DIR)` → `videoGraph.invoke({ userPrompt, jobId })`
+- 进度：开始 10% → 完成 100%
+- 事件：`ready` / `completed` / `failed`（展开 LangGraph 多节点并行错误）/ `error`
+- 优雅关闭：SIGINT/SIGTERM
+
+### executeTask（`lib/orchestrator.ts`）
 
 ```typescript
-// 模式 1（新）：LangGraph 已在 API 中执行完毕
-//   job.data.videoUrl 已存在 → 仅归档日志、更新进度 → 返回结果
-
-// 模式 2（旧/兜底）：无 videoUrl
-//   调用 executeTask(job, STORAGE_DIR) → 在 Worker 中执行完整 LangGraph 管线
+const result = await videoGraph.invoke({ userPrompt: text, jobId });
+return {
+  videoPath: result.mergedVideoUrl（相对 storage 归一化）,
+  durationSec: result.durationSec,
+};
 ```
-
-**配置**: `concurrency: 1`（串行处理）
-**事件**: `ready` / `completed` / `failed` / `error` 均打印到 console
-**启动时**: 调用 `cleanupOldLogs(7)` 清理 7 天前日志
-**优雅关闭**: 处理 SIGINT/SIGTERM 信号
-
-### 进度报告
-
-| 阶段 | 进度 |
-|------|------|
-| 任务开始 | 10% |
-| 视频生成完成 | 90% |
-| 全流程完成 | 100% |
 
 ---
 
-## 九、环境变量一览
+## 十、环境变量一览
 
-### LLM (调研/提案/脚本)
-| 变量 | 说明 | 当前值 |
-|------|------|--------|
-| `RESEARCH_API_KEY` | 调研 API Key | DeepSeek |
-| `RESEARCH_BASE_URL` | 调研 API 地址 | `https://api.deepseek.com/v1` |
-| `RESEARCH_LLM_MODEL` | 调研模型 | `deepseek-v4-pro` |
-| `PROPOSAL_API_KEY` | 提案 API Key | DeepSeek |
-| `PROPOSAL_BASE_URL` | 提案 API 地址 | `https://api.deepseek.com/v1` |
-| `PROPOSAL_LLM_MODEL` | 提案模型 | `deepseek-v4-pro` |
-| `PROPOSAL_DEFAULT_DURATION_PER_SCENE` | 默认单镜头时长 | `8` |
-| `PROPOSAL_MAX_SCENES` | 最大镜头数 | `15` |
-| `SCRIPT_API_KEY` | 脚本 API Key | DeepSeek ★ |
-| `SCRIPT_BASE_URL` | 脚本 API 地址 | `https://api.deepseek.com/v1` ★ |
-| `SCRIPT_LLM_MODEL` | 脚本模型 | `deepseek-v4-pro` ★ |
+### LLM（调研/提案/脚本）
+| 变量 | 说明 |
+|------|------|
+| `RESEARCH_API_KEY` / `RESEARCH_BASE_URL` / `RESEARCH_LLM_MODEL` | 调研 LLM |
+| `PROPOSAL_API_KEY` / `PROPOSAL_BASE_URL` / `PROPOSAL_LLM_MODEL` | 提案 LLM |
+| `PROPOSAL_DEFAULT_DURATION_PER_SCENE` / `PROPOSAL_MAX_SCENES` | 提案默认参数 |
+| `SCRIPT_API_KEY` / `SCRIPT_BASE_URL` / `SCRIPT_LLM_MODEL` | 脚本 LLM ★ |
 
-### AI 服务 (DashScope)
-| 变量 | 说明 | 当前值 |
-|------|------|--------|
-| `AI_ASSET_API_KEY` | 图片生成 Key | DashScope |
-| `AI_ASSET_BASE_URL` | 图片生成地址 | qwen-image-2.0 |
-| `AI_ASSET_MODEL` | 图片模型 | `qwen-image-2.0` |
-| `AI_VIDEO_API_KEY` | 视频生成 Key | DashScope |
-| `AI_VIDEO_BASE_URL` | 视频生成地址 | happyhorse-1.1-i2v |
-| `AI_VIDEO_MODEL` | 视频模型 | `happyhorse-1.1-i2v` |
-| `AI_VIDEO_RESOLUTION` | 视频分辨率 | `720P` |
-| `AI_TTS_API_KEY` | TTS Key | DashScope |
-| `AI_TTS_BASE_URL` | TTS 地址 | qwen3-tts-flash |
-| `AI_TTS_MODEL` | TTS 模型 | `qwen3-tts-flash` |
-| `AI_TTS_VOICE` | TTS 音色 | `Cherry` |
-| `AI_TTS_SPEED` | TTS 语速 | `1.0` |
+### AI 服务（DashScope）
+| 变量 | 说明 |
+|------|------|
+| `AI_ASSET_API_KEY` / `AI_ASSET_BASE_URL` / `AI_ASSET_MODEL` | 图片生成（素材） |
+| `AI_VIDEO_API_KEY` / `AI_VIDEO_BASE_URL` / `AI_VIDEO_MODEL` | 视频生成（未接线阶段保留） |
+| `AI_TTS_API_KEY` / `AI_TTS_BASE_URL` / `AI_TTS_MODEL` / `AI_TTS_VOICE` / `AI_TTS_SPEED` | TTS |
+
+### OSS（公网 URL，视频生成硬依赖）
+| 变量 | 说明 |
+|------|------|
+| `OSS_REGION` / `OSS_BUCKET` / `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET` | 阿里云 OSS |
 
 ### 基础设施
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `REDIS_HOST` | Redis 地址 | `localhost` |
-| `REDIS_PORT` | Redis 端口 | `6379` |
-
----
-
-## 十、工具设计模式
-
-所有 6 个工具遵循统一的四层架构：
-
-```
-┌──────────────────────────────────────────────────┐
-│  1. 公开 API (export async function)              │
-│     · 检查 API Key → 未配置则直接走规则兜底        │
-│     · 调用 withRetry(callLLM + parseAndValidate)  │
-│     · 成功 → 返回 typed result                    │
-│     · 失败 → fallback + 标记 model: "fallback(…)" │
-├──────────────────────────────────────────────────┤
-│  2. LLM 调用 (callXxxLLM)                        │
-│     · 拼接 context JSON + 发送 chat/completions   │
-│     · Bearer Token 鉴权                           │
-│     · 返回 { content, usage }                     │
-├──────────────────────────────────────────────────┤
-│  3. 结构校验 (parseAndValidate)                    │
-│     · 正则提取 JSON 对象                          │
-│     · 递归校验每个字段的存在性 + 类型              │
-│     · 兼容旧格式（可选字段默认值）                  │
-├──────────────────────────────────────────────────┤
-│  4. 规则兜底 (fallback)                           │
-│     · 纯本地处理，不调网络                        │
-│     · 基于上游数据构建最小可用结果                │
-│     · 保证管线不中断                              │
-└──────────────────────────────────────────────────┘
-```
-
-### 重试策略
-
-```
-最大重试: 3 次
-退避公式: delay = 2^attempt * 1000 ms
-即: 1s → 2s → 4s
-```
+| 变量 | 说明 |
+|------|------|
+| `REDIS_HOST` / `REDIS_PORT` | Redis 地址 |
+| `FFMPEG_PATH` | ffmpeg 可执行路径（可选，缺省用系统 PATH） |
 
 ---
 
 ## 十一、日志与可观测性
 
-### ProcedureLog 结构
+### 阶段审计日志（`lib/log/procedure.ts`）
 
-```typescript
+`saveStageLog(jobId, stageName, entry)` 追加写入 `log/procedure/job-<id>/procedure.json`：
+
+```json
 {
-  jobId, timestamp, totalDurationMs, totalTokenUsage?,
-  stages: {
-    research:   { input, output, durationMs, error? }
-    proposal:   { input, output, durationMs, error? }
-    script_gen: { input, output, durationMs, error? }  ★
-    asset_gen:  { input, output, durationMs, error? }
-    tts:        { input, output, durationMs, error? }
-    video_gen:  { input, output, durationMs, error? }
-    queue:      { input, output, durationMs, error? }
-  },
-  finalStatus, globalError?
+  "jobId": "…",
+  "startedAt": "…",
+  "stages": {
+    "research": { "startedAt", "durationSec", "model", "retries",
+                  "input", "output", "tokenUsage", "cost" }
+  }
 }
 ```
+
+- `calculateCost(model, usage)` 按 DeepSeek 定价表计算输入/输出费用
+- 当前 research 节点已接入；其余节点后续扩展
 
 ### 存储路径
 
@@ -581,55 +505,39 @@ const QUEUE_NAME = 'video-generation';
 log/procedure/job-<jobId>/procedure.json
 ```
 
-### 日志清理
-
-- 自动清理 7 天前的日志目录
-- 在应用启动时调用 `cleanupOldLogs()`
-- 超长字段自动截断（2000 字符）
-
 ---
 
 ## 十二、关键设计决策
 
-1. **节点独立可替换**: 每个节点只依赖 state 中的上游字段，与具体节点实现解耦。例如 `video_gen` 只检查 `state.proposal !== null`，不关心 proposal 是如何生成的。
+1. **节点独立可替换**：每个节点只依赖 state 中的上游字段，与具体节点实现解耦。
 
-2. **Send API 并行**: `asset_gen` 和 `tts` 无相互依赖，通过 `Send` 同时分发，减少总耗时。
+2. **Send API 并行**：`asset_gen` 和 `tts` 无相互依赖，通过 `Send` 并行分发（带 `jobId`），减少总耗时。
 
-3. **LLM + 规则双轨容错**: 每个 LLM 调用都有本地规则兜底，确保在 API 故障或配额耗尽时管线不中断。
+3. **零容错**：所有 AI 节点不静默降级，任何异常直接抛出使任务失败。LLM 工具内部最多 3 次指数退避重试，重试仍失败则抛错。
 
-4. **Prompt 与代码分离**: 所有 prompt 模板集中在 `lib/prompts/`，修改 prompt 不需要动工具代码。
+4. **manifest 只存相对路径**：`AssetManifest` 是 source of truth；公网 URL 是派生物，由 `AssetStore.publish()` 按需生成。消费方不关心「本地还是远端」。
 
-5. **deep-merge reducer**: `_procedureLog` 的自定义 reducer 确保每个节点只写入自己的 stage，不会互相覆盖。
+5. **素材两来源接口，单一交付契约**：本地库引用 + AI 生成产出同一 `AssetManifest` 结构，下游无感知差异；`source` 字段留给未来选角匹配逻辑审计。
 
-6. **异步视频 + 轮询**: DashScope 视频生成是异步的，`video_gen` 内部实现 task 创建 → 轮询 → 下载的三步流程。
+6. **库素材按引用不复制**：任务不复制库文件，`library/...` 的 OSS key 跨任务稳定，公网 URL 回填组 meta 后永久复用。
 
-7. **proposal → script_generation 分层**: Proposal 负责"拍什么"（结构），Script 负责"怎么拍"（细节），职责清晰，后续可独立优化。
+7. **appearCharId 显式引用**：角色→图片映射由 `proposal/storyboard.scenes[].appearCharId` 明文给出，取代旧的 `_default` 后缀字符串约定；角色素材按唯一 charId 生成。
+
+8. **Prompt 与代码分离**：prompt 集中在 `lib/prompts/`，新 prompt 在 `new_prompts/` 迭代评测后再落地。
+
+9. **图只到素材组装**：目前止于 `scene_json_assembler`（产出 `SceneVideoSpec[]`），shot_video / video_merge 保留未接线。
 
 ---
 
-## 十三、已知问题
+## 十三、已知限制
 
-### 1. `lib/agent/nodes.ts` 与 `app/lib/agent/nodes.ts` 不一致
+1. **选角为占位逻辑**：`getLatestCharacterGroup()` 取最新库组，多个角色会映射到同一组；appearance ↔ meta 的匹配逻辑待专门设计。
 
-两个文件共存，均含 6 个节点的完整实现，但存在差异：
+2. **前端为单文件 SPA**：`app/page.tsx` 包含全部 UI 逻辑，未拆分组件。
 
-| 差异点 | `lib/agent/nodes.ts` | `app/lib/agent/nodes.ts` |
-|--------|---------------------|--------------------------|
-| 被谁引用 | `graph.ts` (`./nodes`) | 无直接引用 |
-| `videoGenNode` 调 `generateVideo` | **3 参数**（无 audioUrl） | **4 参数**（含 audioUrl） |
-| 日志获取方式 | 统一 `ensureLog()` | `if (log)` null 检查 |
+3. **无认证系统**：任务全局可见，无用户隔离。
 
-**影响**: 当前编译结果中 `video_gen` 节点不会将 TTS 音频传递给视频生成 API。
-
-**建议**: 统一为 `app/lib/agent/nodes.ts` 的较新版本，或改为从 state 中读取 `videoScript` 而非依赖两个不一致的文件。
-
-### 2. 前端为单文件 SPA
-
-`app/page.tsx` 是一个 200+ 行的客户端组件，包含所有 UI 逻辑（输入框、提交、轮询、状态展示、下载），未拆分为独立组件。
-
-### 3. 无认证系统
-
-所有任务全局可见，无用户隔离。任务 ID 可被猜测。
+4. **scenes 未接 shot_video**：图到 `SceneVideoSpec[]` 即止，逐镜头视频生成与最终拼接尚未接线。
 
 ---
 
@@ -640,17 +548,17 @@ log/procedure/job-<jobId>/procedure.json
 npm install
 
 # 2. 配置环境变量
-cp .env.example .env  # 并填写 API Key
+cp .env.example .env  # 并填写各 API Key
 
 # 3. 启动 Redis
 docker compose up -d   # 或 redis-server
 
-# 4. 启动 Next.js 开发服务器 + Worker（并行）
+# 4. 启动 Next.js + Worker（并行）
 npm run dev:all
 
 # 或分别启动:
 npm run dev                           # 终端 1: Web 服务
-npx tsx workers/video-worker.ts       # 终端 2: Worker
+npm run worker                        # 终端 2: Worker
 
 # 5. 运行测试
 npm test

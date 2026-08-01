@@ -1,13 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
 import { type VideoGenStateType, type VideoGenStateUpdate, type SceneAudioSegment, type SceneVideoResult } from './state';
+import type { SceneVideoSpec } from '@/lib/types';
 import { analyzeContent } from '@/lib/tools/research-generator';
 import { generateProposal } from '@/lib/tools/proposal-generator';
 import { generateScript } from '@/lib/tools/script-generator';
 import { generateAssets } from '@/lib/tools/asset-generator';
 import { synthesizeSpeech } from '@/lib/tools/tts-generator';
-import { generateSingleVideo } from '@/lib/tools/shot-video-generator';
 import { buildShotSSML } from '@/lib/prompts/tts';
+import { AssetStore } from '@/lib/store/asset-store';
 import { saveStageLog, calculateCost, formatDurationSec } from '@/lib/log/procedure';
 
 // ── FFmpeg 辅助 ──────────────────────────────────────
@@ -54,8 +56,10 @@ export async function researchNode(state: VideoGenStateType): Promise<Partial<Vi
   const jobId = state.jobId || String(Date.now());
 
   console.log(
-    `[agent] research → ${result.report.contentSkeleton.segments.length} 个段落, ` +
-    `角色需求: ${result.report.characterAnalysis.hasCharacter ? '是' : '否'} (model: ${result.model})`
+    `[agent] research → 需求提取: ${result.report.user_demand.hasExplicitDemand ? '是' : '否'} ` +
+    `(${result.report.user_demand.demands.length} 条), ` +
+    `就绪度: ${result.report.content_readiness_assessment.overallScore} ` +
+    `(${result.report.content_readiness_assessment.level}) (model: ${result.model})`
   );
 
   // ── 阶段审计日志 ──
@@ -90,12 +94,13 @@ export async function proposalNode(state: VideoGenStateType): Promise<Partial<Vi
     state.style ?? undefined
   );
 
-  const charInfo = result.proposal.characters?.length
+  const sceneCount = result.proposal.sceneVisuals.reduce((sum, sv) => sum + sv.scenes.length, 0);
+  const charInfo = result.proposal.characters.length
     ? `, ${result.proposal.characters.length} 个角色`
     : '';
 
   console.log(
-    `[agent] proposal → ${result.proposal.shotScript.length} 个镜头, ` +
+    `[agent] proposal → ${result.proposal.sceneVisuals.length} 个空间, ${sceneCount} 个镜头, ` +
     `${result.proposal.blueprint.totalDuration}s${charInfo} (model: ${result.model})`
   );
 
@@ -118,14 +123,21 @@ export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<V
   );
   const videoScript = result.script;
 
-  // ── 保存关键生成文本快照 ──
-  const textSnapshot = videoScript.sceneScripts.map((sc) => ({
-    sceneId: sc.sceneId,
-    motionDescription: sc.videoGenPrompt.motionDescription,
-    negativePrompt: sc.videoGenPrompt.negativePrompt,
-    narration: sc.audio.narration?.text ?? null,
-    dialogues: sc.audio.dialogues?.map((d) => d.text) ?? [],
-  }));
+  // ── 保存关键生成文本快照（四子脚本按 sceneId 对齐）──
+  const pacingById = new Map(videoScript.pacingScript.scenes.map((p) => [p.sceneId, p]));
+  const audioById = new Map(videoScript.audioScript.scenes.map((a) => [a.sceneId, a]));
+  const textSnapshot = videoScript.storyScript.scenes.map((sc) => {
+    const pc = pacingById.get(sc.sceneId);
+    const au = audioById.get(sc.sceneId);
+    return {
+      sceneId: sc.sceneId,
+      duration: pc?.duration ?? null,
+      narrative: sc.narrative,
+      shotType: (videoScript.storyboardScript.scenes.find((b) => b.sceneId === sc.sceneId))?.shot.type ?? null,
+      dialogue: au?.dialogue?.map((d) => d.text) ?? [],
+      sfx: au?.sfx?.map((s) => s.type) ?? [],
+    };
+  });
 
   const jobId = state.jobId || 'unknown';
   const scriptDir = path.join(SCRIPTS_DIR, jobId);
@@ -137,7 +149,7 @@ export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<V
   );
 
   console.log(
-    `[agent] script_gen → ${videoScript.sceneScripts.length} 个镜头脚本 ` +
+    `[agent] script_gen → ${videoScript.storyScript.scenes.length} 个镜头（四子脚本） ` +
     `(model: ${result.model}) → scripts saved to ${scriptDir}`
   );
 
@@ -159,7 +171,7 @@ export async function assetGenNode(state: VideoGenStateType): Promise<Partial<Vi
   const result = await generateAssets(state.proposal, state.videoScript, jobId);
 
   console.log(
-    `[agent] asset_gen → ${result.characterCount} 个角色, ${result.sceneCount} 个唯一场景`
+    `[agent] asset_gen → ${result.characterCount} 个角色, ${result.sceneCount} 个唯一场景 → ${result.manifestPath}`
   );
 
   return {
@@ -172,17 +184,23 @@ export async function assetGenNode(state: VideoGenStateType): Promise<Partial<Vi
 // ============================================================
 
 async function generateSilence(outputPath: string, durationSec: number): Promise<void> {
+  // 直接用 ffmpeg CLI 子进程生成静音，绕开 fluent-ffmpeg 对新版 ffmpeg -formats 输出的 lavfi 能力探测 bug
   return new Promise<void>((resolve, reject) => {
-    ffmpeg()
-      .input('anullsrc=channel_layout=mono:sample_rate=22050')
-      .inputOptions(['-f', 'lavfi'])
-      .output(outputPath)
-      .audioCodec('libmp3lame')
-      .audioBitrate('64k')
-      .duration(durationSec)
-      .on('end', () => resolve())
-      .on('error', reject)
-      .run();
+    const bin = FFMPEG_PATH || 'ffmpeg';
+    execFile(
+      bin,
+      [
+        '-hide_banner', '-loglevel', 'error',
+        '-f', 'lavfi',
+        '-i', 'anullsrc=channel_layout=mono:sample_rate=22050',
+        '-t', String(durationSec),
+        '-c:a', 'libmp3lame',
+        '-b:a', '64k',
+        '-y',
+        outputPath,
+      ],
+      (err) => (err ? reject(err) : resolve())
+    );
   });
 }
 
@@ -208,20 +226,25 @@ export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGe
 
   const audioSegments: SceneAudioSegment[] = [];
 
+  // 新版数据源：pacingScript.scenes（sceneId + duration）对齐 audioScript.scenes（dialogue/sfx/bgm）
+  const pacingScenes = state.videoScript.pacingScript.scenes;
+  const audioById = new Map(state.videoScript.audioScript.scenes.map((a) => [a.sceneId, a]));
+
   let ttsFirst = true;
-  for (const shot of state.proposal.shotScript) {
+  for (const pc of pacingScenes) {
     if (!ttsFirst) {
       await new Promise((r) => setTimeout(r, 1000)); // TTS 请求间隔 1s 避免限流
     }
     ttsFirst = false;
 
-    const scene = state.videoScript.sceneScripts.find((s) => s.sceneId === shot.sceneId);
-    if (!scene) throw new Error(`Scene script not found for ${shot.sceneId}`);
+    const scene = audioById.get(pc.sceneId);
+    if (!scene) throw new Error(`Scene audio script not found for ${pc.sceneId}`);
 
-    const narrationText = scene.audio.narration?.text ?? null;
-    const narrationEmotion = scene.audio.narration?.emotion ?? 'neutral';
-    const pauseAfter = scene.audio.narration?.pauseAfter ?? 0.5;
-    const dialogues = (scene.audio.dialogues ?? []).filter((d) => d.text.trim());
+    // 新版 audioScript：dialogue[]（旁白/台词合一，无独立 narration/speed），首句情感作语气
+    const dialogues = (scene.dialogue ?? []).filter((d) => d.text.trim());
+    const narrationText = dialogues.length > 0 ? dialogues[0].text : null;
+    const narrationEmotion = dialogues.length > 0 ? dialogues[0].emotion : 'neutral';
+    const pauseAfter = 0.5;
 
     // 构建 SSML（含停顿 + 情感语速映射）
     const ssml = buildShotSSML(
@@ -235,22 +258,22 @@ export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGe
 
     if (ssml) {
       const ttsResult = await synthesizeSpeech(ssml);
-      audioPath = path.join(audioDir, `${shot.sceneId}.mp3`);
+      audioPath = path.join(audioDir, `${pc.sceneId}.mp3`);
       fs.writeFileSync(audioPath, ttsResult.audioBuffer);
     } else {
-      audioPath = path.join(audioDir, `${shot.sceneId}_silent.mp3`);
-      await generateSilence(audioPath, shot.duration);
+      audioPath = path.join(audioDir, `${pc.sceneId}_silent.mp3`);
+      await generateSilence(audioPath, pc.duration);
     }
 
     // 对齐时长
     const rawPath = audioPath;
-    audioPath = path.join(audioDir, `${shot.sceneId}_aligned.mp3`);
-    await alignAudioDuration(rawPath, audioPath, shot.duration);
+    audioPath = path.join(audioDir, `${pc.sceneId}_aligned.mp3`);
+    await alignAudioDuration(rawPath, audioPath, pc.duration);
 
     audioSegments.push({
-      sceneId: shot.sceneId,
+      sceneId: pc.sceneId,
       audioUrl: audioPath,
-      durationSec: shot.duration,
+      durationSec: pc.duration,
     });
   }
 
@@ -262,91 +285,114 @@ export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGe
 }
 
 // ============================================================
-// 节点 6：Shot Video Sequential（串行逐镜头视频生成）
+// 节点 6：Scene JSON Assembler（组装单镜头视频生成完整 JSON）
 // ============================================================
 
-export async function sequentialShotVideoNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
-  const start = Date.now();
-  if (!state.proposal) throw new Error('缺少 Proposal');
+/**
+ * 将四子脚本 + 素材产物 + 音频产物按 sceneId 组装为单镜头的完整视频生成规格（SceneVideoSpec[]）。
+ * 素材经 AssetStore.publish() 发布为公网 URL 后填入 assets。
+ * 图到此为止（不进入 video_merge）。
+ */
+export async function sceneJsonAssemblerNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
   if (!state.videoScript) throw new Error('缺少 VideoScript');
   if (!state.assetManifest) throw new Error('缺少 AssetManifest');
 
-  const jobId = state.jobId || 'unknown';
-  const outputDir = path.join(process.cwd(), 'storage', 'scenes', jobId);
-  fs.mkdirSync(outputDir, { recursive: true });
+  const vs = state.videoScript;
+  const { assetManifest, audioSegments } = state;
 
-  const sceneVideos: SceneVideoResult[] = [];
-  const shots = state.proposal.shotScript;
+  // 发布素材 → 公网 URL（场景图 + 角色四视图），供视频生成 API 引用
+  const store = new AssetStore();
+  const published = await store.publishManifest(assetManifest);
 
-  for (let i = 0; i < shots.length; i++) {
-    const shot = shots[i];
-    const sceneScript = state.videoScript.sceneScripts.find((s) => s.sceneId === shot.sceneId);
-    if (!sceneScript) throw new Error(`Scene script not found for ${shot.sceneId}`);
+  const storyById = new Map(vs.storyScript.scenes.map((s) => [s.sceneId, s]));
+  const boardById = new Map(vs.storyboardScript.scenes.map((b) => [b.sceneId, b]));
+  const audioById = new Map(vs.audioScript.scenes.map((a) => [a.sceneId, a]));
 
-    // 镜头间间隔 5s 防止 API 限流
-    if (i > 0) {
-      console.log(`[agent] shot_video → 等待 5s 后处理下一个镜头...`);
-      await new Promise((r) => setTimeout(r, 5000));
+  // 按 pacingScript 顺序（与 Proposal 镜头顺序一致）
+  const sceneSpecs: SceneVideoSpec[] = vs.pacingScript.scenes.map((pc) => {
+    const st = storyById.get(pc.sceneId);
+    const b = boardById.get(pc.sceneId);
+    const au = audioById.get(pc.sceneId);
+
+    if (!st || !b || !au) {
+      throw new Error(`scene_json_assembler: scene ${pc.sceneId} 缺少对应子脚本`);
     }
 
-    const sceneAsset = state.assetManifest.scenes.find((s) => s.sceneId === shot.sceneId);
-    if (!sceneAsset) throw new Error(`Scene asset not found for ${shot.sceneId}`);
+    // 音频产物：对齐后的音频文件路径
+    const audioSegment = audioSegments.find((a) => a.sceneId === pc.sceneId);
+    const audioFilePath = audioSegment?.audioUrl ?? null;
 
-    const characterImagePaths: string[] = [];
-    for (const charId of (shot.cast ?? [])) {
-      const charAsset = state.assetManifest.characters.find((c) => c.characterId === charId);
-      if (charAsset?.remoteViews) {
+    // 角色图：按 appearCharId 逐个取已发布的四视图公网 URL
+    const characterImageUrls: string[] = [];
+    for (const charId of (b.appearCharId ?? [])) {
+      const views = published.characters[charId];
+      if (views) {
         for (const v of ['front', 'back', 'left', 'right'] as const) {
-          if (charAsset.remoteViews[v]) characterImagePaths.push(charAsset.remoteViews[v]);
+          if (views[v]) characterImageUrls.push(views[v]);
         }
       }
     }
 
-    if (characterImagePaths.length === 0) {
-      console.warn(`[agent] shot_video → ${shot.sceneId}: 无角色 OSS URL`);
-    }
+    return {
+      sceneId: pc.sceneId,
+      duration: pc.duration,
+      engine: b.engine,
+      mode: b.mode,
+      resolution: b.resolution,
+      fps: b.fps,
+      assets: {
+        sceneImageUrl: published.scenes[pc.sceneId] ?? null,
+        characterImageUrls,
+        audioFilePath,
+      },
+      story: {
+        sceneDescription: st.sceneDescription,
+        narrative: st.narrative,
+        characters: st.characters,
+      },
+      storyboard: {
+        shot: b.shot,
+        composition: b.composition,
+        lighting: b.lighting,
+        visualElements: b.visualElements,
+        atmosphere: b.atmosphere,
+        motionLevel: b.motionLevel,
+        negativePrompt: b.negativePrompt,
+      },
+      audio: {
+        dialogue: au.dialogue,
+        sfx: au.sfx,
+        bgm: au.bgm,
+      },
+      pacing: {
+        transitionIn: pc.transitionIn,
+        transitionOut: pc.transitionOut,
+        keyMoments: pc.keyMoments,
+      },
+    };
+  });
 
-    const sceneImagePath = sceneAsset.remoteUrl ?? sceneAsset.imageUrl;
-
-    console.log(
-      `[agent] shot_video → ${shot.sceneId} (${i + 1}/${shots.length}, ` +
-      `${shot.duration}s, ${characterImagePaths.length} 张角色图)`
-    );
-
-    const videoBuffer = await generateSingleVideo({
-      sceneImagePath,
-      characterImagePaths,
-      motionDescription: sceneScript.videoGenPrompt.motionDescription,
-      negativePrompt: sceneScript.videoGenPrompt.negativePrompt,
-      duration: shot.duration,
-      styleStrength: sceneScript.videoGenPrompt.styleStrength,
-    });
-
-    const outputPath = path.join(outputDir, `${shot.sceneId}.mp4`);
-    fs.writeFileSync(outputPath, videoBuffer);
-    sceneVideos.push({ sceneId: shot.sceneId, videoUrl: outputPath, durationSec: shot.duration, status: 'done' });
-    console.log(`[agent] shot_video → ${shot.sceneId} done`);
-  }
-
-  console.log(`[agent] shot_video → 完成 ${sceneVideos.length} 个镜头 (${Date.now() - start}ms)`);
+  console.log(`[agent] scene_json_assembler → ${sceneSpecs.length} 个镜头的完整视频生成规格`);
 
   return {
-    sceneVideos,
+    sceneSpecs,
   };
 }
 
 // ============================================================
-// 节点 7：Video Merge（FFmpeg 拼接）— 零容错
+// 节点 7（保留未接线）：Video Merge（FFmpeg 拼接）— 零容错
 // ============================================================
 
 export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
   if (!state.proposal) throw new Error('缺少 Proposal');
+  if (!state.videoScript) throw new Error('缺少 VideoScript');
 
   const sceneVideos = state.sceneVideos;
   const audioSegments = state.audioSegments;
+  const pacingScenes = state.videoScript.pacingScript.scenes;
 
-  if (sceneVideos.length !== state.proposal.shotScript.length) {
-    throw new Error(`Video count mismatch: expected ${state.proposal.shotScript.length}, got ${sceneVideos.length}`);
+  if (sceneVideos.length !== pacingScenes.length) {
+    throw new Error(`Video count mismatch: expected ${pacingScenes.length}, got ${sceneVideos.length}`);
   }
 
   const jobId = state.jobId || 'unknown';
@@ -354,17 +400,17 @@ export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<
   fs.mkdirSync(outputDir, { recursive: true });
   const outputPath = path.join(outputDir, `${jobId}.mp4`);
 
-  // 按 shot 顺序排列
+  // 按 pacingScript 顺序排列
   const orderedVideos: SceneVideoResult[] = [];
   const orderedAudios: SceneAudioSegment[] = [];
 
-  for (const shot of state.proposal.shotScript) {
-    const video = sceneVideos.find((v) => v.sceneId === shot.sceneId);
-    if (!video) throw new Error(`Missing video for ${shot.sceneId}`);
+  for (const pc of pacingScenes) {
+    const video = sceneVideos.find((v) => v.sceneId === pc.sceneId);
+    if (!video) throw new Error(`Missing video for ${pc.sceneId}`);
     orderedVideos.push(video);
 
-    const audio = audioSegments.find((a) => a.sceneId === shot.sceneId);
-    if (!audio) throw new Error(`Missing audio for ${shot.sceneId}`);
+    const audio = audioSegments.find((a) => a.sceneId === pc.sceneId);
+    if (!audio) throw new Error(`Missing audio for ${pc.sceneId}`);
     orderedAudios.push(audio);
   }
 

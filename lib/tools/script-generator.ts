@@ -6,9 +6,8 @@ import type { TokenUsage } from '@/lib/log/procedure';
  * Script 工具 — 基于 Proposal + ResearchReport 调用 LLM 生成逐镜头生产脚本。
  *
  * 策略：
- * 1. 调用 AI API，要求返回 VideoScript JSON
+ * 1. 调用 AI API，要求返回 VideoScript JSON（新版四子脚本：storyScript / storyboardScript / audioScript / pacingScript）
  * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
- * 3. 全部失败时回退到规则生成（fallbackScript）
  */
 
 // ── 配置（全部来自环境变量）─────────────────────────
@@ -57,201 +56,106 @@ function parseAndValidateScript(raw: string): VideoScript {
 
   const obj = parsed as Record<string, unknown>;
 
-  // ── narrativeDesign 校验 ──
-  const narrativeDesign = obj.narrativeDesign as Record<string, unknown> | undefined;
-  if (!narrativeDesign) throw new Error('[script] narrativeDesign 缺失');
-  if (typeof narrativeDesign.hook !== 'string' || !narrativeDesign.hook.trim()) {
-    throw new Error('[script] narrativeDesign.hook 缺失');
-  }
-  if (!Array.isArray(narrativeDesign.emotionalArc)) {
-    throw new Error('[script] narrativeDesign.emotionalArc 缺失');
+  // ── 四子脚本：顶层键存在性 ──
+  const subKeys = ['storyScript', 'storyboardScript', 'audioScript', 'pacingScript'] as const;
+  for (const key of subKeys) {
+    if (!obj[key] || typeof obj[key] !== 'object') {
+      throw new Error(`[script] ${key} 缺失或无效`);
+    }
   }
 
-  const pacingMap = narrativeDesign.pacingMap as Record<string, unknown> | undefined;
-  if (!pacingMap) throw new Error('[script] narrativeDesign.pacingMap 缺失');
-  if (typeof pacingMap.tempo !== 'string' ||
-      !['slow', 'medium', 'fast'].includes(pacingMap.tempo)) {
-    throw new Error('[script] narrativeDesign.pacingMap.tempo 无效');
+  const story = (obj.storyScript as Record<string, unknown>).scenes as unknown[] | undefined;
+  const board = (obj.storyboardScript as Record<string, unknown>).scenes as unknown[] | undefined;
+  const audio = (obj.audioScript as Record<string, unknown>).scenes as unknown[] | undefined;
+  const pacing = (obj.pacingScript as Record<string, unknown>).scenes as unknown[] | undefined;
+
+  if (!Array.isArray(story) || story.length === 0) throw new Error('[script] storyScript.scenes 缺失或为空');
+  if (!Array.isArray(board) || board.length !== story.length) {
+    throw new Error(`[script] storyboardScript.scenes 长度(${board?.length}) ≠ storyScript(${story.length})`);
   }
-  if (!Array.isArray(pacingMap.accelerationAt)) {
-    throw new Error('[script] narrativeDesign.pacingMap.accelerationAt 缺失');
+  if (!Array.isArray(audio) || audio.length !== story.length) {
+    throw new Error(`[script] audioScript.scenes 长度(${audio?.length}) ≠ storyScript(${story.length})`);
+  }
+  if (!Array.isArray(pacing) || pacing.length !== story.length) {
+    throw new Error(`[script] pacingScript.scenes 长度(${pacing?.length}) ≠ storyScript(${story.length})`);
   }
 
-  // ── sceneScripts 校验 ──
-  const sceneScripts = obj.sceneScripts as unknown[];
-  if (!Array.isArray(sceneScripts) || sceneScripts.length === 0) {
-    throw new Error('[script] sceneScripts 缺失或为空');
+  const sceneIds = story.map((s) => (s as Record<string, unknown>).sceneId);
+  for (const [name, arr] of [['storyboardScript', board], ['audioScript', audio], ['pacingScript', pacing]] as const) {
+    const ids = arr.map((s) => (s as Record<string, unknown>).sceneId);
+    if (JSON.stringify(ids) !== JSON.stringify(sceneIds)) {
+      throw new Error(`[script] ${name}.scenes 的 sceneId 与 storyScript 不一致`);
+    }
   }
 
-  for (let i = 0; i < sceneScripts.length; i++) {
-    const ss = sceneScripts[i] as Record<string, unknown> | undefined;
-    if (!ss) throw new Error(`[script] sceneScripts[${i}] 无效`);
-
-    if (typeof ss.sceneId !== 'string' || !ss.sceneId.trim()) {
-      throw new Error(`[script] sceneScripts[${i}].sceneId 缺失`);
+  // ── 逐镜校验 ──
+  for (let i = 0; i < story.length; i++) {
+    const st = story[i] as Record<string, unknown> | undefined;
+    if (!st) throw new Error(`[script] storyScript.scenes[${i}] 无效`);
+    if (typeof st.sceneId !== 'string' || !st.sceneId.trim()) {
+      throw new Error(`[script] storyScript.scenes[${i}].sceneId 缺失`);
     }
-    if (typeof ss.duration !== 'number') {
-      throw new Error(`[script] sceneScripts[${i}].duration 缺失`);
+    if (typeof st.sceneDescription !== 'string' || !st.sceneDescription.trim()) {
+      throw new Error(`[script] storyScript.scenes[${i}].sceneDescription 缺失`);
     }
-
-    // resourceRefs 校验
-    const resourceRefs = ss.resourceRefs as Record<string, unknown> | undefined;
-    if (!resourceRefs) throw new Error(`[script] sceneScripts[${i}].resourceRefs 缺失`);
-    if (resourceRefs.characterImageRef !== undefined && resourceRefs.characterImageRef !== null &&
-        typeof resourceRefs.characterImageRef !== 'string') {
-      throw new Error(`[script] sceneScripts[${i}].resourceRefs.characterImageRef 无效`);
-    }
-    if (typeof resourceRefs.sceneImageRef !== 'string' || !resourceRefs.sceneImageRef.trim()) {
-      throw new Error(`[script] sceneScripts[${i}].resourceRefs.sceneImageRef 缺失`);
+    if (!Array.isArray(st.characters)) {
+      throw new Error(`[script] storyScript.scenes[${i}].characters 缺失`);
     }
 
-    // videoGenPrompt 校验
-    const videoGenPrompt = ss.videoGenPrompt as Record<string, unknown> | undefined;
-    if (!videoGenPrompt) throw new Error(`[script] sceneScripts[${i}].videoGenPrompt 缺失`);
-    if (typeof videoGenPrompt.motionDescription !== 'string' || !videoGenPrompt.motionDescription.trim()) {
-      throw new Error(`[script] sceneScripts[${i}].videoGenPrompt.motionDescription 缺失`);
+    const b = board[i] as Record<string, unknown> | undefined;
+    if (!b) throw new Error(`[script] storyboardScript.scenes[${i}] 无效`);
+    const rRefs = b.resourceRefs as Record<string, unknown> | undefined;
+    if (!rRefs || typeof rRefs.sceneImageRef !== 'string' || !rRefs.sceneImageRef.trim()) {
+      throw new Error(`[script] storyboardScript.scenes[${i}].resourceRefs.sceneImageRef 缺失`);
     }
-    if (typeof videoGenPrompt.negativePrompt !== 'string') {
-      throw new Error(`[script] sceneScripts[${i}].videoGenPrompt.negativePrompt 缺失`);
+    if (!Array.isArray(b.appearCharId)) {
+      throw new Error(`[script] storyboardScript.scenes[${i}].appearCharId 缺失`);
     }
-    if (typeof videoGenPrompt.styleStrength !== 'number') {
-      throw new Error(`[script] sceneScripts[${i}].videoGenPrompt.styleStrength 缺失`);
+    const shot = b.shot as Record<string, unknown> | undefined;
+    if (!shot || typeof shot.type !== 'string' || !shot.type.trim()) {
+      throw new Error(`[script] storyboardScript.scenes[${i}].shot.type 缺失`);
     }
-
-    // audio 校验（必须存在）
-    const audio = ss.audio as Record<string, unknown> | undefined;
-    if (!audio) throw new Error(`[script] sceneScripts[${i}].audio 缺失`);
-    if (!Array.isArray(audio.dialogues)) {
-      throw new Error(`[script] sceneScripts[${i}].audio.dialogues 缺失`);
+    if (typeof b.motionLevel !== 'number' || b.motionLevel < 1 || b.motionLevel > 5) {
+      throw new Error(`[script] storyboardScript.scenes[${i}].motionLevel 无效`);
     }
-    if (!Array.isArray(audio.soundEffects)) {
-      throw new Error(`[script] sceneScripts[${i}].audio.soundEffects 缺失`);
+    if (typeof b.negativePrompt !== 'string') {
+      throw new Error(`[script] storyboardScript.scenes[${i}].negativePrompt 缺失`);
     }
 
-    // textOverlays 校验
-    if (!Array.isArray(ss.textOverlays)) {
-      throw new Error(`[script] sceneScripts[${i}].textOverlays 缺失`);
+    const a = audio[i] as Record<string, unknown> | undefined;
+    if (!a) throw new Error(`[script] audioScript.scenes[${i}] 无效`);
+    if (a.dialogue !== null && !Array.isArray(a.dialogue)) {
+      throw new Error(`[script] audioScript.scenes[${i}].dialogue 无效`);
+    }
+    if (!Array.isArray(a.sfx)) {
+      throw new Error(`[script] audioScript.scenes[${i}].sfx 缺失`);
+    }
+    if (!a.bgm || typeof a.bgm !== 'object') {
+      throw new Error(`[script] audioScript.scenes[${i}].bgm 缺失`);
     }
 
-    // transition 校验
-    const transition = ss.transition as Record<string, unknown> | undefined;
-    if (!transition) throw new Error(`[script] sceneScripts[${i}].transition 缺失`);
+    const p = pacing[i] as Record<string, unknown> | undefined;
+    if (!p) throw new Error(`[script] pacingScript.scenes[${i}] 无效`);
+    if (typeof p.duration !== 'number' || p.duration <= 0) {
+      throw new Error(`[script] pacingScript.scenes[${i}].duration 缺失`);
+    }
+    if (!p.transitionIn || typeof p.transitionIn !== 'object') {
+      throw new Error(`[script] pacingScript.scenes[${i}].transitionIn 缺失`);
+    }
+    if (!p.transitionOut || typeof p.transitionOut !== 'object') {
+      throw new Error(`[script] pacingScript.scenes[${i}].transitionOut 缺失`);
+    }
   }
 
   // ── 构建并返回 ──
+  const buildScene = <T>(arr: unknown[]): T[] =>
+    arr.map((s) => s as T);
+
   return {
-    narrativeDesign: {
-      hook: narrativeDesign.hook as string,
-      emotionalArc: (narrativeDesign.emotionalArc as unknown[]).filter(
-        (e): e is string => typeof e === 'string'
-      ),
-      pacingMap: {
-        tempo: pacingMap.tempo as VideoScript['narrativeDesign']['pacingMap']['tempo'],
-        accelerationAt: (pacingMap.accelerationAt as unknown[]).filter(
-          (n): n is number => typeof n === 'number'
-        ),
-      },
-    },
-    sceneScripts: sceneScripts.map((s) => {
-      const ss = s as Record<string, unknown>;
-      const rRefs = ss.resourceRefs as Record<string, unknown>;
-      const vgp = ss.videoGenPrompt as Record<string, unknown>;
-      const aud = ss.audio as Record<string, unknown>;
-      const trans = ss.transition as Record<string, unknown>;
-
-      // narration 解析
-      const narrationRaw = aud.narration as Record<string, unknown> | null | undefined;
-      const narration: VideoScript['sceneScripts'][number]['audio']['narration'] = narrationRaw
-        ? {
-            text: (narrationRaw.text as string) ?? '',
-            speaker: (narrationRaw.speaker as string) ?? 'narrator',
-            emotion: (narrationRaw.emotion as string) ?? 'calm',
-            speed: typeof narrationRaw.speed === 'number' ? narrationRaw.speed : 1.0,
-            pauseAfter: typeof narrationRaw.pauseAfter === 'number' ? narrationRaw.pauseAfter : 0.5,
-          }
-        : null;
-
-      // dialogues 解析
-      const dialogues = (Array.isArray(aud.dialogues) ? aud.dialogues : []) as unknown[];
-      const parsedDialogues: VideoScript['sceneScripts'][number]['audio']['dialogues'] =
-        dialogues.map((d) => {
-          const dd = d as Record<string, unknown>;
-          return {
-            characterId: (dd.characterId as string) ?? '',
-            text: (dd.text as string) ?? '',
-            emotion: (dd.emotion as string) ?? 'neutral',
-            speed: typeof dd.speed === 'number' ? dd.speed : 1.0,
-          };
-        });
-
-      // soundEffects 解析
-      const soundEffects = (Array.isArray(aud.soundEffects) ? aud.soundEffects : []) as unknown[];
-      const parsedSFX: VideoScript['sceneScripts'][number]['audio']['soundEffects'] =
-        soundEffects.map((sfx) => {
-          const s = sfx as Record<string, unknown>;
-          return {
-            type: (s.type as string) ?? '',
-            timing: typeof s.timing === 'number' ? s.timing : 0,
-            duration: typeof s.duration === 'number' ? s.duration : 0,
-            description: (s.description as string) ?? '',
-          };
-        });
-
-      // musicOverride 解析
-      const musicRaw = aud.musicOverride as Record<string, unknown> | null | undefined;
-      const musicOverride: VideoScript['sceneScripts'][number]['audio']['musicOverride'] = musicRaw
-        ? {
-            genre: (musicRaw.genre as string) ?? '',
-            intensity: (musicRaw.intensity as string) ?? 'medium',
-            fadeIn: typeof musicRaw.fadeIn === 'boolean' ? musicRaw.fadeIn : false,
-          }
-        : null;
-
-      // textOverlays 解析
-      const overlays = (Array.isArray(ss.textOverlays) ? ss.textOverlays : []) as unknown[];
-      const parsedOverlays: VideoScript['sceneScripts'][number]['textOverlays'] =
-        overlays.map((ov) => {
-          const o = ov as Record<string, unknown>;
-          const timing = o.timing as Record<string, unknown> | undefined;
-          return {
-            content: (o.content as string) ?? '',
-            position: (o.position as string) ?? 'center',
-            style: (o.style as string) ?? '',
-            animation: (o.animation as string) ?? 'fade',
-            timing: {
-              in: typeof timing?.in === 'number' ? timing.in : 0,
-              out: typeof timing?.out === 'number' ? timing.out : 0,
-            },
-          };
-        });
-
-      return {
-        sceneId: ss.sceneId as string,
-        duration: ss.duration as number,
-        resourceRefs: {
-          characterImageRef: (rRefs.characterImageRef as string | null) ?? null,
-          sceneImageRef: rRefs.sceneImageRef as string,
-        },
-        videoGenPrompt: {
-          motionDescription: vgp.motionDescription as string,
-          negativePrompt: vgp.negativePrompt as string,
-          styleStrength: vgp.styleStrength as number,
-        },
-        audio: {
-          narration,
-          dialogues: parsedDialogues,
-          soundEffects: parsedSFX,
-          musicOverride,
-        },
-        textOverlays: parsedOverlays,
-        transition: {
-          transitionType: (trans.transitionType as string) ?? '',
-          visualLink: (trans.visualLink as string) ?? '',
-          fromPrevious: (trans.fromPrevious as string) ?? '',
-          toNext: (trans.toNext as string) ?? '',
-        },
-      };
-    }),
+    storyScript: { scenes: buildScene<VideoScript['storyScript']['scenes'][number]>(story) },
+    storyboardScript: { scenes: buildScene<VideoScript['storyboardScript']['scenes'][number]>(board) },
+    audioScript: { scenes: buildScene<VideoScript['audioScript']['scenes'][number]>(audio) },
+    pacingScript: { scenes: buildScene<VideoScript['pacingScript']['scenes'][number]>(pacing) },
   };
 }
 
@@ -359,14 +263,16 @@ export async function generateScript(
 
   console.log(
     `[script] ${SCRIPT_LLM_MODEL} 生成完成：` +
-      `${result.sceneScripts.length} 个镜头脚本` +
+      `${result.storyboardScript.scenes.length} 个镜头脚本` +
       (retries > 0 ? `（重试 ${retries} 次）` : '')
   );
 
   return {
     script: {
-      narrativeDesign: result.narrativeDesign,
-      sceneScripts: result.sceneScripts,
+      storyScript: result.storyScript,
+      storyboardScript: result.storyboardScript,
+      audioScript: result.audioScript,
+      pacingScript: result.pacingScript,
     },
     model: SCRIPT_LLM_MODEL,
     retries,

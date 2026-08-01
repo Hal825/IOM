@@ -10,9 +10,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { analyzeContent } from '../lib/tools/research-generator';
 import { NEW_RESEARCH_SYSTEM } from '../new_prompts/research';
-import { RESEARCH_SYSTEM } from '../lib/prompts/research';
+import { RESEARCH_SYSTEM as OLD_RESEARCH_SYSTEM } from '../old_prompts/research/research';
 import { calculateCost, formatDurationSec } from '../lib/log/procedure';
 
 // ── CLI 参数解析 ────────────────────────────────────
@@ -66,14 +65,55 @@ async function main() {
   console.log(`测试文本: "${testInput.slice(0, 80)}${testInput.length > 80 ? '...' : ''}" (${testInput.length}字)`);
   console.log('');
 
-  // ── 原始 prompt ──
-  console.log('▶ 运行原始 prompt...');
+  // ── 原始 prompt（归档旧版，裸调 LLM）──
+  console.log('▶ 运行原始 prompt（归档旧版，裸调）...');
+  const ORIG_API_KEY = process.env.RESEARCH_API_KEY;
+  const ORIG_BASE_URL = process.env.RESEARCH_BASE_URL;
+  const ORIG_MODEL = process.env.RESEARCH_LLM_MODEL;
+
+  if (!ORIG_API_KEY || !ORIG_BASE_URL || !ORIG_MODEL) {
+    throw new Error('Research 环境变量未配置');
+  }
+
   const t0 = Date.now();
-  const origResult = await analyzeContent(testInput);
+  const origResp = await fetch(`${ORIG_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${ORIG_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: ORIG_MODEL,
+      messages: [
+        { role: 'system', content: OLD_RESEARCH_SYSTEM },
+        { role: 'user', content: testInput },
+      ],
+      max_tokens: 8000,
+      temperature: 0.5,
+    }),
+  });
+
+  if (!origResp.ok) {
+    const errText = await origResp.text().catch(() => '');
+    throw new Error(`原始 prompt API 返回 ${origResp.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const origData = await origResp.json();
+  const origRawContent: string = origData.choices?.[0]?.message?.content ?? '(空)';
+  const origTokenUsage = origData.usage ?? null;
   const origDurationMs = Date.now() - t0;
-  const origCost = origResult.tokenUsage
-    ? calculateCost(origResult.model, origResult.tokenUsage)
+  const origCost = origTokenUsage
+    ? calculateCost(ORIG_MODEL, origTokenUsage)
     : null;
+  const origModel = ORIG_MODEL;
+
+  let origParsedReport: Record<string, unknown> | null = null;
+  try {
+    const jsonMatch = origRawContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) origParsedReport = JSON.parse(jsonMatch[0]);
+  } catch {
+    // 忽略解析错误
+  }
 
   // 两轮之间有间隔，避免 API 限流
   console.log('  等待 2s...');
@@ -139,13 +179,14 @@ async function main() {
     testInput,
     evaluatedAt: new Date().toISOString(),
     original: {
-      systemPrompt: RESEARCH_SYSTEM,
+      systemPrompt: OLD_RESEARCH_SYSTEM,
       durationSec: formatDurationSec(origDurationMs),
-      model: origResult.model,
-      retries: origResult.retries,
-      tokenUsage: origResult.tokenUsage ?? null,
+      model: origModel,
+      retries: 0,
+      tokenUsage: origTokenUsage ?? null,
       cost: origCost,
-      report: origResult.report,
+      reportRaw: origRawContent,
+      reportParsed: origParsedReport,
     },
     new: {
       systemPrompt: NEW_RESEARCH_SYSTEM,
@@ -159,9 +200,9 @@ async function main() {
     },
     comparison: {
       promptDiff: {
-        originalLength: RESEARCH_SYSTEM.length,
+        originalLength: OLD_RESEARCH_SYSTEM.length,
         newLength: NEW_RESEARCH_SYSTEM.length,
-        lengthDelta: `${NEW_RESEARCH_SYSTEM.length - RESEARCH_SYSTEM.length >= 0 ? '+' : ''}${NEW_RESEARCH_SYSTEM.length - RESEARCH_SYSTEM.length} (${pct(NEW_RESEARCH_SYSTEM.length, RESEARCH_SYSTEM.length)})`,
+        lengthDelta: `${NEW_RESEARCH_SYSTEM.length - OLD_RESEARCH_SYSTEM.length >= 0 ? '+' : ''}${NEW_RESEARCH_SYSTEM.length - OLD_RESEARCH_SYSTEM.length} (${pct(NEW_RESEARCH_SYSTEM.length, OLD_RESEARCH_SYSTEM.length)})`,
       },
       duration: {
         original: formatDurationSec(origDurationMs),
@@ -169,9 +210,9 @@ async function main() {
         delta: deltaStr(origDurationMs, newDurationMs, 's'),
       },
       tokens: {
-        originalTotal: origResult.tokenUsage?.total_tokens ?? 0,
+        originalTotal: origTokenUsage?.total_tokens ?? 0,
         newTotal: newTokenUsage?.total_tokens ?? 0,
-        delta: deltaStr(origResult.tokenUsage?.total_tokens ?? 0, newTokenUsage?.total_tokens ?? 0),
+        delta: deltaStr(origTokenUsage?.total_tokens ?? 0, newTokenUsage?.total_tokens ?? 0),
       },
       cost: {
         originalTotal: origCost?.totalCost ?? 0,
@@ -191,7 +232,7 @@ async function main() {
   console.log('═══════════════════════════════════════════');
 
   console.log('\n─── Prompt 差异 ───────────────────────────');
-  console.log(`原始: ${RESEARCH_SYSTEM.length} 字符`);
+  console.log(`原始: ${OLD_RESEARCH_SYSTEM.length} 字符`);
   console.log(`新版本: ${NEW_RESEARCH_SYSTEM.length} 字符 (${report.comparison.promptDiff.lengthDelta})`);
 
   console.log('\n─── 耗时 ──────────────────────────────────');
@@ -199,7 +240,7 @@ async function main() {
   console.log(`新版本: ${formatDurationSec(newDurationMs)}s (${report.comparison.duration.delta})`);
 
   console.log('\n─── Token 消耗 ────────────────────────────');
-  const ou = origResult.tokenUsage;
+  const ou = origTokenUsage;
   const nu = newTokenUsage;
   console.log('          原始        新版本');
   console.log(`输入:     ${String(ou?.prompt_tokens ?? 'N/A').padEnd(11)}${nu?.prompt_tokens ?? 'N/A'}`);
@@ -219,13 +260,22 @@ async function main() {
   console.log(`新版本: $${newCost?.totalCost.toFixed(6) ?? 'N/A'} (${report.comparison.cost.delta})`);
 
   // ── 输出对比（新旧格式不同，分开展示）──
-  console.log('\n═══ 原始 Prompt 输出 ═══════════════════════');
-  console.log(`segments  : ${origResult.report.contentSkeleton.segments.length}`);
-  console.log(`flow      : ${origResult.report.contentSkeleton.flow}`);
-  console.log(`tone      : ${origResult.report.styleProfile.tone}`);
-  console.log(`pace      : ${origResult.report.styleProfile.pace}`);
-  console.log(`readiness : ${origResult.report.readiness.overallScore}`);
-  console.log(`hasChar   : ${origResult.report.characterAnalysis.hasCharacter}`);
+  console.log('\n═══ 原始 Prompt 输出（归档旧版）═══════════');
+  if (origParsedReport) {
+    const metadata = origParsedReport.metadata as Record<string, unknown> | undefined;
+    const cs = origParsedReport.contentSkeleton as Record<string, unknown> | undefined;
+    const sp = origParsedReport.styleProfile as Record<string, unknown> | undefined;
+    const readiness = origParsedReport.readiness as Record<string, unknown> | undefined;
+
+    console.log(`topic     : ${safeStr(metadata?.topic)}`);
+    console.log(`segments  : ${Array.isArray(cs?.segments) ? (cs!.segments as unknown[]).length : 'N/A'}`);
+    console.log(`flow      : ${safeStr(cs?.flow)}`);
+    console.log(`tone      : ${safeStr(sp?.tone)}`);
+    console.log(`readiness : ${readiness?.overallScore ?? 'N/A'}`);
+  } else {
+    console.log('(JSON 解析失败，原始输出如下)');
+    console.log(origRawContent.slice(0, 500));
+  }
 
   console.log('\n═══ 新 Prompt 输出 ═══════════════════════════');
   if (newParsedReport) {

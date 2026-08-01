@@ -59,13 +59,13 @@ export function resolveEmotion(emotion: string): EmotionProfile {
  * 为单个镜头构建 SSML 文档。
  * @param narrationText  旁白文本
  * @param narrationEmotion 旁白情感标签
- * @param dialogues  角色对话列表
+ * @param dialogues  角色对话列表（新版 audioScript.dialogue 无 speed 字段，默认 1.0）
  * @param pauseAfterSec  读完后停顿秒数
  */
 export function buildShotSSML(
   narrationText: string | null,
   narrationEmotion: string,
-  dialogues: Array<{ characterId: string; text: string; emotion: string; speed: number }>,
+  dialogues: Array<{ characterId: string; text: string; emotion: string; speed?: number }>,
   pauseAfterSec: number,
 ): string {
   const parts: string[] = [];
@@ -87,12 +87,13 @@ export function buildShotSSML(
     if (!d.text.trim()) continue;
 
     const dp = resolveEmotion(d.emotion);
+    const dSpeed = typeof d.speed === 'number' ? d.speed : 1.0;
     if (i > 0 || parts.length > 0) {
       parts.push(`<break time="200ms"/>`);
     }
 
     parts.push(
-      `<prosody rate="${(profile.rate * d.speed).toFixed(2)}" pitch="${dp.pitch}" volume="${dp.volume}">` +
+      `<prosody rate="${(profile.rate * dSpeed).toFixed(2)}" pitch="${dp.pitch}" volume="${dp.volume}">` +
       `${escapeXml(d.text.trim())}` +
       `</prosody>`
     );

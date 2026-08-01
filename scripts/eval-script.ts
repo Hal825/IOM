@@ -139,7 +139,7 @@ async function main() {
       console.log(`\n  [${st.sceneId}] ← ${b.visualSource} | ${pc.duration}s | motion=${b.motionLevel}`);
       console.log(`    story   : ${safeStr(st.narrative, 80)}`);
       console.log(`    chars   : ${Array.isArray(st.characters) && st.characters.length ? st.characters.map((c: any) => c.characterId).join(', ') : '(无)'}`);
-      console.log(`    refs    : scene=${b.resourceRefs?.sceneImageRef} | char=[${(b.resourceRefs?.characterImageRefs ?? []).join(', ')}]`);
+      console.log(`    refs    : scene=${b.resourceRefs?.sceneImageRef} | appearCharId=[${(b.appearCharId ?? []).join(', ')}]`);
       console.log(`    shot    : ${shot.type} / ${shot.angle} / ${shot.movement}`);
       console.log(`    engine  : ${b.engine} | ${b.mode} | ${b.resolution} ${b.fps}fps`);
       console.log(`    neg     : ${safeStr(b.negativePrompt, 80)}`);

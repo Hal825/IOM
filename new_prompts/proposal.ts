@@ -97,6 +97,7 @@ LangGraph: 图拓扑
 - **scenes**:发生在这个空间内的镜头列表:
   - **sceneId**:镜头编号,格式 "scene-1", "scene-2" ...(全局递增)
   - **sceneDescription**:中文.在该空间内发生的具体内容,融合:核心事件,人物动作与空间位置,构图与镜头运动,画面中的文字/字幕
+  - **appearCharId**:string[],本镜头出镜的角色 ID 列表(对应 characters[].characterId).纯视觉镜头为 []
   - **duration**:该镜头时长(秒),5-12 秒范围
 
 所有 sceneVisuals 中所有 scenes 的 duration 之和必须等于 blueprint.totalDuration.
@@ -143,16 +144,19 @@ LangGraph: 图拓扑
         {
           "sceneId": "scene-1",
           "sceneDescription": "中景镜头,林医生坐在诊桌后查看平板上的患者数据,陈阿姨坐在诊桌对面略显紧张.林医生抬头看向全息屏幕,手指在平板上向右滑动,屏幕随之切换显示脑部3D扫描影像.镜头从林医生正面缓慢推近至半身景别.屏幕右下角叠加半透明蓝色标签'AI辅助诊断'.",
+          "appearCharId": ["char-1", "char-2"],
           "duration": 8
         },
         {
           "sceneId": "scene-2",
           "sceneDescription": "过肩镜头,从林医生背后拍摄全息屏幕.屏幕上AI分析结果以动态光圈圈出病灶区域,旁边弹出数据面板显示'检出率 98.7%'.陈阿姨看到结果后,原本紧握的双手缓缓松开,眼中闪过一丝惊喜.林医生手指在全息屏前做放大手势,影像随之放大,同时转头向陈阿姨温和地点头.文字标签'AI精准识别'从画面底部滑入.",
+          "appearCharId": ["char-1", "char-2"],
           "duration": 7
         },
         {
           "sceneId": "scene-3",
           "sceneDescription": "侧面中景,林医生走到西窗前,自然光勾勒出她的轮廓剪影.陈阿姨站起身,望着全息屏幕上'康复预后良好'的诊断结论,眼眶微湿.林医生转身,向陈阿姨微笑伸出手.画面从冷蓝色调渐变至暖白色调.底部中央浮现文字'精准医疗,触手可及'.",
+          "appearCharId": ["char-1", "char-2"],
           "duration": 9
         }
       ]
@@ -165,6 +169,7 @@ LangGraph: 图拓扑
         {
           "sceneId": "scene-4",
           "sceneDescription": "俯视全景缓慢拉远,从诊室窗户视角过渡至城市天际线.全息医疗数据流从诊室屏幕飘升至城市上空.镜头继续拉远,城市全景渐显.画面优雅淡出至白.",
+          "appearCharId": [],
           "duration": 6
         }
       ]
@@ -193,6 +198,7 @@ LangGraph: 图拓扑
 - sceneVisuals[].visualHints:英文,50-150 词,非空字符串
 - sceneId 格式:全局递增,scene-1, scene-2, scene-3 ...
 - sceneDescription:非空字符串,描述在该空间内发生的具体事件,动作,镜头运动
+- appearCharId:string[],本镜头出镜的角色 ID,必须在 characters 中定义;sceneDescription 中出现的角色必须全部包含在内;纯视觉镜头为 []
 - duration:5-12 秒之间的整数
 - tone:必须是 professional / lively / serious / inspirational / minimal 之一
 - visualStyle:非空字符串,10-30 字
