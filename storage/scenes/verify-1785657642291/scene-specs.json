@@ -1,0 +1,338 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "480x854",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657642291/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657642291\\scene-1_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "手机竖持广角,海平线位于画面上三分之一处,前景礁石占据画面下部,暖金色阳光铺满中景海面,波光细碎闪烁.左侧深色礁石伸入浅水区,白色浪花轻轻拍打礁石,溅起细小水雾.镜头几乎静止,带轻微手持呼吸感,模拟手机随拍.天空与海面交界处泛出柔和的橙金色,画面整体呈现日落前最后光线的暖金调.",
+      "narrative": "以暖金调的广角海岸空镜开场,建立日落海边的宁静基调",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "wide establishing shot",
+        "angle": "eye-level",
+        "movement": "static with subtle handheld breathing sway",
+        "focus": "golden rippling sea surface and dark foreground rocks"
+      },
+      "composition": "horizon on upper third, large dark rocks occupying lower left foreground, open calm sea in middle, warm sky at top",
+      "lighting": "warm golden sunset backlight from upper right, soft orange-gold glow reflecting on rippling water, gentle texture contrast on rocks",
+      "visualElements": [
+        "dark basalt rocks with seaweed and barnacles",
+        "soft white foam lapping rocks",
+        "golden rippling sea surface",
+        "orange-gold horizon glow",
+        "fine mist spray"
+      ],
+      "atmosphere": "serene sunset seascape, handheld casual smartphone aesthetic, natural light, quiet meditative mood, cinematic natural color grading, 8k",
+      "motionLevel": 2,
+      "negativePrompt": "people, boats, buildings, watermark, text, logo, distortion, blurry, low quality, oversaturated, heavy noise"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "gentle waves lapping against rocks",
+          "timing": "throughout, continuous"
+        },
+        {
+          "type": "soft sea breeze",
+          "timing": "throughout at low level"
+        },
+        {
+          "type": "distant gull cry",
+          "timing": "sparse, around 5s in"
+        }
+      ],
+      "bgm": {
+        "style": "none - pure natural ambience",
+        "mood": "serene, quiet, meditative",
+        "timing": "natural ambience only from start, consistent level, no music"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "画面从黑场淡入,暖金色海面与礁石建立"
+        },
+        {
+          "time": 5,
+          "event": "浪花轻轻拍打礁石,水雾溅起"
+        },
+        {
+          "time": 8,
+          "event": "海天交界泛出柔和橙金色,暖金调确立"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "480x854",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657642291/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657642291\\scene-2_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "手机竖持中近景低角度,镜头贴近右侧礁石,海浪涌来撞击礁石,白色浪花翻滚散开,水珠在逆光中泛着琥珀色光泽.背景海面与天空约占画面上方三分之一,暖金色日光从右上方斜射入镜,偶尔产生轻微镜头光晕.镜头缓慢向右上方微移,跟随一波浪涌退去.天空边缘开始渗入淡紫色,暖金调中夹带一丝紫调.",
+      "narrative": "用浪花与礁石的近景细节增强临场感,色调开始向淡紫过渡,预示暮色将至",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "low-angle medium close-up",
+        "angle": "low angle",
+        "movement": "slow drift upward-right following the receding wave",
+        "focus": "wave crashing on rock, amber backlit water droplets"
+      },
+      "composition": "right-side rock filling lower foreground, sea and sky occupying upper third, wave action sweeping across lower frame",
+      "lighting": "warm golden backlight from upper right with occasional subtle lens flare, amber glow on spray and droplets, faint purple bleeding into sky edge",
+      "visualElements": [
+        "close foreground rock with wet texture",
+        "rolling white foam and spray",
+        "amber glistening water droplets",
+        "faint purple tint at sky edge",
+        "soft lens flare"
+      ],
+      "atmosphere": "raw intimate seascape detail, sparkling droplets, calm yet alive, shallow depth of field, handheld mobile feel, 8k",
+      "motionLevel": 2,
+      "negativePrompt": "people, boats, buildings, watermark, text, logo, distortion, blurry, low quality, oversaturated, cluttered composition"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "wave crashing on rock with rolling foam",
+          "timing": "at start, rhythmic waves throughout"
+        },
+        {
+          "type": "water droplets splashing and spray",
+          "timing": "on each wave impact"
+        },
+        {
+          "type": "subtle hiss of receding water",
+          "timing": "after each crash"
+        }
+      ],
+      "bgm": {
+        "style": "none - pure natural ambience",
+        "mood": "calm with gentle motion, alive yet relaxing",
+        "timing": "natural ambience only, waves slightly more present, no music"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "海浪涌来撞击右侧礁石,浪花翻滚散开"
+        },
+        {
+          "time": 4,
+          "event": "天空边缘开始渗入淡紫色"
+        },
+        {
+          "time": 7,
+          "event": "镜头跟随浪涌退去,琥珀色水珠逆光闪烁"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "480x854",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657642291/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657642291\\scene-3_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "手机竖持远景,天空在画面上方占据约一半,已过渡为淡紫色与暖金交织的暮色,海面倒映出紫橙混合的光带.海浪节奏放缓,近处礁石间水面轻轻起伏.一只海鸟剪影从画面左侧掠过,飞向右上方.镜头缓慢推近,带轻微手机数码变焦感.画面色调以淡紫为主,仅天边残留一线暖金.",
+      "narrative": "暮色加深,海鸟剪影点缀画面,节奏放缓,空镜情绪由宁静转向恬淡释然",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "wide shot",
+        "angle": "eye-level",
+        "movement": "slow push-in with subtle digital zoom feel",
+        "focus": "bird silhouette crossing the purple-gold twilight sky"
+      },
+      "composition": "sky occupies upper half, calm sea fills lower half with purple-orange reflection band, bird flying from left to upper right along rule of thirds",
+      "lighting": "soft purple dusk ambient light blended with a last warm gold line on the horizon, gentle reflection on calm sea",
+      "visualElements": [
+        "bird silhouette in flight",
+        "purple-gold twilight sky",
+        "purple-orange reflection band on sea",
+        "calm water between rocks",
+        "last warm gold horizon line"
+      ],
+      "atmosphere": "tranquil dusk seascape, poetic stillness, gentle breathing pace, handheld mobile aesthetic, cinematic natural color, 8k",
+      "motionLevel": 2,
+      "negativePrompt": "people, boats, buildings, watermark, text, logo, distortion, blurry, low quality, oversaturated, multiple birds cluttering frame"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "gentle lapping waves, slower rhythm",
+          "timing": "throughout, calming"
+        },
+        {
+          "type": "bird wings flapping",
+          "timing": "when bird crosses, around 5s in"
+        },
+        {
+          "type": "distant gull calls",
+          "timing": "following the bird, fading"
+        }
+      ],
+      "bgm": {
+        "style": "none - pure natural ambience",
+        "mood": "quiet, poetic, tranquil",
+        "timing": "natural ambience only, birds prominent mid-scene, no music"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 2,
+          "event": "画面色调基本过渡为淡紫与暖金交织的暮色"
+        },
+        {
+          "time": 5,
+          "event": "海鸟剪影从左侧掠过,飞向右上方"
+        },
+        {
+          "time": 8,
+          "event": "镜头缓慢推近,天边仅残留一线暖金"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "480x854",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657642291/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657642291\\scene-4_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "手机竖持大全景,天色完全转为淡紫色,海面趋于平静,微波在暮色中泛着柔和的紫灰色光泽.前景礁石轮廓逐渐变暗,浪花拍打声轻柔稀疏.远处鸟鸣若隐若现.镜头保持静止,画面在淡紫暮色中缓缓变暗,最后淡出至黑,自然收尾.整体干净空旷,传递安静放松的情绪.",
+      "narrative": "以完全淡紫的静止大全景收束,画面缓缓淡出至黑,留下安静悠长的余韵",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "extreme wide shot",
+        "angle": "eye-level",
+        "movement": "static, held still as light fades naturally",
+        "focus": "vast calm purple sea merging into the twilight sky"
+      },
+      "composition": "fully purple sky above a nearly flat calm sea, dark rock silhouettes along the bottom edge, vast negative space",
+      "lighting": "dim soft purple twilight ambient, evenly fading to darkness, minimal contrast",
+      "visualElements": [
+        "full purple twilight sky",
+        "nearly calm sea with faint purple-grey shimmer",
+        "darkening rock silhouettes",
+        "fading natural light",
+        "empty clean frame"
+      ],
+      "atmosphere": "vast minimalist stillness, deep calm meditative closure, quiet fading to black, handheld mobile aesthetic, 8k",
+      "motionLevel": 1,
+      "negativePrompt": "people, boats, buildings, watermark, text, logo, distortion, blurry, low quality, flicker, abrupt darkness, oversaturation"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "very soft sparse wave laps",
+          "timing": "throughout, fading"
+        },
+        {
+          "type": "distant faint bird calls",
+          "timing": "sparse, fading to silence"
+        },
+        {
+          "type": "deep quiet sea room tone",
+          "timing": "last 3s, drifting into silence"
+        }
+      ],
+      "bgm": {
+        "style": "none - pure natural ambience",
+        "mood": "hushed, deeply serene, fading",
+        "timing": "ambience fades out with picture to black silence, no music"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "天色完全转为淡紫,海面趋于平静"
+        },
+        {
+          "time": 6,
+          "event": "画面在淡紫暮色中开始缓缓变暗"
+        },
+        {
+          "time": 8.5,
+          "event": "即将淡出至黑,自然收尾"
+        }
+      ]
+    }
+  }
+]

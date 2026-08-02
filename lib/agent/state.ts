@@ -15,7 +15,8 @@ export interface SceneVideoResult {
   sceneId: string;
   videoUrl: string;
   durationSec: number;
-  status: 'generating' | 'done' | 'failed';
+  /** generating=生成中 / done=真实视频已生成 / failed=失败 / received=脚本已交接（未真正生成） */
+  status: 'generating' | 'done' | 'failed' | 'received';
 }
 
 // ── LangGraph 状态定义 ──────────────────────────────

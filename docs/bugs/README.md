@@ -14,7 +14,7 @@
 | 4 | tts | 400 InvalidParameter | 误用 input.messages 格式 | ✅ |
 | 5 | tts | audio.startsWith is not a function | resolveAudio 未处理对象类型 | ✅ |
 | 6 | video-gen | 任务成功但未找到视频 URL | 响应字段兼容不足 | ✅ |
-| 7 | video-gen | duration must be 3-15s | proposal 总时长超出模型限制 | 🔲 |
+| 7 | video-gen | duration must be 3-15s | proposal 总时长超出模型限制 | ✅ |
 
 ---
 
@@ -148,9 +148,9 @@ GET .../video-synthesis/tasks/xxx  ← 此端点不存在
 
 ---
 
-## 7. video-gen duration 超出模型限制 🔲
+## 7. video-gen duration 超出模型限制 ✅（预留）
 
-**文件**: `lib/tools/video-generator.ts`
+**文件**: `lib/tools/video-generation/util.ts`
 
 **现象**:
 ```
@@ -159,7 +159,7 @@ GET .../video-synthesis/tasks/xxx  ← 此端点不存在
 
 **根因**: `happyhorse-1.1-i2v` 单次生成限制 3-15 秒，但 proposal 的 `totalDuration`（sceneCount × 8s）可能超过 15 秒。
 
-**待修复**: 需要钳制 duration 到 3-15 范围，或按场景拆分生成。
+**修复（预留）**: `lib/tools/video-generation/util.ts` 提供 `clampDuration(sec, 3, 15)`。当前 `shot_video_gen` 只做脚本交接（不真正生成），待真实视频生成接入时对每个镜头时长钳制后再传给视频 API。
 
 ---
 

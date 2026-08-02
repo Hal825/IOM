@@ -47,8 +47,9 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 1. **用户提交文本** → `POST /api/tasks` 校验后入队 BullMQ
 2. **Worker 消费任务** → `executeTask()` → `videoGraph.invoke({ userPrompt, jobId })`
 3. **图并行执行**：`asset_gen` 和 `tts` 通过 `Send` 并行分发，`scene_json_assembler` 汇聚
-4. **前端轮询** `GET /api/tasks` → 任务状态 + 下载链接
-5. **下载**：远程 URL → 307 重定向；本地文件 → 流式传输
+4. **视频生成 + 拼接**：`shot_video_gen` 逐镜头真实调用视频生成 API（并发窗口）→ `video_merge` FFmpeg 拼接产出最终 MP4
+5. **前端轮询** `GET /api/tasks` → 任务状态 + 下载链接
+6. **下载**：远程 URL → 307 重定向；本地文件 → 流式传输
 
 ---
 
@@ -74,15 +75,15 @@ openmontage/
 │   ├── agent/
 │   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派）
 │   │   ├── state.ts              # 状态通道定义 (Annotation.Root + 自定义 reducer)
-│   │   └── nodes.ts              # 节点实现（6 接线 + video_merge 保留未接线）
+│   │   └── nodes.ts              # 节点实现（8 接线）
 │   ├── tools/
 │   │   ├── research-generator.ts # 调研工具
 │   │   ├── proposal-generator.ts # 提案工具
 │   │   ├── script-generator.ts   # 四子脚本生成 + 结构校验 ★
 │   │   ├── asset-generator.ts    # 素材生成（本地库引用 + AI 生成，产出 AssetManifest）
 │   │   ├── oss-uploader.ts       # OSS 上传（REST+HMAC，公网 URL）
-│   │   ├── tts-generator.ts      # 语音合成 (Edge-TTS)
-│   │   └── shot-video-generator.ts # 逐镜头视频生成（保留，未接线）
+│   │   ├── tts-generator.ts      # 语音合成 (DashScope qwen3-tts-flash)
+│   │   └── video-generation/     # 视频生成抽象层（统一请求 + Adapter 工厂 + happyhorse-r2v，预留）
 │   ├── store/
 │   │   └── asset-store.ts        # AssetStore：存储 / 库访问 / OSS 发布
 │   ├── prompts/
@@ -96,15 +97,16 @@ openmontage/
 ├── old_prompts/                  # 历史 prompt 归档
 ├── scripts/
 │   ├── eval-*.ts                 # 评测脚本（eval-proposal/eval-research/eval-script…）
-│   └── verify-graph-to-scene-specs.ts  # 跑图到 assembler 的验证脚本
+│   ├── verify-graph-full.ts      # 跑完整图（到最终拼接）的验证脚本
+│   └── test-video-gen.ts         # 精简测试：2 镜头/15s/480p 真实视频生成+拼接
 ├── storage/                      # 输出产物 (gitignored)
 │   ├── library/                  # 素材库（本地已有资源，跨任务复用）
 │   │   └── characters/<组>/      # 一组主角：四视图 + meta.json
 │   ├── assets/<jobId>/           # 任务素材产物（AI 生成 + manifest.json）
 │   ├── audio/<jobId>/            # TTS 音频
 │   ├── scripts/<jobId>/          # 脚本文本快照 (scene-texts.json)
-│   ├── scenes/<jobId>/           # 逐镜头视频（未接线阶段的产物）
-│   └── output/<jobId>.mp4        # 最终视频
+│   ├── scenes/<jobId>/           # 逐镜头视频（shot_video_gen 产物，含 scene-specs.json）
+│   └── output/<jobId>.mp4        # 最终视频（video_merge 合并产物）
 ├── log/procedure/                # 流程审计日志 (gitignored)
 ├── docker-compose.yml            # Redis 7 Alpine
 └── .env / .env.example
@@ -131,9 +133,11 @@ asset_gen  tts        ← 节点 4/5：素材生成 ∥ 分段语音合成
   ╲        ╱
 scene_json_assembler  ← 节点 6：组装 SceneVideoSpec[]（素材公网 URL + 音频路径）
     │
+shot_video_gen        ← 节点 7：逐镜头真实视频生成（模型无关适配器，并发窗口 + ffprobe 校验）
+    │
+video_merge           ← 节点 8：FFmpeg 拼接逐镜头视频 + 合成音轨
+    │
    END
-
-# shot_video / video_merge 节点保留在 nodes.ts 但未接线
 ```
 
 ### 状态通道（VideoGenState）
@@ -149,10 +153,10 @@ scene_json_assembler  ← 节点 6：组装 SceneVideoSpec[]（素材公网 URL 
 | `audioSegments` | `SceneAudioSegment[]` | tts | 自定义覆盖 |
 | `sceneSpecs` | `SceneVideoSpec[]` | scene_json_assembler | 自定义覆盖 |
 | `scriptTextSnapshot` | `string \| null` | script_generation | LastValue |
-| `sceneVideos` | `SceneVideoResult[]` | shot_video（未接线） | 按 sceneId 合并 |
-| `mergedVideoUrl` | `string \| null` | video_merge（未接线） | LastValue |
-| `mergeLog` | `string \| null` | video_merge（未接线） | LastValue |
-| `durationSec` | `number` | video_merge（未接线） | LastValue |
+| `sceneVideos` | `SceneVideoResult[]` | shot_video_gen（status=done，ffprobe 实测时长） | 按 sceneId 合并 |
+| `mergedVideoUrl` | `string \| null` | video_merge | LastValue |
+| `mergeLog` | `string \| null` | video_merge | LastValue |
+| `durationSec` | `number` | video_merge | LastValue |
 | `jobId` | `string` | 输入 | LastValue |
 | `error` | `string` | 异常时 | LastValue |
 
@@ -235,6 +239,10 @@ pacingScript     节奏脚本（duration + transitionIn/Out + keyMoments）
 
 **结构校验**：`parseAndValidateScript` 检查四子脚本长度一致、sceneId 一致、`appearCharId` 数组存在、各子脚本必填字段，不合法即重试。
 
+**生成后处理**（`applyPostProcess`，确定性覆盖 LLM 输出）：
+1. **分辨率需求传递**：research 提取的分辨率档位（如 `480p`）按 aspectRatio 覆盖 storyboard 各镜头 `resolution`（16:9→`854x480`，9:16→`480x854`，1:1→`480x480`）
+2. **取消边界 fade**：首镜头 `transitionIn`、末镜头 `transitionOut` 强制为 `cut(0)`，避免自动淡入淡出
+
 **快照**: 写 `storage/scripts/{jobId}/scene-texts.json`（按 sceneId 对齐的关键文本），并写回 `scriptTextSnapshot`。
 
 ---
@@ -262,7 +270,7 @@ sceneRefs  → Record<sceneId, ref>                （sceneId → ref 显式映�
 3. 写本地 `storage/assets/{jobId}/`（AI 产物）+ manifest.json（全部相对路径）
 4. 公网 URL 由 `AssetStore.publish()` 在组装时按需生成
 
-**零容错**：任何异常直接抛出，不降级。
+**失败策略**：单个角色/场景图生成失败 → 跳过该项（对应 `sceneImageUrl` 落 null），任务继续；正式的中性兜底重试机制后续完善。
 
 ---
 
@@ -311,9 +319,38 @@ pacing    → { transitionIn, transitionOut, keyMoments }
 
 ---
 
-### 节点 7（保留未接线）：Video Merge
+### 节点 7：Shot Video Gen（逐镜头真实视频生成）
 
-`videoMergeNode` 保留在 nodes.ts 但不在图中：FFmpeg 拼接逐镜头视频 + 合成音轨。待 shot_video 接入后恢复。
+| 属性 | 值 |
+|------|-----|
+| 工具 | `generateSceneVideo()`（模型无关抽象层 `lib/tools/video-generation/`） |
+| 适配器 | `happyhorse-1.1-r2v`（DashScope 异步：创建→轮询→下载） |
+| 并发 | `AI_VIDEO_CONCURRENCY`（默认 2）窗口内逐镜头并行 |
+| 校验 | 每个镜头写出后 **ffprobe** 校验真实生成成功并取实际时长 |
+
+**输入**: `sceneSpecs`（SceneVideoSpec[]，来自 assembler）
+
+**输出** (`sceneVideos: SceneVideoResult[]`): 每镜头 `{ sceneId, videoUrl, durationSec, status: 'done' }`，产物落 `storage/scenes/{jobId}/{sceneId}.mp4`（另写 `scene-specs.json` 审计）
+
+**关键点**:
+1. 视频模型 API 结构各异 → 抽象层收敛统一请求 `VideoGenRequest`，`createVideoAdapter(model)` 按模型名分派；当前仅实现 `happyhorse-1.1-r2v`，未知模型零容错抛错
+2. 首帧硬依赖：`sceneImageUrl` 必须为公网 http(s) URL，缺失直接抛错
+3. 时长钳制 [3,15]；`spec.resolution`（宽x高）经 `resolutionToTier` 映射为档位（854x480→480P）
+4. 任一镜头失败 → 整体失败（零容错），失败后不再排新任务
+
+---
+
+### 节点 8：Video Merge（FFmpeg 拼接）
+
+| 属性 | 值 |
+|------|-----|
+| 工具 | `videoMergeNode`（fluent-ffmpeg concat） |
+
+**输入**: `videoScript.pacingScript`（镜头顺序）+ `sceneVideos` + `audioSegments`
+
+**输出**: `mergedVideoUrl`（`storage/output/{jobId}.mp4`）+ `mergeLog` + `durationSec`
+
+按 pacing 顺序排列逐镜头视频与音频，FFmpeg 分别 concat 视频流 + 音轨流，转码 h264/AAC（`complexFilter` 先设 output 再挂 filter，避免重复 -map）。
 
 ---
 
@@ -463,7 +500,8 @@ return {
 | 变量 | 说明 |
 |------|------|
 | `AI_ASSET_API_KEY` / `AI_ASSET_BASE_URL` / `AI_ASSET_MODEL` | 图片生成（素材） |
-| `AI_VIDEO_API_KEY` / `AI_VIDEO_BASE_URL` / `AI_VIDEO_MODEL` | 视频生成（未接线阶段保留） |
+| `AI_VIDEO_API_KEY` / `AI_VIDEO_BASE_URL` / `AI_VIDEO_MODEL` | 视频生成（happyhorse-r2v 适配器，预留，当前节点不调用） |
+| `AI_VIDEO_RESOLUTION` / `AI_VIDEO_CONCURRENCY` / `AI_VIDEO_STYLE_STRENGTH` | 视频分辨率档位 / 并发窗口（默认 2）/ 风格强度（默认 0.85），预留 |
 | `AI_TTS_API_KEY` / `AI_TTS_BASE_URL` / `AI_TTS_MODEL` / `AI_TTS_VOICE` / `AI_TTS_SPEED` | TTS |
 
 ### OSS（公网 URL，视频生成硬依赖）
@@ -525,7 +563,9 @@ log/procedure/job-<jobId>/procedure.json
 
 8. **Prompt 与代码分离**：prompt 集中在 `lib/prompts/`，新 prompt 在 `new_prompts/` 迭代评测后再落地。
 
-9. **图只到素材组装**：目前止于 `scene_json_assembler`（产出 `SceneVideoSpec[]`），shot_video / video_merge 保留未接线。
+9. **视频模型抽象层**：不同视频模型 API 结构各异，统一收敛为 `VideoGenRequest` + `VideoModelAdapter` 接口 + `createVideoAdapter(model)` 工厂；当前仅实现 `happyhorse-1.1-r2v`，未知模型零容错抛错。
+
+10. **端到端到视频**：`scene_json_assembler → shot_video_gen（并发真实生成 + ffprobe 校验）→ video_merge（FFmpeg 拼接）→ END`，任务产出可下载 MP4。
 
 ---
 
@@ -537,7 +577,7 @@ log/procedure/job-<jobId>/procedure.json
 
 3. **无认证系统**：任务全局可见，无用户隔离。
 
-4. **scenes 未接 shot_video**：图到 `SceneVideoSpec[]` 即止，逐镜头视频生成与最终拼接尚未接线。
+4. **视频引擎单一**：当前仅实现 `happyhorse-1.1-r2v` 适配器；`sceneVideos.durationSec` 为 ffprobe 实测时长。
 
 ---
 

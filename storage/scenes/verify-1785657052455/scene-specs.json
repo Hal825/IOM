@@ -1,0 +1,330 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657052455/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657052455\\scene-1_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "远景固定镜头，机位略高于海面，拍摄开阔的海岸线全景。镜头极缓慢推近，海面波光粼粼，暖金色调占据画面主导；前景礁石轮廓深暗，为画面增加层次。无字幕。",
+      "narrative": "以开阔海岸线全景与金色光路确立全片的宁静基调",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "wide establishing shot",
+        "angle": "slightly high angle",
+        "movement": "very slow push-in",
+        "focus": "the shimmering golden light path on the calm sea, between dark foreground rocks and the distant horizon"
+      },
+      "composition": "dark foreground rock silhouettes frame the lower edge, calm sea and golden light path lead toward the horizon on the right third",
+      "lighting": "warm golden-hour low sunlight from the west creating a shimmering reflection path on the water, soft thin clouds catching the golden glow",
+      "visualElements": [
+        "dark rocky shoreline with seaweed texture",
+        "calm sea with shimmering gold light path",
+        "thin layered clouds at low altitude",
+        "distant horizon line"
+      ],
+      "atmosphere": "tranquil golden-hour coastal vista, authentic smartphone video texture, film-like natural grade, 8k",
+      "motionLevel": 1,
+      "negativePrompt": "people, boats, buildings, man-made structures, text, watermark, blurry, oversaturated, distorted rocks, lens flare artifacts"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "gentle ocean waves lapping",
+          "timing": "throughout, soft and steady"
+        },
+        {
+          "type": "distant seagull calls",
+          "timing": "faint, intermittent from 3s"
+        }
+      ],
+      "bgm": {
+        "style": "none — pure natural ambience",
+        "mood": "calm, quiet",
+        "timing": "no music; only sea and birds, gentle presence from start"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "fade-in",
+        "durationSec": 1
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "画面淡入，海岸线全景与金色光路建立"
+        },
+        {
+          "time": 3,
+          "event": "镜头开始极缓慢推近海面"
+        },
+        {
+          "time": 6,
+          "event": "暖金色调主导画面，前景礁石剪影提供层次"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657052455/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657052455\\scene-2_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "中景固定镜头，从礁石侧面贴近海面拍摄。波浪涌来撞击礁石，溅起白色水花，水珠在逆光中闪烁；镜头轻微下摇跟随水流退回，金色光斑在湿润礁石表面游动。色调开始向淡紫过渡。无字幕。",
+      "narrative": "用浪击礁石的鲜活细节带出动态元素与色彩过渡的起点",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "medium shot",
+        "angle": "low angle at water level",
+        "movement": "gentle tilt down tracking the retreating backwash",
+        "focus": "white foam and water spray bursting against the dark rock, sparkling droplets in backlight"
+      },
+      "composition": "low camera angle close to the waterline, dark rock mass on the left, churning water filling the right and foreground",
+      "lighting": "strong warm backlight from the low sun, water droplets sparkling in rim light, palette shifting from gold to soft lavender",
+      "visualElements": [
+        "white sea foam and spray bursting on rock",
+        "wet dark basalt with gliding golden highlights",
+        "glistening airborne droplets in backlight",
+        "cooling lavender reflections on the water surface"
+      ],
+      "atmosphere": "intimate close-up of nature's rhythm, authentic handheld phone texture, film-like dynamic, 8k",
+      "motionLevel": 3,
+      "negativePrompt": "people, boats, buildings, text, watermark, blurry, oversaturated colors, distorted waves, deformed rocks, lens flare artifacts"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "waves crashing against rocks",
+          "timing": "throughout, rhythmic bursts"
+        },
+        {
+          "type": "foam and water splash",
+          "timing": "at each wave impact"
+        },
+        {
+          "type": "distant seagull calls",
+          "timing": "sparse, around middle of scene"
+        }
+      ],
+      "bgm": {
+        "style": "none — pure natural ambience",
+        "mood": "organic, immersive",
+        "timing": "no music; waves dominant, softer during bird calls"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "波浪开始间歇撞击礁石，水花溅起"
+        },
+        {
+          "time": 4,
+          "event": "镜头轻微下摇跟随水流退回"
+        },
+        {
+          "time": 8,
+          "event": "色调明显向淡紫过渡"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657052455/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657052455\\scene-3_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "中全景，镜头从礁石低角度缓慢上摇至天空。海面占据画面下半部，上半部是淡紫色云层；最后几缕暖金色光线从云隙中透出，与紫色天空交汇。海浪声变得平缓。无字幕。",
+      "narrative": "视线自海面抬升至紫云天空，完成暖金到淡紫的情绪转换",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "medium full shot",
+        "angle": "low angle",
+        "movement": "slow tilt up from the reef to the sky",
+        "focus": "lavender clouds with the last warm golden rays breaking through cloud gaps"
+      },
+      "composition": "horizontal split composition, calm sea in the lower half, layered lavender clouds filling the upper half, sun glow on the upper third",
+      "lighting": "last warm low-angle sunlight piercing thin cloud gaps, soft lavender-violet ambient in the upper sky, golden reflected streaks on the sea",
+      "visualElements": [
+        "calm sea surface in the lower frame",
+        "layered lavender purple clouds",
+        "final golden rays through cloud gaps",
+        "soft cloud reflections on water"
+      ],
+      "atmosphere": "serene painterly dusk, cinematic film grain, meditative pace, authentic smartphone texture, 8k",
+      "motionLevel": 2,
+      "negativePrompt": "people, boats, buildings, text, watermark, blurry, oversaturated, deformed clouds, lens flare artifacts, noise"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "waves settling and receding",
+          "timing": "throughout, gradually softer"
+        },
+        {
+          "type": "gentle wind over shoreline",
+          "timing": "soft breeze from start"
+        },
+        {
+          "type": "distant birds calling",
+          "timing": "fading away near the end"
+        }
+      ],
+      "bgm": {
+        "style": "none — pure natural ambience",
+        "mood": "serene, wistful",
+        "timing": "no music; ambience becomes calmer and sparser"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "镜头从礁石低角度开始上摇"
+        },
+        {
+          "time": 3,
+          "event": "画面切至海面与淡紫云层各半构图"
+        },
+        {
+          "time": 7,
+          "event": "云隙透出最后暖金光线，与紫空交汇"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 12,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/verify-1785657052455/scenes/scene_visual-1.png",
+      "characterImageUrls": [],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\verify-1785657052455\\scene-4_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "远景静态镜头，画面中心是平静的海面与渐暗的紫色天空。镜头极缓慢拉远，海面反光逐渐暗淡，整体色调偏淡紫与深蓝。画面保持静默，适合淡出收尾。无字幕。",
+      "narrative": "以渐暗的平静海面收束全片，为淡出结尾留足呼吸感",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "extreme wide static shot",
+        "angle": "eye-level toward horizon",
+        "movement": "extremely slow pull back",
+        "focus": "calm sea and the darkening purple sky near the horizon"
+      },
+      "composition": "minimal centered horizon, vast empty sky and sea with dominant negative space",
+      "lighting": "low-contrast dusky lavender and deep blue ambient light, fading reflections on the glassy sea",
+      "visualElements": [
+        "glassy calm sea surface",
+        "purple-to-deep-blue gradient sky",
+        "dimming horizon glow",
+        "empty tranquil negative space"
+      ],
+      "atmosphere": "quiet meditative finale, minimal composition, film-like natural texture, gentle fade-out ending, 8k",
+      "motionLevel": 1,
+      "negativePrompt": "people, boats, buildings, text, watermark, blurry, oversaturated, noise, lens flare artifacts, deformed clouds"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "calm water surface sound",
+          "timing": "throughout, very soft"
+        },
+        {
+          "type": "last distant bird call",
+          "timing": "once around 3s"
+        },
+        {
+          "type": "gentle breeze",
+          "timing": "throughout, fading"
+        }
+      ],
+      "bgm": {
+        "style": "none — pure natural ambience",
+        "mood": "meditative, hushed",
+        "timing": "no music; all sound fades to silence at the end"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "fade-out",
+        "durationSec": 1.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "镜头缓慢拉远，平静海面与渐暗紫空居中"
+        },
+        {
+          "time": 4,
+          "event": "海面反光逐渐暗淡，色调偏淡紫深蓝"
+        },
+        {
+          "time": 9,
+          "event": "画面静默，准备淡出收尾"
+        }
+      ]
+    }
+  }
+]

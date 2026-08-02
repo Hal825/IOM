@@ -1,0 +1,57 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "以开阔海面与夕阳建立静谧空镜基调，将观众带入日落时分的放松氛围",
+    "shotType": "wide establishing shot",
+    "dialogue": [],
+    "sfx": [
+      "gentle ocean waves rolling and receding",
+      "distant sparse seabird calls"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 8,
+    "narrative": "通过水平缓移与色彩渐变衔接光线变化，铺垫由暖转紫的视觉过渡",
+    "shotType": "medium long shot",
+    "dialogue": [],
+    "sfx": [
+      "continuous soft waves",
+      "distant seabird calls approaching then fading"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 8,
+    "narrative": "将视线从海面收拢至礁石近岸，丰富空镜层次，强化随拍的真实触感",
+    "shotType": "medium shot",
+    "dialogue": [],
+    "sfx": [
+      "waves splashing against rocks with white foam hiss",
+      "distant seabird calls fading in briefly"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 8,
+    "narrative": "以贴近水面的微观视角呈现余晖细节，将色彩过渡推向以淡紫为主调的暮色",
+    "shotType": "close-up",
+    "dialogue": [],
+    "sfx": [
+      "close-up water lapping and trickling over mossy rocks",
+      "soft tiny droplet drips"
+    ]
+  },
+  {
+    "sceneId": "scene-5",
+    "duration": 8,
+    "narrative": "极缓慢拉远并渐暗收束全片，以暮色定格完成放松治愈的结尾空镜",
+    "shotType": "full shot",
+    "dialogue": [],
+    "sfx": [
+      "slow rhythmic waves hitting rocks resembling breathing",
+      "faint wind over calm sea"
+    ]
+  }
+]

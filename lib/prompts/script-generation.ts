@@ -117,8 +117,8 @@ LangGraph: 图拓扑
 
 - **sceneId**:与 Proposal 对应
 - **duration**:秒,与 Proposal 中对应 scene 的 duration 严格一致.所有 duration 之和必须等于 blueprint.totalDuration.
-- **transitionIn**:入场转场 { type, durationSec }.首镜头 type 必须为 "fade-in"(durationSec 1.0-1.5),其余按叙事节奏选 "cut"(0) 或 "dissolve"(0.5)
-- **transitionOut**:出场转场 { type, durationSec }.末镜头 type 必须为 "fade-out"(durationSec 1.0-1.5),其余选 "cut"(0) 或 "dissolve"(0.5)
+- **transitionIn**:入场转场 { type, durationSec }.首镜头选 "cut"(0) 或 "fade-in"(durationSec 1.0-1.5),其余按叙事节奏选 "cut"(0) 或 "dissolve"(0.5)
+- **transitionOut**:出场转场 { type, durationSec }.末镜头选 "cut"(0) 或 "fade-out"(durationSec 1.0-1.5),其余选 "cut"(0) 或 "dissolve"(0.5)
 - **keyMoments**:KeyMoment 数组,用于音画同步或字幕时机:
   - **time**:秒(不超过本镜头 duration)
   - **event**:关键时刻描述(中文)
@@ -430,7 +430,7 @@ LangGraph: 图拓扑
 - audioScript.dialogue:有台词写完整中文口语化对话,纯视觉镜头为 null
 - audioScript.sfx[].type / bgm 各字段:英文
 - pacingScript.duration:与 Proposal 对应 scene 严格一致,所有 duration 之和等于 blueprint.totalDuration
-- pacingScript.transitionIn:首镜头 type 必须为 "fade-in"
-- pacingScript.transitionOut:末镜头 type 必须为 "fade-out"
+- pacingScript.transitionIn:首镜头可选 "cut"(0) 或 "fade-in"
+- pacingScript.transitionOut:末镜头可选 "cut"(0) 或 "fade-out"
 - pacingScript.keyMoments[].time:不超过本镜头 duration
 `;

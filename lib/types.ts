@@ -179,7 +179,7 @@ export interface StoryboardScriptScene {
   motionLevel: number;
   /** 排除元素（英文） */
   negativePrompt: string;
-  /** 由 aspectRatio 决定：16:9→1920x1080, 9:16→1080x1920, 1:1→1080x1080 */
+  /** 默认由 aspectRatio 决定：16:9→1920x1080, 9:16→1080x1920, 1:1→1080x1080；research 有分辨率需求（如 480p）时被后处理覆盖 */
   resolution: string;
   /** 固定 24 */
   fps: number;

@@ -7,10 +7,12 @@ import {
   assetGenNode,
   ttsNode,
   sceneJsonAssemblerNode,
+  shotVideoGenNode,
+  videoMergeNode,
 } from './nodes';
 
 /**
- * 节点拓扑（图只走到 video 之前，不进入真实视频生成）：
+ * 节点拓扑：
  *
  *   __start__
  *       │
@@ -26,9 +28,11 @@ import {
  *     ╲        ╱
  *   scene_json_assembler  ← 组装单镜头完整视频生成 JSON（含素材/音频产物）
  *       │
+ *   shot_video_gen        ← 逐镜头真实视频生成（模型无关适配器，并发窗口 + ffprobe 校验）
+ *       │
+ *   video_merge           ← FFmpeg 拼接逐镜头视频 + 合成音轨 → storage/output/{jobId}.mp4
+ *       │
  *      END
- *
- * videoMergeNode 保留在 nodes.ts 但不再接线。
  */
 
 // ── Fanout：asset_gen 和 tts 并行分发 ──
@@ -49,6 +53,8 @@ const workflow = new StateGraph(VideoGenState)
   .addNode('asset_gen', assetGenNode)
   .addNode('tts', ttsNode)
   .addNode('scene_json_assembler', sceneJsonAssemblerNode)
+  .addNode('shot_video_gen', shotVideoGenNode)
+  .addNode('video_merge', videoMergeNode)
 
   // 顺序链
   .addEdge('__start__', 'research')
@@ -58,9 +64,11 @@ const workflow = new StateGraph(VideoGenState)
   // 并行：asset_gen + tts
   .addConditionalEdges('script_generation', fanoutAssetsTts, ['asset_gen', 'tts'])
 
-  // asset_gen 和 tts 都完成后 → 组装单镜头完整 JSON → END
+  // asset_gen 和 tts 都完成后 → 组装单镜头完整 JSON → 逐镜头视频 → 拼接 → END
   .addEdge('asset_gen', 'scene_json_assembler')
   .addEdge('tts', 'scene_json_assembler')
-  .addEdge('scene_json_assembler', END);
+  .addEdge('scene_json_assembler', 'shot_video_gen')
+  .addEdge('shot_video_gen', 'video_merge')
+  .addEdge('video_merge', END);
 
 export const videoGraph = workflow.compile();

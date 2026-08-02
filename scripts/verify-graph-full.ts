@@ -1,6 +1,8 @@
 /**
- * 验证脚本 — 跑完整图到 scene_json_assembler（video 前），不进入真实视频生成。
- * 用法：npx tsx --env-file=.env scripts/verify-graph-to-scene-specs.ts "测试文本..."
+ * 验证脚本 — 跑完整图（research → proposal → script → asset/tts → assembler → shot_video_gen）。
+ * shot_video_gen 只接收视频生成脚本并落盘 scene-specs.json（不真正调用视频生成 API）。
+ * 需要 .env 配置 LLM / AI_ASSET / OSS 齐全。
+ * 用法：npx tsx --env-file=.env scripts/verify-graph-full.ts "测试文本..."
  */
 
 import { videoGraph } from '../lib/agent/graph';
@@ -11,7 +13,7 @@ async function main() {
   const jobId = `verify-${Date.now()}`;
 
   console.log('═══════════════════════════════════════════');
-  console.log('  验证：图跑到 scene_json_assembler（video 前）');
+  console.log('  验证：完整图（含逐镜头视频生成 + 合并）');
   console.log('═══════════════════════════════════════════');
   console.log(`jobId: ${jobId}`);
   console.log(`测试文本: "${testInput.slice(0, 60)}..."`);
@@ -89,11 +91,37 @@ async function main() {
     console.log(JSON.stringify(specs[0], null, 2));
   }
 
-  // 检查是否调用了视频生成（应无 sceneVideos / mergedVideoUrl）
-  console.log('\n─── video 前停止检查 ───');
-  console.log(`sceneVideos    : ${((report.sceneVideos ?? []) as unknown[]).length}（应为 0）`);
-  console.log(`mergedVideoUrl : ${report.mergedVideoUrl ?? 'null'}`);
+  // ── 视频生成脚本交接阶段检查 ──
+  const sceneVideos = (report.sceneVideos ?? []) as Array<Record<string, unknown>>;
+  console.log('\n─── 视频生成脚本交接阶段检查 ───');
+  console.log(`[shot_video_gen] sceneVideos=${sceneVideos.length}（应与 sceneSpecs=${specs.length} 一致）`);
+  for (const v of sceneVideos) {
+    console.log(`  [${v.sceneId}] ${v.durationSec}s | ${v.status} | ${v.videoUrl}`);
+  }
 
+  const specPath = `storage/scenes/${jobId}/scene-specs.json`;
+  const merged = report.mergedVideoUrl as string | null | undefined;
+  console.log(`[shot_video_gen] 脚本包应已落盘 : ${specPath}`);
+  console.log(`[video_merge]    mergedVideoUrl（未接线，应为 null）: ${merged ?? 'null'}`);
+
+  // 断言：脚本交接成功（不真正生成）
+  const failures: string[] = [];
+  if (sceneVideos.length === 0) failures.push('sceneVideos 为空（shot_video_gen 未交接）');
+  if (specs.length > 0 && sceneVideos.length !== specs.length) {
+    failures.push(`sceneVideos(${sceneVideos.length}) ≠ sceneSpecs(${specs.length})`);
+  }
+  if (sceneVideos.some((v) => v.status !== 'received')) {
+    failures.push('存在非 received 状态的镜头（应仅标记为脚本已交接）');
+  }
+  if (merged) failures.push(`mergedVideoUrl 应为 null（video_merge 未接线）: ${merged}`);
+
+  if (failures.length > 0) {
+    console.error('\n✗ 视频脚本交接断言失败:');
+    for (const f of failures) console.error(`  - ${f}`);
+    process.exit(1);
+  }
+
+  console.log('\n✓ 视频脚本交接断言通过（每镜头脚本均已接收，未真实生成）');
   console.log('\n═══════════════════════════════════════════');
 }
 

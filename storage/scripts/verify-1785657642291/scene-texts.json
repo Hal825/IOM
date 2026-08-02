@@ -1,0 +1,50 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 10,
+    "narrative": "以暖金调的广角海岸空镜开场,建立日落海边的宁静基调",
+    "shotType": "wide establishing shot",
+    "dialogue": [],
+    "sfx": [
+      "gentle waves lapping against rocks",
+      "soft sea breeze",
+      "distant gull cry"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 10,
+    "narrative": "用浪花与礁石的近景细节增强临场感,色调开始向淡紫过渡,预示暮色将至",
+    "shotType": "low-angle medium close-up",
+    "dialogue": [],
+    "sfx": [
+      "wave crashing on rock with rolling foam",
+      "water droplets splashing and spray",
+      "subtle hiss of receding water"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "narrative": "暮色加深,海鸟剪影点缀画面,节奏放缓,空镜情绪由宁静转向恬淡释然",
+    "shotType": "wide shot",
+    "dialogue": [],
+    "sfx": [
+      "gentle lapping waves, slower rhythm",
+      "bird wings flapping",
+      "distant gull calls"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 10,
+    "narrative": "以完全淡紫的静止大全景收束,画面缓缓淡出至黑,留下安静悠长的余韵",
+    "shotType": "extreme wide shot",
+    "dialogue": [],
+    "sfx": [
+      "very soft sparse wave laps",
+      "distant faint bird calls",
+      "deep quiet sea room tone"
+    ]
+  }
+]

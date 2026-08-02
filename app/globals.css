@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * 暖纸浅色主题 — 色彩简洁、明快愉悦。
+ * 朱砂红主色 + 松绿/靛蓝/琥珀功能色， ink 墨色文字。
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: #f7f4ee;
+  --color-panel: #ffffff;
+  --color-border: #e7e0d3;
+  --color-foreground: #2b2622;
+  --color-muted: #8a8274;
+  --color-accent: #e8543f;
+  --color-success: #2e9e6b;
+  --color-danger: #d93636;
+  --color-warning: #e8a33d;
+  --color-info: #3b82c4;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* 轻抬升的暖色卡片阴影 */
+  --shadow-card: 0 1px 3px rgb(43 38 34 / 0.06), 0 4px 16px rgb(43 38 34 / 0.04);
+
+  /* 不定进度条（后端进度仅 0/10/100 三档，不展示伪造百分比） */
+  --animate-indeterminate: indeterminate 1.4s ease-in-out infinite;
+
+  @keyframes indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(400%);
+    }
   }
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  /* 纸面上两团极淡的暖色光晕，静态但让背景有层次 */
+  background-image:
+    radial-gradient(60rem 40rem at 110% -10%, rgba(232, 84, 63, 0.06), transparent 60%),
+    radial-gradient(50rem 36rem at -20% 110%, rgba(46, 158, 107, 0.08), transparent 60%);
+  background-attachment: fixed;
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(232, 84, 63, 0.18);
+}
+
+/* 细滚动条，融进暖色面板 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }

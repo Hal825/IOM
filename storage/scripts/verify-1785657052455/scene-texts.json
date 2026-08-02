@@ -1,0 +1,49 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "以开阔海岸线全景与金色光路确立全片的宁静基调",
+    "shotType": "wide establishing shot",
+    "dialogue": [],
+    "sfx": [
+      "gentle ocean waves lapping",
+      "distant seagull calls"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 10,
+    "narrative": "用浪击礁石的鲜活细节带出动态元素与色彩过渡的起点",
+    "shotType": "medium shot",
+    "dialogue": [],
+    "sfx": [
+      "waves crashing against rocks",
+      "foam and water splash",
+      "distant seagull calls"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "narrative": "视线自海面抬升至紫云天空，完成暖金到淡紫的情绪转换",
+    "shotType": "medium full shot",
+    "dialogue": [],
+    "sfx": [
+      "waves settling and receding",
+      "gentle wind over shoreline",
+      "distant birds calling"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 12,
+    "narrative": "以渐暗的平静海面收束全片，为淡出结尾留足呼吸感",
+    "shotType": "extreme wide static shot",
+    "dialogue": [],
+    "sfx": [
+      "calm water surface sound",
+      "last distant bird call",
+      "gentle breeze"
+    ]
+  }
+]

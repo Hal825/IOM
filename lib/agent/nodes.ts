@@ -11,6 +11,14 @@ import { synthesizeSpeech } from '@/lib/tools/tts-generator';
 import { buildShotSSML } from '@/lib/prompts/tts';
 import { AssetStore } from '@/lib/store/asset-store';
 import { saveStageLog, calculateCost, formatDurationSec } from '@/lib/log/procedure';
+import {
+  generateSceneVideo,
+  runWithConcurrency,
+  clampDuration,
+  buildMotionDescription,
+  resolutionToTier,
+  type VideoGenRequest,
+} from '@/lib/tools/video-generation';
 
 // ── FFmpeg 辅助 ──────────────────────────────────────
 
@@ -34,6 +42,46 @@ function ffmpeg(...args: any[]): any {
   }
   if (!_ffmpeg) throw new Error('fluent-ffmpeg 加载失败');
   return _ffmpeg(...args);
+}
+
+/** 解析 ffprobe 可执行路径：FFMPEG_PATH 指向 ffmpeg 时同目录取 ffprobe，否则用系统 PATH */
+function getFfprobeBin(): string {
+  if (FFMPEG_PATH) {
+    const dir = path.dirname(FFMPEG_PATH);
+    const base = process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe';
+    return path.join(dir, base);
+  }
+  return 'ffprobe';
+}
+
+/**
+ * 用 ffprobe 校验视频文件真实生成成功，并取实际时长（秒）。
+ * 校验失败（文件损坏/无有效流/时长不可解析）→ 抛错（零容错，视为该镜头生成失败）。
+ */
+function probeVideoDuration(filePath: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      getFfprobeBin(),
+      [
+        '-v', 'error',
+        '-show_entries', 'format=duration',
+        '-of', 'default=noprint_wrappers=1:nokey=1',
+        filePath,
+      ],
+      (err, stdout) => {
+        if (err) {
+          reject(new Error(`ffprobe 校验失败 ${filePath}: ${err.message}`));
+          return;
+        }
+        const duration = parseFloat(stdout.trim());
+        if (!Number.isFinite(duration) || duration <= 0) {
+          reject(new Error(`无法解析视频时长 ${filePath}: ${stdout.trim() || '(空)'}`));
+          return;
+        }
+        resolve(duration);
+      }
+    );
+  });
 }
 
 // ── 脚本存储目录 ────────────────────────────────────
@@ -380,7 +428,78 @@ export async function sceneJsonAssemblerNode(state: VideoGenStateType): Promise<
 }
 
 // ============================================================
-// 节点 7（保留未接线）：Video Merge（FFmpeg 拼接）— 零容错
+// 节点 7：Shot Video Gen（逐镜头视频生成）— 零容错 + 并发窗口
+// ============================================================
+
+/**
+ * 逐个镜头真实调用视频生成 API（经模型无关抽象层 generateSceneVideo），
+ * 并发窗口（AI_VIDEO_CONCURRENCY，默认 2），产物落 storage/scenes/{jobId}/{sceneId}.mp4。
+ * 每个镜头写出后用 ffprobe 校验真实生成成功并取实际时长。
+ * 同时写盘 scene-specs.json（视频生成脚本包，审计/复用用）。任一镜头失败 → 整体失败（零容错）。
+ */
+export async function shotVideoGenNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  const sceneSpecs = state.sceneSpecs ?? [];
+  if (sceneSpecs.length === 0) throw new Error('缺少 SceneSpecs（shot_video_gen）');
+  if (!state.jobId) throw new Error('缺少 jobId（shot_video_gen）');
+
+  const jobId = state.jobId;
+  const scenesDir = path.join(process.cwd(), 'storage', 'scenes', jobId);
+  fs.mkdirSync(scenesDir, { recursive: true });
+
+  // 写盘视频生成脚本包（交接凭证，便于审计/后续复用）
+  const specPath = path.join(scenesDir, 'scene-specs.json');
+  fs.writeFileSync(specPath, JSON.stringify(sceneSpecs, null, 2), 'utf-8');
+
+  const concurrency = Number(process.env.AI_VIDEO_CONCURRENCY ?? '2') || 2;
+  const fallbackModel = process.env.AI_VIDEO_MODEL ?? '';
+  const defaultResolution = process.env.AI_VIDEO_RESOLUTION ?? '720P';
+  const styleStrength = Number(process.env.AI_VIDEO_STYLE_STRENGTH ?? '0.85');
+
+  const sceneVideos: SceneVideoResult[] = [];
+
+  await runWithConcurrency(sceneSpecs, concurrency, async (spec) => {
+    // 模型：spec.engine 优先（脚本 prompt 固定为 AI_VIDEO_MODEL），回退 env
+    const model = spec.engine?.trim() || fallbackModel;
+
+    // 首帧硬依赖：必须为公网 http(s) URL（i2v 需要首帧）
+    const sceneImageUrl = spec.assets.sceneImageUrl;
+    if (!sceneImageUrl || !/^https?:\/\//i.test(sceneImageUrl)) {
+      throw new Error(`场景 ${spec.sceneId} 缺少公网场景图（i2v 需要首帧 URL）`);
+    }
+
+    const durationSec = clampDuration(spec.duration);
+    // spec.resolution 为宽x高（如 854x480），映射为档位；映射不到则回退 env
+    const resolution = resolutionToTier(spec.resolution) ?? defaultResolution;
+
+    const req: VideoGenRequest = {
+      model,
+      sceneImageUrl,
+      characterImageUrls: spec.assets.characterImageUrls,
+      motionDescription: buildMotionDescription(spec.storyboard),
+      negativePrompt: spec.storyboard.negativePrompt,
+      durationSec,
+      resolution,
+      styleStrength,
+    };
+
+    console.log(`[shot_video_gen] ${spec.sceneId} → ${model} (${resolution}, ${durationSec}s)`);
+    const { buffer } = await generateSceneVideo(req);
+
+    const videoUrl = path.join(scenesDir, `${spec.sceneId}.mp4`);
+    fs.writeFileSync(videoUrl, buffer);
+
+    // 用 ffprobe 校验视频真实生成成功，并取实际时长（失败视为该镜头生成失败）
+    const actualDuration = await probeVideoDuration(videoUrl);
+    sceneVideos.push({ sceneId: spec.sceneId, videoUrl, durationSec: actualDuration, status: 'done' });
+  });
+
+  console.log(`[shot_video_gen] 完成 ${sceneVideos.length} 个镜头 → ${scenesDir}`);
+
+  return { sceneVideos };
+}
+
+// ============================================================
+// 节点 8：Video Merge（FFmpeg 拼接）— 零容错
 // ============================================================
 
 export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
@@ -447,11 +566,13 @@ export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<
     const vConcat = `${vFilters.join('')}concat=n=${vidCount}:v=1:a=0[vout]`;
     const aConcat = `${aFilters.join('')}concat=n=${audCount}:v=0:a=1[aout]`;
 
-    cmd.complexFilter([vConcat, aConcat], ['vout', 'aout'])
+    // 先设 output，再挂 filter_complex（不带 outputs 参数，避免 fluent-ffmpeg 自动 -map 与手动 -map 重复）
+    cmd
       .output(outputPath)
+      .complexFilter([vConcat, aConcat])
       .videoCodec('libx264')
       .audioCodec('aac')
-      .outputOptions(['-map', '[vout]', '-map', '[aout]'])
+      .outputOptions(['-map', '[vout]', '-map', '[aout]', '-y'])
       .on('end', () => resolve())
       .on('error', reject)
       .run();

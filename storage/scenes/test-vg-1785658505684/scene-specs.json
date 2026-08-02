@@ -1,0 +1,112 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 7,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "image-to-video",
+    "resolution": "854x480",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/test-vg-1785658505684/scenes/test_visual.png",
+      "characterImageUrls": [],
+      "audioFilePath": null
+    },
+    "story": {
+      "sceneDescription": "暖金日落海面",
+      "narrative": "开场",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "wide",
+        "angle": "eye-level",
+        "movement": "slow push-in",
+        "focus": "horizon"
+      },
+      "composition": "rule of thirds",
+      "lighting": "golden hour",
+      "visualElements": [
+        "sea",
+        "rocks"
+      ],
+      "atmosphere": "calm",
+      "motionLevel": 2,
+      "negativePrompt": "people, text, watermark"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [],
+      "bgm": {
+        "style": "",
+        "mood": "",
+        "timing": ""
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "transitionOut": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "keyMoments": []
+    }
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 8,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "image-to-video",
+    "resolution": "854x480",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/test-vg-1785658505684/scenes/test_visual.png",
+      "characterImageUrls": [],
+      "audioFilePath": null
+    },
+    "story": {
+      "sceneDescription": "淡紫暮色海天",
+      "narrative": "收尾",
+      "characters": []
+    },
+    "storyboard": {
+      "shot": {
+        "type": "wide",
+        "angle": "eye-level",
+        "movement": "slow pan right",
+        "focus": "horizon"
+      },
+      "composition": "rule of thirds",
+      "lighting": "golden hour",
+      "visualElements": [
+        "sea",
+        "rocks"
+      ],
+      "atmosphere": "calm",
+      "motionLevel": 2,
+      "negativePrompt": "people, text, watermark"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [],
+      "bgm": {
+        "style": "",
+        "mood": "",
+        "timing": ""
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "transitionOut": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "keyMoments": []
+    }
+  }
+]

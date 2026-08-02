@@ -2,6 +2,60 @@ import { SCRIPT_SYSTEM } from '@/lib/prompts/script-generation';
 import type { ResearchReport, Proposal, VideoScript } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
 
+// ── 生成后处理（需求传递 / 转场策略）─────────────────
+
+/** 分辨率档位 → 各比例下的规格（宽x高）。档位小写 key。 */
+const RESOLUTION_TIERS: Record<string, { sizes: Record<string, string> }> = {
+  '480p': { sizes: { '16:9': '854x480', '9:16': '480x854', '1:1': '480x480' } },
+  '720p': { sizes: { '16:9': '1280x720', '9:16': '720x1280', '1:1': '720x720' } },
+  '1080p': { sizes: { '16:9': '1920x1080', '9:16': '1080x1920', '1:1': '1080x1080' } },
+  '2k': { sizes: { '16:9': '2560x1440', '9:16': '1440x2560', '1:1': '1440x1440' } },
+  '4k': { sizes: { '16:9': '3840x2160', '9:16': '2160x3840', '1:1': '2160x2160' } },
+};
+
+const RESOLUTION_TIER_ORDER = ['4k', '2k', '1080p', '720p', '480p'] as const;
+
+/** 从 research 需求中提取分辨率档位（如 '480p'），无则返回 null */
+export function extractResolutionDemand(researchReport: ResearchReport | null): string | null {
+  if (!researchReport) return null;
+  for (const d of researchReport.user_demand.demands) {
+    const text = `${d.description} ${d.originalPhrase}`.toLowerCase();
+    for (const tier of RESOLUTION_TIER_ORDER) {
+      if (text.includes(tier)) return tier;
+    }
+  }
+  return null;
+}
+
+/**
+ * 脚本生成后处理（确定性，覆盖 LLM 输出）：
+ * 1. 分辨率需求传递：research 提取了分辨率档位（如 480p）→ 按 aspectRatio 覆盖 storyboard 各镜头 resolution
+ * 2. 取消边界淡入淡出：首镜头 transitionIn、末镜头 transitionOut 强制为 cut（手机随拍等风格用硬切）
+ */
+export function applyPostProcess(
+  script: VideoScript,
+  proposal: Proposal,
+  researchReport: ResearchReport | null
+): VideoScript {
+  // 1) 分辨率需求 → 覆盖 storyboard
+  const tier = extractResolutionDemand(researchReport);
+  const resolved = tier ? RESOLUTION_TIERS[tier]?.sizes[proposal.blueprint.aspectRatio] : undefined;
+  if (resolved) {
+    for (const b of script.storyboardScript.scenes) {
+      b.resolution = resolved;
+    }
+  }
+
+  // 2) 取消边界 fade
+  const pacing = script.pacingScript.scenes;
+  if (pacing.length > 0) {
+    pacing[0].transitionIn = { type: 'cut', durationSec: 0 };
+    pacing[pacing.length - 1].transitionOut = { type: 'cut', durationSec: 0 };
+  }
+
+  return script;
+}
+
 /**
  * Script 工具 — 基于 Proposal + ResearchReport 调用 LLM 生成逐镜头生产脚本。
  *
@@ -268,12 +322,16 @@ export async function generateScript(
   );
 
   return {
-    script: {
-      storyScript: result.storyScript,
-      storyboardScript: result.storyboardScript,
-      audioScript: result.audioScript,
-      pacingScript: result.pacingScript,
-    },
+    script: applyPostProcess(
+      {
+        storyScript: result.storyScript,
+        storyboardScript: result.storyboardScript,
+        audioScript: result.audioScript,
+        pacingScript: result.pacingScript,
+      },
+      proposal,
+      researchReport
+    ),
     model: SCRIPT_LLM_MODEL,
     retries,
     tokenUsage: result.usage,

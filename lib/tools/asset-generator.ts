@@ -10,7 +10,8 @@
  * - 库素材      → 引用 storage/library/…（不复制）
  * - 交付物      → storage/assets/{jobId}/manifest.json（AssetManifest，全部相对路径）
  *
- * 零容错：任何异常直接抛出。
+ * 失败策略：单个角色/场景图生成失败 → 跳过该项（对应 sceneImageUrl 落 null），任务继续；
+ * 正式的中性兜底重试机制后续完善。
  */
 
 import { AssetStore, VIEW_ORDER, type CharacterViews } from '@/lib/store/asset-store';
@@ -120,16 +121,21 @@ export async function generateAssets(
       console.log(`[asset-gen] 角色 ${char.name} → 库组 ${latestGroup.groupId}`);
     } else {
       // AI 生成四视图（占位实现，4 次独立调用；角色一致性后续专门设计）
-      const dir = `assets/${jobId}/characters/${char.characterId}`;
-      const views = {} as CharacterViews;
-      for (let i = 0; i < VIEW_ORDER.length; i++) {
-        const view = VIEW_ORDER[i];
-        if (i > 0) await sleep(1000);
-        const url = await callImageAPI(buildCharacterViewPrompt(char.appearance, view));
-        views[view] = await store.storeFromUrl(url, `${dir}/${view}.png`);
+      try {
+        const dir = `assets/${jobId}/characters/${char.characterId}`;
+        const views = {} as CharacterViews;
+        for (let i = 0; i < VIEW_ORDER.length; i++) {
+          const view = VIEW_ORDER[i];
+          if (i > 0) await sleep(1000);
+          const url = await callImageAPI(buildCharacterViewPrompt(char.appearance, view));
+          views[view] = await store.storeFromUrl(url, `${dir}/${view}.png`);
+        }
+        characters[char.characterId] = { source: 'ai', views };
+        console.log(`[asset-gen] 角色 ${char.name} → AI 生成四视图`);
+      } catch (err) {
+        // 单角色生成失败：跳过该角色（下游 characterImageUrls 为空），任务继续（兜底机制后续完善）
+        console.warn(`[asset-gen] 角色 ${char.name} AI 生成失败，跳过（${(err as Error).message}）`);
       }
-      characters[char.characterId] = { source: 'ai', views };
-      console.log(`[asset-gen] 角色 ${char.name} → AI 生成四视图`);
     }
   }
 
@@ -160,11 +166,19 @@ export async function generateAssets(
   for (const [ref, info] of refMap) {
     if (!first) await sleep(2000); // 请求间隔 2s 避免限流
     first = false;
-    const url = await callImageAPI(buildSceneBackgroundPrompt(info.hints));
-    const relPath = `assets/${jobId}/scenes/${ref.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
-    await store.storeFromUrl(url, relPath);
-    scenes[ref] = { source: 'ai', image: relPath };
-    console.log(`[asset-gen] 场景 "${ref}": 覆盖 ${info.sceneIds.length} 个镜头`);
+    try {
+      const url = await callImageAPI(buildSceneBackgroundPrompt(info.hints));
+      const relPath = `assets/${jobId}/scenes/${ref.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+      await store.storeFromUrl(url, relPath);
+      scenes[ref] = { source: 'ai', image: relPath };
+      console.log(`[asset-gen] 场景 "${ref}": 覆盖 ${info.sceneIds.length} 个镜头`);
+    } catch (err) {
+      // 单张场景图失败：跳过该 ref，对应镜头 sceneImageUrl 落 null，任务继续（兜底机制后续完善）
+      console.warn(`[asset-gen] 场景 "${ref}" 生成失败，跳过（${(err as Error).message}）`);
+      for (const sceneId of info.sceneIds) {
+        delete sceneRefs[sceneId];
+      }
+    }
   }
 
   const manifest: AssetManifest = { jobId, characters, scenes, sceneRefs };
@@ -172,13 +186,13 @@ export async function generateAssets(
 
   console.log(
     `[asset-gen] 完成: ${Object.keys(characters).length} 角色, ` +
-    `${refMap.size} 个唯一场景 → ${manifestPath}`
+    `${Object.keys(scenes).length} 个唯一场景 → ${manifestPath}`
   );
 
   return {
     manifest,
     manifestPath,
     characterCount: Object.keys(characters).length,
-    sceneCount: refMap.size,
+    sceneCount: Object.keys(scenes).length,
   };
 }

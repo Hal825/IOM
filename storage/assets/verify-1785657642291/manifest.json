@@ -1,0 +1,16 @@
+{
+  "jobId": "verify-1785657642291",
+  "characters": {},
+  "scenes": {
+    "scene_visual-1": {
+      "source": "ai",
+      "image": "assets/verify-1785657642291/scenes/scene_visual-1.png"
+    }
+  },
+  "sceneRefs": {
+    "scene-1": "scene_visual-1",
+    "scene-2": "scene_visual-1",
+    "scene-3": "scene_visual-1",
+    "scene-4": "scene_visual-1"
+  }
+}

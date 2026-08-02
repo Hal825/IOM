@@ -11,7 +11,7 @@
 | 任务队列 | BullMQ + Redis (Docker) |
 | AI 文本分析 | 兼容 OpenAI 接口的模型（DeepSeek 等） |
 | AI 图片生成 | DashScope qwen-image-2.0 |
-| AI 视频生成 | DashScope happyhorse-1.1-i2v |
+| AI 视频生成 | DashScope happyhorse-1.1-r2v |
 | AI 语音合成 | DashScope qwen3-tts-flash |
 | 对象存储 | 阿里云 OSS（角色/场景素材上传） |
 | 视频拼接 | FFmpeg (fluent-ffmpeg) |
@@ -54,7 +54,9 @@ AI_ASSET_MODEL=qwen-image-2.0
 # ── AI 视频生成 ──
 AI_VIDEO_API_KEY=your_dashscope_key
 AI_VIDEO_BASE_URL=https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis
-AI_VIDEO_MODEL=happyhorse-1.1-i2v
+AI_VIDEO_MODEL=happyhorse-1.1-r2v
+# AI_VIDEO_CONCURRENCY=2          # 逐镜头视频生成并发窗口（默认 2）
+# AI_VIDEO_STYLE_STRENGTH=0.85    # 与参考图风格相似度 0-1（默认 0.85）
 
 # ── AI 语音合成（TTS）──
 AI_TTS_API_KEY=your_dashscope_key
@@ -107,6 +109,10 @@ asset_gen   tts       ← 并发：素材生成（本地库引用 + AI 生成）
   ╲       ╱
 scene_json_assembler  ← 组装单镜头完整视频生成 JSON（素材公网 URL + 音频路径）
     │
+shot_video_gen        ← 逐镜头真实视频生成（模型无关适配器，并发窗口 + ffprobe 校验）
+    │
+video_merge           ← FFmpeg 拼接逐镜头视频 + 合成音轨 → output/{jobId}.mp4
+    │
    END
 ```
 
@@ -132,7 +138,7 @@ scene_json_assembler  ← 组装单镜头完整视频生成 JSON（素材公网 
 │   │   ├── asset-generator.ts         # 素材生成（本地库引用 + AI 生成，产出 AssetManifest）
 │   │   ├── oss-uploader.ts            # OSS 上传（REST+HMAC，公网 URL）
 │   │   ├── tts-generator.ts           # AI 语音合成
-│   │   └── shot-video-generator.ts    # 单镜头视频生成（保留，未接线）
+│   │   └── video-generation/          # 视频生成抽象层（统一请求 + Adapter 工厂 + happyhorse-r2v）
 │   ├── store/                 # 存储层
 │   │   └── asset-store.ts             # AssetStore：存储 / 库访问 / OSS 发布
 │   ├── prompts/               # LLM 提示词模板
@@ -150,15 +156,17 @@ scene_json_assembler  ← 组装单镜头完整视频生成 JSON（素材公网 
 ## 架构决策
 
 - **零容错**：所有 AI 节点不进行自动重试，任何错误直接抛出使任务失败（`attempts: 1`）。保持简单，避免隐式成本。
-- **图只到素材组装**：图目前止于 `scene_json_assembler`（产出 `SceneVideoSpec[]`），`shot_video` / `video_merge` 节点保留在 nodes.ts 但未接线。
-- **单 Worker**：`concurrency: 1`，一次只处理一个任务。视频生成本身已是异步轮询，并发不会显著提速。
+- **视频模型抽象层**：不同视频模型 API 结构各异，统一收敛为 `VideoGenRequest` + `VideoModelAdapter` 接口 + `createVideoAdapter(model)` 工厂；当前仅实现 `happyhorse-1.1-r2v`，未知模型抛错。
+- **脚本后处理**：research 提取的分辨率需求（如 480p）覆盖 storyboard `resolution`；首/末镜头转场强制为 `cut`（不自动 fade）。
+- **视频生成 + 拼接**：`shot_video_gen` 逐镜头真实生成（并发窗口 + ffprobe 校验）→ `video_merge` FFmpeg 拼接。
+- **单 Worker**：`concurrency: 1`，一次只处理一个任务。
 - **无数据库**：任务状态直接存储在 BullMQ (Redis) 中，完成/失败记录各保留最近 100 条。
 - **无用户系统**：任务全局可见，MVP 阶段不引入认证。
 
 ## 已知限制
 
 - 所有 AI 节点依赖外部 API（DeepSeek + DashScope），网络问题或 API 配额耗尽会导致任务失败
-- OSS 未配置时视频生成 API 可能无法访问角色/场景素材
+- 视频引擎当前仅实现 `happyhorse-1.1-r2v`，且依赖 DashScope 账户可用额度
 - 单 Worker 串行处理（`concurrency: 1`）
 - 无用户系统，任务全局可见
 - Windows 下 FFmpeg 需要额外配置 `FFMPEG_PATH` 环境变量
