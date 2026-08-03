@@ -1,4 +1,5 @@
 @AGENTS.md
+@.claude/TECHNICAL-SPEC.md
 
 <!-- BEGIN:english-coaching-rule -->
 # English Coaching Rule (Always Active)

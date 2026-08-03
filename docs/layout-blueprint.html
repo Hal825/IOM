@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenMontage · 布局蓝图（Layout Blueprint）</title>
+<style>
+/* =====================================================================
+   OpenMontage 布局蓝图 · Hallmark layout-blueprint
+   pre-emit critique: P4 H4 E4 S4 R4 V4
+   ---------------------------------------------------------------------
+   这是一份「线框蓝图」，不是最终设计：
+   - 区域配色 = 已确认的「浅色精修」最终色板（见下方 0.5 色板注释）；
+     design.md 将以此为基础扩展字体 / 间距 / 动效的完整规格
+   - 每个区域用 2px 实线边框圈出，区域名称用 .tag 胶囊标签标明
+   - 子区域用虚线边框区分层级
+   布局技术：整体用 CSS Grid（2 列 × 4 行），区块内部对齐用 Flexbox。
+   关键设计意图：内容区 Stage 按「对话时间线」建模 —— 现在只渲染
+   「节点成果卡」（每轮任务 = 一张卡）；不设预留区域，将来多轮对话的
+   「流式输出卡 + 等待用户回复」直接向下追加，由时间线滚动自然容纳。
+   ===================================================================== */
+
+/* ---------- 0. 基础重置 ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* 防止任何宽度下出现横向滚动条（320px 也必须成立） */
+html, body { overflow-x: clip; }
+
+body {
+  min-height: 100dvh;
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+               "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* ---------- 1. 页面主网格（CSS Grid）--------------------------------
+   整体是 2 列 × 4 行：
+
+   ┌───────────────── header（横跨两列，固定 56px）─────────────────┐
+   ├───────────┬──────────────────────────────────────────────┤
+   │   rail    │                    stage                     │ ← 第 2 行：
+   │ （侧边栏， ├──────────────────────────────────────────────┤   1fr 吃掉
+   │  跨 2/3   │                  composer                    │ ← 第 3 行：
+   │   两行）  │                                              │   auto 由内容撑高
+   ├───────────┴──────────────────────────────────────────────┤
+   │                status（横跨两列，固定 28px）              │ ← 第 4 行
+   └──────────────────────────────────────────────────────────┘
+
+   排列要点：
+   - 第 1 列 rail 固定 280px，第 2 列 minmax(0,1fr) 自适应剩余宽度
+     （minmax(0,1fr) 而不是裸 1fr：防止子内容过宽时把网格撑破）
+   - rail 用 grid-row 跨第 2~3 行：侧边栏整条通高，
+     输入区 composer 只占据右列底部 —— 编辑器式布局
+   - stage 内部 = 可滚动的时间线：每轮任务渲染一张「节点成果卡」；
+     不设预留区域 —— 将来多轮对话的卡直接向下追加，滚动自然容纳
+   - 区块之间留 6px gap，让每条边框都清晰可见
+-------------------------------------------------------------------- */
+.app {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-rows: 56px minmax(0, 1fr) auto 28px;
+  grid-template-areas:
+    "header   header"
+    "rail     stage"
+    "rail     composer"
+    "status   status";
+  gap: 6px;
+  padding: 6px;
+}
+
+/* ---------- 0.5 设计色板（已确认 · 浅色精修）----------------
+   这是「最终配色」的起点，design.md 将以此扩展字体/间距/动效。
+   区域 → 色值：
+     Header   白底 #ffffff    + 靛蓝边 #6366f1  ← 品牌
+     Rail     琥珀浅底 #fffbeb + 琥珀   #f59e0b  ← 队列
+     Stage    白卡片 #ffffff   + 绿     #10b981  ← 内容 / 成功
+     Composer 白底 #ffffff    + 靛蓝   #6366f1  ← 主操作
+     Status   石板浅底 #f1f5f9 + 石板   #475569  ← 系统
+   状态色：成功 绿 #10b981 · 信息 青 #0891b2 ·
+           警告 琥珀 #f59e0b · 危险 红 #ef4444 · 元信息 紫 #9333ea
+---------------------------------------------------------------- */
+
+/* ---------- 2. 区块公共样式 ----------
+   每个区块 = 不同底色 + 2px 实线边框 + 圆角 + 内部 padding；
+   .tag 是区域名称胶囊，.hint 是灰色小字说明。 */
+.zone {
+  border: 2px solid;
+  border-radius: 8px;
+  padding: 12px;
+}
+.tag {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.hint { font-size: 12px; line-height: 1.6; opacity: 0.72; margin-top: 8px; }
+
+/* 子区域：虚线边框 + 更浅底色，与顶层区块区分层级 */
+.sub {
+  border: 2px dashed;
+  border-radius: 6px;
+  padding: 10px;
+}
+.sub .tag { font-size: 12px; font-weight: 600; }
+
+/* 骨架占位条：模拟将来真实内容的体积感 */
+.bar {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.10);
+  margin-top: 8px;
+}
+
+/* ---------- 3. 五大区块：各自的颜色 + 网格位置 ---------- */
+
+/* 3a. 页头 header —— 白底 + 靛蓝品牌边。内部 Flexbox：品牌在左，
+       全局状态靠右，justify-content: space-between 把两端顶开 */
+.zone-header {
+  grid-area: header;
+  background: #ffffff;   /* 白底：品牌横条 */
+  border-color: #6366f1; /* 靛蓝边：品牌色 */
+  color: #3730a3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+/* 3b. 侧边栏 rail —— 琥珀浅底。内部 Flexbox 纵向排列：
+       队列概况在顶（自然高度），任务列表 flex:1 吃掉剩余高度并可滚动 */
+.zone-rail {
+  grid-area: rail;
+  background: #fffbeb;   /* 琥珀浅底 */
+  border-color: #f59e0b; /* 琥珀：队列 */
+  color: #92400e;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0; /* 允许内部列表在网格单元里收缩滚动 */
+}
+.rail-list {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto; /* 滚动结构：任务列表内部滚动，rail 本体不滚 */
+}
+/* 列表底部淡出：提示「下方还有更多任务」的视觉暗示 */
+.rail-list::after {
+  content: "";
+  display: block;
+  position: sticky;
+  bottom: -1px;
+  height: 22px;
+  margin: 0 -10px -10px;
+  background: linear-gradient(to bottom, rgba(255, 251, 235, 0), #fffbeb);
+  pointer-events: none;
+}
+.task-row {
+  border: 2px dashed rgba(245, 158, 11, 0.5);
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* 3c. 内容区 stage —— 白卡片 + 绿边。内部 Flexbox 纵向：
+       视频预览（大头）→ 任务元信息 → 流水线进度，三块从上到下 */
+.zone-stage {
+  grid-area: stage;
+  background: #ffffff;   /* 白卡片：内容舞台 */
+  border-color: #10b981; /* 绿：内容 / 成功 */
+  color: #065f46;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 320px;
+  overflow-y: auto; /* 时间线：不设预留区域，卡直接向下追加，滚动自然容纳 */
+}
+
+/* 节点成果卡：当前唯一渲染的卡类型。每轮任务 = 一张卡；
+   将来 human-in-loop 时，卡之后追加「流式输出卡」「等待回复卡」 */
+.turn {
+  border: 2px dashed rgba(16, 185, 129, 0.45);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sub-video    { background: #ecfeff; border-color: #0891b2; color: #155e75; }
+.sub-meta     { background: #faf5ff; border-color: #9333ea; color: #6b21a8; }
+.sub-pipeline { background: #f0fdfa; border-color: #0d9488; color: #115e59; }
+
+/* 视频预览：16:9 比例盒（aspect-ratio），限宽 576px 并居中——
+   避免在宽 Stage 里撑得太高，完整视频无需滚动即可看到 */
+.video-box {
+  width: 100%;
+  max-width: 576px;
+  margin: 8px auto 0;
+  aspect-ratio: 16 / 9;
+  border: 2px dashed rgba(8, 145, 178, 0.5);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* 空态：视频尚未生成时的默认外观 —— 虚线圆环播放占位 + 引导文案 */
+.video-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #155e75;
+  opacity: 0.8;
+  font-size: 12px;
+}
+.video-icon {
+  width: 44px;
+  height: 44px;
+  border: 2px dashed rgba(8, 145, 178, 0.55);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+/* 流水线：Flexbox 横排 6 个阶段盒，flex:1 均分宽度，窄屏自动换行 */
+.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.step {
+  flex: 1 1 90px;
+  min-width: 0;
+  border: 2px dashed rgba(13, 148, 136, 0.5);
+  border-radius: 6px;
+  padding: 8px 4px;
+  text-align: center;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* 3d. 输入区 composer —— 白底 + 靛蓝主操作。内部 Flexbox 横排：
+       文本输入框 flex:1 吃宽度，提交按钮固定宽度靠右 */
+.zone-composer {
+  grid-area: composer;
+  background: #ffffff;   /* 白底：主操作栏 */
+  border-color: #6366f1; /* 靛蓝：主操作（原红仅用于区分区域） */
+  color: #3730a3;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+.composer-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border: 2px solid rgba(99, 102, 241, 0.55); /* 靛蓝主按钮 */
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #eef2ff; /* indigo-50 */
+  color: #4338ca;
+}
+
+/* 3e. 状态栏 status —— 石板浅底。Flexbox 横排，两端对齐：
+       左侧系统状态，右侧版本/计数 */
+.zone-status {
+  grid-area: status;
+  background: #f1f5f9;   /* 石板浅底 */
+  border-color: #475569; /* 石板 */
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  padding: 0 12px;
+}
+
+/* ---------- 4. 移动端折叠（≤ 960px）--------------------------------
+   单列堆叠，顺序 = 页头 → 内容区 → 输入区 → 侧边栏 → 状态栏。
+   原则：手机上「创作与结果」优先，任务列表退到下方。
+-------------------------------------------------------------------- */
+@media (max-width: 960px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 56px auto auto auto 28px;
+    grid-template-areas:
+      "header"
+      "stage"
+      "composer"
+      "rail"
+      "status";
+  }
+  .zone-stage { min-height: 260px; }
+  .rail-list { max-height: 220px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================================================
+       页头 HEADER（白底 · 靛蓝品牌）
+       后续真实内容：
+       - 左：OpenMontage 品牌字标（display 字体，无图形 logo）
+       - 右：队列连接状态仪表（空闲 / 渲染中 / 离线 三态圆点 + 文字）
+       说明：本产品是单屏工作台、没有多页导航，页头即导航位；
+       将来若加页面（文档 / 设置），在此扩展链接区。
+  ============================================================ -->
+  <header class="zone zone-header">
+    <span class="tag">页头 Header</span>
+    <span class="hint" style="margin:0">配色已定 · 浅色精修（白 / 靛蓝 / 琥珀 / 绿 / 石板）</span>
+    <div class="header-right">
+      <span class="tag">品牌区</span>
+      <span class="tag">队列状态仪表</span>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       侧边栏 RAIL（琥珀浅底）
+       滚动结构：整条 rail 不滚动；只有「任务列表」内部滚动
+       （flex:1 + overflow-y:auto，底部淡出提示还有更多任务）。
+       后续真实内容：
+       - 顶部「队列概况」：状态圆点 + 文字（空闲 / 渲染中 / 队列离线）
+       - 「任务列表」：每行 = #任务号 + 截断的输入文本
+         + 相对时间（刚刚 / N 分钟前）+ 状态芯片（排队中/处理中/
+         已完成/失败）；选中行高亮，点击切换右侧内容区
+  ============================================================ -->
+  <aside class="zone zone-rail">
+    <div class="sub">
+      <span class="tag">队列概况</span>
+      <div class="bar" style="width:60%"></div>
+    </div>
+    <div class="sub rail-list">
+      <span class="tag">任务列表</span>
+      <div class="task-row">#12 · 任务行（选中态示意）· 2 分钟前</div>
+      <div class="task-row">#11 · 任务行 · 1 小时前</div>
+      <div class="task-row">#10 · 任务行 · 昨天</div>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       内容区 STAGE（白卡片 · 绿边）—— 工作台的「舞台」= 对话时间线
+       关键设计意图（本次确认的核心）：
+       Stage 是为将来的「多轮对话 + human-in-loop」准备的舞台。
+       - 现在：仍保持 workflow，只渲染「节点成果卡」——每轮任务
+         一张卡，内含 视频预览 / 任务元信息 / 流水线进度 三块。
+       - 将来：成果卡之后会追加「流式输出卡」（如 research report
+         完成后逐字流式写入）+「等待用户回复」状态，由底部 composer
+         接住用户的下一轮输入，形成对话闭环。
+       - 因此 Stage 就是一条「可滚动的时间线」：不设预留区域，
+         将来多轮对话的「流式输出卡 + 等待回复卡」直接向下追加，
+         由滚动自然容纳；现在不渲染任何还不存在的交互 —— 不伪造。
+
+       节点成果卡内部三块子区域：
+       1. 视频预览（青）：完成任务的 <video> 播放器（16:9）；
+          处理中显示骨架占位；没有任务时显示空态引导文案
+       2. 任务元信息（紫）：#任务号 + 状态芯片 + 提交时间 +
+          用户原始文本；完成后加 时长 + 下载 MP4 按钮；
+          失败时显示失败原因块
+       3. 流水线进度（蓝绿）：六阶段 调研→提案→脚本→素材→
+          逐镜头视频→拼接。注意：后端目前只返回 0/10/100 三档
+          进度，所以图上只高亮「排队中 / 渲染中 / 已完成」三个
+          真实状态，不伪造逐阶段百分比；后续可接 worker 阶段
+          事件实现真实逐步进度
+  ============================================================ -->
+  <main class="zone zone-stage">
+    <span class="tag">内容区 Stage · 对话时间线</span>
+
+    <!-- ↓↓↓ 节点成果卡：当前唯一渲染的卡类型（每轮任务 = 一张）↓↓↓ -->
+    <div class="turn">
+      <div class="sub sub-video">
+        <span class="tag">视频预览</span>
+        <!-- 视频预览三态（蓝图只展示「空态」①，②③注释说明、不伪造）：
+             ① 空态（视频还没生成 / 无任务）：虚线圆环 ▷ 占位 +
+                「暂无视频 · 提交描述后在此生成」
+             ② 处理中：16:9 骨架占位（脉动灰块）+ 状态文字
+             ③ 完成：<video> 播放器（16:9）+ 下载 MP4 栏 -->
+        <div class="video-box">
+          <div class="video-empty">
+            <span class="video-icon">▷</span>
+            <span>暂无视频 · 提交描述后在此生成</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub sub-meta">
+        <span class="tag">任务元信息</span>
+        <div class="bar" style="width:45%"></div>
+        <div class="bar" style="width:80%"></div>
+        <div class="bar" style="width:65%"></div>
+      </div>
+
+      <div class="sub sub-pipeline">
+        <span class="tag">流水线进度</span>
+        <div class="steps">
+          <div class="step">调研</div>
+          <div class="step">提案</div>
+          <div class="step">脚本</div>
+          <div class="step">素材</div>
+          <div class="step">逐镜头视频</div>
+          <div class="step">拼接</div>
+        </div>
+      </div>
+    </div>
+    <!-- ↑↑↑ 节点成果卡 ↑↑↑ -->
+
+    <!-- 将来：多轮对话 / human-in-loop 的「流式输出卡」「等待回复卡」
+         不设预留区域，直接在此处向下追加，时间线滚动自然容纳 -->
+  </main>
+
+  <!-- ============================================================
+       输入区 COMPOSER（白底 · 靛蓝主操作）—— 底部指令栏
+       后续真实内容：
+       - 左：多行输入框（视频描述，≤2000 字 + 字符计数；
+         ⌘/Ctrl + Enter 快速提交；出错时下方出现错误横幅）
+       - 右：「生成视频」主按钮（提交中变 loading 文案）
+  ============================================================ -->
+  <section class="zone zone-composer">
+    <div class="composer-input">
+      <span class="tag">输入区 Composer · 文本输入框</span>
+      <div class="hint">描述你想生成的视频……（占位示意）</div>
+    </div>
+    <div class="composer-btn">生成视频</div>
+  </section>
+
+  <!-- ============================================================
+       状态栏 STATUS（石板浅底）—— 全宽贴底
+       后续真实内容：
+       - 左：Redis / 队列连接状态 + Worker 状态（如：队列已连接 ·
+         Worker 空闲）
+       - 右：任务总数 + 版本号
+  ============================================================ -->
+  <footer class="zone zone-status">
+    <span class="tag">状态栏 Status</span>
+    <span>左：队列 / Worker 连接状态</span>
+    <span>右：任务数 · 版本</span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -217,7 +217,7 @@
 
 ## 六、Phase 2 里程碑完成度
 
-对比 `remedy/parse2.md` 规划：
+对比 `docs/archive/parse2.md` 规划：
 
 | 里程碑 | 状态 | 说明 |
 |---|---|---|

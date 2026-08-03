@@ -58,8 +58,20 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 ```
 openmontage/
 ├── app/                          # Next.js App Router
-│   ├── page.tsx                  # 主页面（单文件 SPA）
-│   ├── layout.tsx / globals.css
+│   ├── page.tsx                  # 首页壳：仅渲染 <Workbench />（服务端）
+│   ├── layout.tsx / globals.css  # 根布局 + Tailwind v4 主题（浅色精修色板，见 docs/design.md）
+│   ├── components/               # 前端组件（Workbench 组装五区域）
+│   │   ├── workbench.tsx         # 顶层工作台：轮询任务 + 布局组装
+│   │   ├── task-sidebar.tsx      # 侧栏：队列概况 + 任务列表（琥珀底）
+│   │   ├── task-item.tsx         # 侧栏任务行
+│   │   ├── task-detail.tsx       # 内容区节点成果卡（视频三态 + 元信息 + 流水线）
+│   │   ├── pipeline.tsx          # 流水线六阶段（诚实约束：三档进度整体着色）
+│   │   ├── composer.tsx          # 底部输入区（textarea + 提交）
+│   │   ├── video-player.tsx      # 内联视频播放器
+│   │   ├── status-badge.tsx      # 任务状态芯片
+│   │   ├── queue-indicator.tsx   # 队列状态仪表（空闲/渲染中/离线）
+│   │   ├── status-bar.tsx        # 底部状态栏（队列状态 + 任务数/版本）
+│   │   └── format.ts             # 前端纯函数（formatRelativeTime）
 │   └── api/tasks/
 │       ├── route.ts              # POST 创建(入队) / GET 列表
 │       └── [id]/
@@ -72,6 +84,7 @@ openmontage/
 │   ├── queue.ts                  # BullMQ 队列单例 + Redis 连接
 │   ├── tasks.ts                  # jobToSummary + STORAGE_DIR
 │   ├── orchestrator.ts           # executeTask()：图调用入口
+│   ├── api.ts                    # 前端 API 客户端（listTasks / createTask）
 │   ├── agent/
 │   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派）
 │   │   ├── state.ts              # 状态通道定义 (Annotation.Root + 自定义 reducer)
@@ -96,9 +109,13 @@ openmontage/
 ├── new_prompts/                  # 新 prompt 迭代区（评测用，落地后进 lib/prompts）
 ├── old_prompts/                  # 历史 prompt 归档
 ├── scripts/
-│   ├── eval-*.ts                 # 评测脚本（eval-proposal/eval-research/eval-script…）
+│   ├── eval-research.ts / eval-proposal.ts / eval-script.ts  # 节点级 LLM 评测
+│   ├── eval-proposal-solo.ts     # 提案单测评测
 │   ├── verify-graph-full.ts      # 跑完整图（到最终拼接）的验证脚本
-│   └── test-video-gen.ts         # 精简测试：2 镜头/15s/480p 真实视频生成+拼接
+│   ├── test-video-gen.ts         # 精简测试：2 镜头/15s/480p 真实视频生成+拼接
+│   ├── retry-jobs.ts             # BullMQ 一键查询/重试失败任务
+│   ├── check-job-34.ts / fix-job-34.ts  # 任务 #34 排查 / 修复脚本
+│   └── diag-visualhints.ts       # 视觉提示词诊断
 ├── storage/                      # 输出产物 (gitignored)
 │   ├── library/                  # 素材库（本地已有资源，跨任务复用）
 │   │   └── characters/<组>/      # 一组主角：四视图 + meta.json
@@ -108,6 +125,14 @@ openmontage/
 │   ├── scenes/<jobId>/           # 逐镜头视频（shot_video_gen 产物，含 scene-specs.json）
 │   └── output/<jobId>.mp4        # 最终视频（video_merge 合并产物）
 ├── log/procedure/                # 流程审计日志 (gitignored)
+├── docs/                         # 文档
+│   ├── design.md                 # 前端设计系统规格（配色/字体/间距/动效/组件映射）
+│   ├── layout-blueprint.html     # 前端布局蓝图（冻结，设计变更入口）
+│   ├── bugs/README.md            # 历史 bug 记录（现象/根因/修复/经验）
+│   ├── screenshots/              # 验证截图
+│   └── archive/                  # 历史归档（ARCHITECTURE / parse1 / parse2）
+├── .claude/
+│   └── TECHNICAL-SPEC.md         # 给 Claude 的技术规范（操作手册：工作规则/重构/bug 流程/坑）
 ├── docker-compose.yml            # Redis 7 Alpine
 └── .env / .env.example
 ```

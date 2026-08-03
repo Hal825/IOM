@@ -4,12 +4,20 @@ import { useCallback, useEffect, useState } from 'react';
 import type { TaskSummary } from '@/lib/types';
 import { createTask, listTasks } from '@/lib/api';
 import { Composer } from './composer';
+import { QueueIndicator } from './queue-indicator';
+import { StatusBar } from './status-bar';
 import { TaskDetail } from './task-detail';
 import { TaskSidebar } from './task-sidebar';
 
 const POLL_INTERVAL_MS = 3000;
 
-/** 顶层工作台：轮询任务列表、管理选中项与提交，拼装两栏布局。 */
+/**
+ * 顶层工作台，按蓝图四行两列组装：
+ *   header（品牌区 ↔ 队列状态仪表）
+ *   / rail（通高侧栏） | stage（可滚动时间线）+ composer（底部）\
+ *   status（全宽状态栏）
+ * 移动端（≤960px）折叠为：页头 → 内容区 → 输入区 → 侧边栏 → 状态栏。
+ */
 export function Workbench() {
   const [tasks, setTasks] = useState<TaskSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -70,18 +78,27 @@ export function Workbench() {
   }, []);
 
   const selected = tasks.find((t) => t.id === effectiveSelectedId) ?? null;
+  const anyActive = tasks.some((t) => t.status === 'active');
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    // 桌面端用固定高度 h-dvh：flex 在 definite height 下才能正确分配空间，
+    // 避免被 flex-grow 撑长（min-h-dvh 只是下限，会失控增长）；移动端保留自然滚动折叠
+    <div className="flex min-h-dvh flex-col bg-background text-foreground md:h-dvh">
+      {/* 页头：品牌区（左）↔ 队列状态仪表（右） */}
       <header className="flex items-center gap-3 border-b border-border bg-panel px-4 py-3 md:px-6">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-xs text-white shadow-sm">
           ▸
         </span>
         <h1 className="text-sm font-semibold tracking-wide">OpenMontage</h1>
         <span className="hidden text-[11px] text-muted sm:inline">文本生成视频</span>
+        <span className="ml-auto">
+          <QueueIndicator queueOnline={queueOnline} anyActive={anyActive} />
+        </span>
       </header>
 
-      <div className="grid flex-1 md:grid-cols-[280px_1fr]">
+      {/* 中部 Grid：rail 通高（跨 stage + composer 两行）。
+           md:grid-rows 显式填满 —— 静态布局吃满剩余高度，长内容由内部滚动承载 */}
+      <div className="grid flex-1 md:grid-cols-[280px_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)] md:min-h-0">
         <TaskSidebar
           tasks={tasks}
           selectedId={effectiveSelectedId}
@@ -89,11 +106,17 @@ export function Workbench() {
           queueOnline={queueOnline}
           className="order-2 border-t border-border md:order-none md:border-r md:border-t-0"
         />
-        <main className="order-1 flex min-w-0 flex-col gap-4 p-4 md:order-none md:p-6">
+
+        {/* 右列：stage（可滚动时间线）+ composer（底部编辑器） */}
+        <main className="order-1 flex min-w-0 flex-col gap-4 p-4 md:order-none md:min-h-0 md:p-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+            <TaskDetail task={selected} />
+          </div>
           <Composer onSubmit={handleSubmit} submitting={submitting} error={error} />
-          <TaskDetail task={selected} />
         </main>
       </div>
+
+      <StatusBar queueOnline={queueOnline} taskCount={tasks.length} />
     </div>
   );
 }

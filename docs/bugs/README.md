@@ -20,7 +20,7 @@
 
 ## 1. video-gen 查询任务返回 400
 
-**文件**: `lib/tools/video-generator.ts`
+**文件**: `lib/tools/video-generation/`
 
 **现象**:
 ```
@@ -44,7 +44,7 @@ GET .../video-synthesis/tasks/xxx  ← 此端点不存在
 
 ## 2. video-gen Field required: input.media
 
-**文件**: `lib/tools/video-generator.ts` + `lib/tools/asset-generator.ts`
+**文件**: `lib/tools/video-generation/` + `lib/tools/asset-generator.ts`
 
 **现象**:
 ```
@@ -131,7 +131,7 @@ GET .../video-synthesis/tasks/xxx  ← 此端点不存在
 
 ## 6. video-gen 任务成功但未找到视频 URL
 
-**文件**: `lib/tools/video-generator.ts`
+**文件**: `lib/tools/video-generation/`
 
 **现象**:
 ```

@@ -1,4 +1,5 @@
 import type { TaskSummary } from '@/lib/types';
+import { QueueIndicator } from './queue-indicator';
 import { TaskItem } from './task-item';
 
 interface TaskSidebarProps {
@@ -10,7 +11,10 @@ interface TaskSidebarProps {
   className?: string;
 }
 
-/** 左栏：队列状态 + 可滚动任务列表。 */
+/**
+ * 左栏（琥珀浅底）：顶部「队列概况」 + 可滚动「任务列表」。
+ * 滚动结构：整条 rail 不滚动，只有任务列表内部 overflow-y。
+ */
 export function TaskSidebar({
   tasks,
   selectedId,
@@ -19,29 +23,27 @@ export function TaskSidebar({
   className = '',
 }: TaskSidebarProps) {
   const anyActive = tasks.some((t) => t.status === 'active');
-  const dot = !queueOnline
-    ? 'bg-danger'
-    : anyActive
-      ? 'bg-accent animate-pulse'
-      : 'bg-muted';
-  const hint = !queueOnline ? '队列离线' : anyActive ? '渲染中' : '空闲';
 
   return (
-    <aside className={`flex min-h-0 flex-col bg-panel ${className}`}>
+    <aside className={`flex min-h-0 flex-col bg-amber-50 ${className}`}>
+      {/* 队列概况 */}
       <div className="flex items-center justify-between px-4 py-3">
-        <h2 className="text-xs font-medium text-muted">任务列表</h2>
-        <span className="flex items-center gap-1.5 font-mono text-[10px] text-muted">
-          <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-          {hint}
-        </span>
+        <h2 className="text-xs font-medium text-amber-900">队列概况</h2>
+        <QueueIndicator queueOnline={queueOnline} anyActive={anyActive} />
+      </div>
+
+      {/* 任务列表标题 */}
+      <div className="flex items-center justify-between border-t border-amber-200 px-4 py-2">
+        <h3 className="text-[11px] font-medium text-amber-800/80">任务列表</h3>
+        <span className="font-mono text-[10px] text-amber-800/60">{tasks.length}</span>
       </div>
 
       {tasks.length === 0 ? (
-        <p className="mx-3 rounded-lg border border-dashed border-border px-3 py-8 text-center text-xs text-muted">
+        <p className="mx-3 mb-3 rounded-lg border border-dashed border-amber-300 px-3 py-8 text-center text-xs text-amber-800/70">
           {queueOnline ? '暂无任务，提交一段文本试试' : '无法连接队列，请确认 Redis 已启动'}
         </p>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
+        <div className="rail-list min-h-0 flex-1 overflow-y-auto border-t border-amber-200">
           {tasks.map((task) => (
             <TaskItem
               key={task.id}

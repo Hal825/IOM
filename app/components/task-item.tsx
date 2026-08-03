@@ -18,7 +18,7 @@ export function TaskItem({ task, selected, onSelect }: TaskItemProps) {
       className={`w-full border-l-2 px-3 py-2.5 text-left transition-colors ${
         selected
           ? 'border-accent bg-accent/8'
-          : 'border-transparent hover:border-border hover:bg-background'
+          : 'border-transparent hover:border-amber-200 hover:bg-amber-100'
       }`}
     >
       <div className="flex items-center justify-between gap-2">

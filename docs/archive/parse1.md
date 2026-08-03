@@ -63,7 +63,7 @@ POST /api/tasks → videoGraph.invoke()
 | `app/lib/agent/state.ts` | 使用 `Annotation.Root` 定义 6 个状态通道 |
 | `app/lib/agent/nodes.ts` | 三个节点函数：`scriptNode` / `ttsNode` / `queueNode` |
 | `app/lib/agent/graph.ts` | 编译 `StateGraph` 并导出 `videoGraph` |
-| `remedy/parse1.md` | 本文件 |
+| `docs/archive/parse1.md` | 本文件 |
 
 ### 3.2 修改
 
