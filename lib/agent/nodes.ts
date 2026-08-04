@@ -11,6 +11,7 @@ import { synthesizeSpeech } from '@/lib/tools/tts-generator';
 import { buildShotSSML } from '@/lib/prompts/tts';
 import { AssetStore } from '@/lib/store/asset-store';
 import { saveStageLog, calculateCost, formatDurationSec } from '@/lib/log/procedure';
+import { pausePoint } from '@/lib/pause';
 import {
   generateSceneVideo,
   runWithConcurrency,
@@ -587,4 +588,16 @@ export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<
     mergeLog: `Merged ${orderedVideos.length} scenes into ${outputPath}`,
     durationSec: totalDuration,
   };
+}
+
+// ============================================================
+// 暂停门节点 — 逐任务暂停/恢复检查点
+// 被暂停时阻塞（pausePoint 轮询），恢复则放行，删除则抛错中止管线。
+// ============================================================
+
+export async function pauseGateNode(
+  state: VideoGenStateType
+): Promise<Partial<VideoGenStateUpdate>> {
+  await pausePoint(state.jobId);
+  return {};
 }

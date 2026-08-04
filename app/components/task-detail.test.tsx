@@ -16,6 +16,22 @@ const legacyCompleted = {
   result: { videoPath: 'output/34.mp4' }, // 缺 durationSec
 } as unknown as TaskSummary;
 
+const activeTask = {
+  id: '35',
+  status: 'active',
+  progress: 10,
+  text: '处理中的任务',
+  createdAt: 1785600000000,
+} as TaskSummary;
+
+const pausedTask = {
+  id: '36',
+  status: 'paused',
+  progress: 10,
+  text: '已暂停的任务',
+  createdAt: 1785600000000,
+} as TaskSummary;
+
 describe('TaskDetail', () => {
   it('渲染缺少 durationSec 的历史完成任务（不崩溃、不显示时长）', () => {
     const html = renderToString(<TaskDetail task={legacyCompleted} />);
@@ -38,5 +54,27 @@ describe('TaskDetail', () => {
   it('未选中任务时渲染占位态', () => {
     const html = renderToString(<TaskDetail task={null} />);
     expect(html).toContain('选择左侧任务查看详情');
+  });
+
+  it('active 任务显示暂停 + 删除按钮，无继续', () => {
+    const html = renderToString(<TaskDetail task={activeTask} />);
+    expect(html).toContain('⏸ 暂停');
+    expect(html).toContain('🗑 删除');
+    expect(html).not.toContain('▶ 继续');
+  });
+
+  it('paused 任务显示继续 + 删除按钮与暂停占位', () => {
+    const html = renderToString(<TaskDetail task={pausedTask} />);
+    expect(html).toContain('▶ 继续');
+    expect(html).toContain('🗑 删除');
+    expect(html).toContain('已暂停 · 恢复后继续生成');
+    expect(html).not.toContain('⏸ 暂停');
+  });
+
+  it('completed 任务保留下载 + 删除，无暂停', () => {
+    const html = renderToString(<TaskDetail task={legacyCompleted} />);
+    expect(html).toContain('下载 MP4');
+    expect(html).toContain('🗑 删除');
+    expect(html).not.toContain('⏸ 暂停');
   });
 });

@@ -16,8 +16,8 @@
    - 子区域用虚线边框区分层级
    布局技术：整体用 CSS Grid（2 列 × 4 行），区块内部对齐用 Flexbox。
    关键设计意图：内容区 Stage 按「对话时间线」建模 —— 现在只渲染
-   「节点成果卡」（每轮任务 = 一张卡）；不设预留区域，将来多轮对话的
-   「流式输出卡 + 等待用户回复」直接向下追加，由时间线滚动自然容纳。
+   「节点成果卡」（每轮任务 = 一张卡），将来追加「流式输出卡 +
+   等待用户回复」实现多轮对话与 human-in-loop（详见 Stage 注释）。
    ===================================================================== */
 
 /* ---------- 0. 基础重置 ---------- */
@@ -53,7 +53,7 @@ body {
    - rail 用 grid-row 跨第 2~3 行：侧边栏整条通高，
      输入区 composer 只占据右列底部 —— 编辑器式布局
    - stage 内部 = 可滚动的时间线：每轮任务渲染一张「节点成果卡」；
-     不设预留区域 —— 将来多轮对话的卡直接向下追加，滚动自然容纳
+     为将来的多轮对话 / human-in-loop 预留追加位置（流式输出 + 等待回复）
    - 区块之间留 6px gap，让每条边框都清晰可见
 -------------------------------------------------------------------- */
 .app {
@@ -183,7 +183,7 @@ body {
   flex-direction: column;
   gap: 10px;
   min-height: 320px;
-  overflow-y: auto; /* 时间线：不设预留区域，卡直接向下追加，滚动自然容纳 */
+  overflow-y: auto; /* 时间线：成果卡变多时内部滚动，为多轮对话留好滚动结构 */
 }
 
 /* 节点成果卡：当前唯一渲染的卡类型。每轮任务 = 一张卡；
@@ -197,6 +197,16 @@ body {
   gap: 10px;
 }
 
+/* 将来扩展注脚：只在蓝图里说明意图，不渲染真实内容 */
+.future-note {
+  margin-top: auto;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #10b981;
+  opacity: 0.55;
+  border-top: 1px dashed rgba(16, 185, 129, 0.35);
+  padding-top: 8px;
+}
 .sub-video    { background: #ecfeff; border-color: #0891b2; color: #155e75; }
 .sub-meta     { background: #faf5ff; border-color: #9333ea; color: #6b21a8; }
 .sub-pipeline { background: #f0fdfa; border-color: #0d9488; color: #115e59; }
@@ -318,6 +328,144 @@ body {
   .zone-stage { min-height: 260px; }
   .rail-list { max-height: 220px; }
 }
+
+/* =====================================================================
+   设计变更注解 v2（2026-08-04 · 等用户确认）样式
+   「新建任务」流程线框，不属于已冻结的主网格。
+   可动区域仅「内容区 + 输入区」；其余区域格式冻结。
+   ===================================================================== */
+.note {
+  margin: 18px 10px 40px;
+  padding: 14px;
+  border: 2px dashed #6366f1;
+  border-radius: 10px;
+  background: #eef2ff;
+}
+.note .tag { background: #ffffff; }
+.note-title { font-size: 13px; font-weight: 700; color: #4338ca; margin: 8px 0 12px; line-height: 1.6; }
+.note-sub { margin-top: 10px; }
+.note-sub-title { font-size: 12px; font-weight: 700; color: #6d28d9; margin: 0 0 8px; }
+
+/* ① 队列概况里的「＋ 新建任务」按钮（舒适尺寸 / 格式） */
+.mock-queue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 260px;
+  background: #fffbeb;
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #92400e;
+}
+.mock-queue .dot { width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block; }
+.q-btn {
+  background: #6366f1;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+}
+
+/* ② 初始空状态：内容区置空 → 大输入横跨「内容区 + 输入区」整个右列 */
+.mock-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 300px;
+  border: 2px dashed #10b981;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px;
+  color: #065f46;
+  font-size: 12px;
+}
+.mock-composer-big {
+  width: 100%;
+  max-width: 560px;
+  margin: auto;                 /* 内容区里垂直居中 */
+  border: 2px dashed rgba(99, 102, 241, 0.5);
+  border-radius: 16px;
+  background: #fafbff;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mock-composer-big .in {
+  min-height: 110px;
+  color: #64748b;
+  font-size: 13px;
+  text-align: left;
+  line-height: 1.6;
+}
+.mock-composer-big .foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mock-count { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; color: #94a3b8; }
+.send {
+  background: #6366f1;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 6px 22px;
+  font-size: 12px;
+}
+
+/* ③ 新建任务页：内容区 = 创建表单（其他区域格式不变） */
+.mock-create {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 240px;
+  border: 2px dashed #10b981;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px 16px;
+  color: #065f46;
+  font-size: 12px;
+}
+.mock-create .star { color: #6366f1; font-size: 16px; }
+.mock-create h4 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0; }
+.mock-box {
+  width: 100%;
+  max-width: 460px;
+  border: 2px dashed rgba(99, 102, 241, 0.5);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fafbff;
+}
+.mock-box-input { min-height: 96px; color: #64748b; text-align: left; padding: 4px 2px; }
+.mock-box-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mock-create .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 460px; }
+.mock-create .chip {
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: #eef2ff;
+  color: #4338ca;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ④ 状态切换 */
+.mock-rule { font-size: 12px; line-height: 1.9; color: #334155; margin: 0; padding-left: 18px; }
+.mock-rule code {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
 </style>
 </head>
 <body>
@@ -372,9 +520,9 @@ body {
        - 将来：成果卡之后会追加「流式输出卡」（如 research report
          完成后逐字流式写入）+「等待用户回复」状态，由底部 composer
          接住用户的下一轮输入，形成对话闭环。
-       - 因此 Stage 就是一条「可滚动的时间线」：不设预留区域，
-         将来多轮对话的「流式输出卡 + 等待回复卡」直接向下追加，
-         由滚动自然容纳；现在不渲染任何还不存在的交互 —— 不伪造。
+       - 因此现在就把 Stage 做成「可滚动的时间线」结构（.turn 卡 +
+         overflow 滚动），为将来追加卡类型留好结构；但不渲染任何
+         还不存在的交互 —— 不伪造。
 
        节点成果卡内部三块子区域：
        1. 视频预览（青）：完成任务的 <video> 播放器（16:9）；
@@ -429,8 +577,17 @@ body {
     </div>
     <!-- ↑↑↑ 节点成果卡 ↑↑↑ -->
 
-    <!-- 将来：多轮对话 / human-in-loop 的「流式输出卡」「等待回复卡」
-         不设预留区域，直接在此处向下追加，时间线滚动自然容纳 -->
+    <!--
+       ↓↓↓ 将来追加的位置（现在刻意留白，不渲染）：
+       · 流式输出卡：research report 等文本成果逐字流式写入
+       · 等待回复卡：human-in-loop 检查点，高亮提示用户确认 / 修正，
+                     底部 composer 激活进入下一轮对话
+       ↑↑↑ ↑↑↑
+    -->
+    <div class="future-note">
+      将来（当前不渲染）· human-in-loop：此处在成果卡之后追加「流式输出卡」
+      + 「等待用户回复」，由底部 Composer 接住下一轮输入 → 多轮对话闭环
+    </div>
   </main>
 
   <!-- ============================================================
@@ -449,7 +606,7 @@ body {
   </section>
 
   <!-- ============================================================
-       状态栏 STATUS（石板浅底）—— 全宽贴底
+       状态栏 STATUS（石板灰）—— 全宽贴底
        后续真实内容：
        - 左：Redis / 队列连接状态 + Worker 状态（如：队列已连接 ·
          Worker 空闲）
@@ -462,5 +619,75 @@ body {
   </footer>
 
 </div>
+
+<!-- ============================================================
+     设计变更注解 v2 · 2026-08-04（等用户确认，尚未冻结）
+     「新建任务」流程改版要点：
+       可动区域仅「内容区 + 输入区」，其余（页头 / 侧栏 / 状态栏）格式冻结。
+       ① ＋新建任务按钮 → 队列概况区域
+       ② 初始空状态 → 内容区置空，大输入横跨「内容区+输入区」（放大居中，视觉舒适）
+       ③ 新建任务页 → 内容区置空，只保留输入区（同初始状态页）
+     确认后进入前端 building（阶段二）。
+============================================================ -->
+<section class="note">
+  <span class="tag">设计变更注解 v2 · 2026-08-04 · 尚未冻结</span>
+  <p class="note-title">「新建任务」改版：可动区域仅「内容区 + 输入区」；按钮放队列概况；空态 / 新建页都追求视觉舒适</p>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">① 「＋ 新建任务」按钮 —— 放在「队列概况」区域（舒适尺寸 / 格式）</p>
+    <div class="mock-queue">
+      <span><span class="dot"></span> 队列概况</span>
+      <span class="q-btn">＋ 新建任务</span>
+    </div>
+    <p class="hint">侧栏顶部「队列概况」行内放一个靛蓝圆角按钮，尺寸 / 留白舒适，不改变 rail 整体结构。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">② 初始空状态（无任务）—— 内容区置空，输入区放大并横跨「内容区 + 输入区」整个右列（视觉舒适）</p>
+    <div class="mock-empty">
+      <div class="mock-composer-big">
+        <div class="in">描述你想生成的视频……（占位 · 居中大输入框）</div>
+        <div class="foot">
+          <span class="mock-count">0 / 2000</span>
+          <span class="send">生成视频</span>
+        </div>
+      </div>
+    </div>
+    <p class="hint">空态下内容区置空，大输入框实际占满「内容区 + 输入区」整体，形成首屏舒适的输入体验。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">③ 新建任务页 —— 与初始状态页一致：内容区置空，只保留输入区（大输入横跨内容区+输入区）</p>
+    <div class="mock-empty">
+      <div class="mock-composer-big">
+        <div class="in">描述你想生成的视频……（占位 · 居中大输入框）</div>
+        <div class="foot">
+          <span class="mock-count">0 / 2000</span>
+          <span class="send">生成视频</span>
+        </div>
+      </div>
+    </div>
+    <p class="hint">新建页不再单独做创建表单，内容区置空、仅保留大输入框（示例提示词留待后续实现）。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">④ 状态切换</p>
+    <ul class="mock-rule">
+      <li>进入默认 → 初始状态页（② 大输入，内容区置空）</li>
+      <li>点击队列概况「＋ 新建任务」→ 回到初始状态页（② 大输入）</li>
+      <li>点选侧栏任务 / 提交成功 → 内容区切回任务详情（TaskDetail）</li>
+    </ul>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">⑤ 任务操作（补充 · 2026-08-04）—— 详情卡操作行</p>
+    <ul class="mock-rule">
+      <li>暂停 / 继续：仅 waiting / active / paused 显示，管线在阶段间暂停点阻塞</li>
+      <li>删除：两步确认，删任务记录 + 清理该任务产物（共享素材库不动）</li>
+      <li>下载：任务完成时显示</li>
+    </ul>
+  </div>
+</section>
+
 </body>
 </html>

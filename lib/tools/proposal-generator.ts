@@ -153,6 +153,7 @@ function parseAndValidateProposal(raw: string): Proposal {
     }
     parsedSceneVisuals.push({
       visualId: sv.visualId as string,
+      
       description: sv.description as string,
       visualHints: (typeof sv.visualHints === 'string' ? sv.visualHints : '') as string,
       scenes: parsedScenes,

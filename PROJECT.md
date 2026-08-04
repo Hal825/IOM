@@ -62,11 +62,12 @@ openmontage/
 │   ├── layout.tsx / globals.css  # 根布局 + Tailwind v4 主题（浅色精修色板，见 docs/design.md）
 │   ├── components/               # 前端组件（Workbench 组装五区域）
 │   │   ├── workbench.tsx         # 顶层工作台：轮询任务 + 布局组装
-│   │   ├── task-sidebar.tsx      # 侧栏：队列概况 + 任务列表（琥珀底）
+│   │   ├── task-sidebar.tsx      # 侧栏：队列概况（含「＋新建任务」）+ 任务列表（琥珀底）
 │   │   ├── task-item.tsx         # 侧栏任务行
 │   │   ├── task-detail.tsx       # 内容区节点成果卡（视频三态 + 元信息 + 流水线）
 │   │   ├── pipeline.tsx          # 流水线六阶段（诚实约束：三档进度整体着色）
 │   │   ├── composer.tsx          # 底部输入区（textarea + 提交）
+│   │   ├── new-task-page.tsx     # 初始/新建视图：EmptyHero 大输入（横跨内容区+输入区）
 │   │   ├── video-player.tsx      # 内联视频播放器
 │   │   ├── status-badge.tsx      # 任务状态芯片
 │   │   ├── queue-indicator.tsx   # 队列状态仪表（空闲/渲染中/离线）
@@ -75,15 +76,17 @@ openmontage/
 │   └── api/tasks/
 │       ├── route.ts              # POST 创建(入队) / GET 列表
 │       └── [id]/
-│           ├── route.ts          # GET 单个任务状态
+│           ├── route.ts          # GET 单个任务状态 / DELETE 删除（记录+产物）
+│           ├── pause/route.ts    # POST 暂停/恢复（逐任务）
 │           └── download/route.ts # GET 流式下载 MP4
 ├── workers/
 │   └── video-worker.ts           # BullMQ Worker（执行 LangGraph）
 ├── lib/
 │   ├── types.ts                  # 全部公共类型（TaskData/Proposal/VideoScript/AssetManifest…）
 │   ├── queue.ts                  # BullMQ 队列单例 + Redis 连接
-│   ├── tasks.ts                  # jobToSummary + STORAGE_DIR
-│   ├── orchestrator.ts           # executeTask()：图调用入口
+│   ├── tasks.ts                  # jobToSummary + STORAGE_DIR + deleteTaskFiles
+│   ├── pause.ts                  # 逐任务暂停/删除 Redis 标志 + pausePoint 暂停点
+│   ├── orchestrator.ts           # executeTask()：图调用入口（前置暂停点）
 │   ├── api.ts                    # 前端 API 客户端（listTasks / createTask）
 │   ├── agent/
 │   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派）

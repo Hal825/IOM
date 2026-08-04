@@ -6,19 +6,22 @@ interface TaskSidebarProps {
   tasks: TaskSummary[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** 点击「＋新建任务」→ 内容区切换为创建表单 */
+  onNewTask: () => void;
   /** Redis/队列是否可达（轮询失败时为 false） */
   queueOnline: boolean;
   className?: string;
 }
 
 /**
- * 左栏（琥珀浅底）：顶部「队列概况」 + 可滚动「任务列表」。
+ * 左栏（琥珀浅底）：顶部「队列概况」（含「＋新建任务」入口） + 可滚动「任务列表」。
  * 滚动结构：整条 rail 不滚动，只有任务列表内部 overflow-y。
  */
 export function TaskSidebar({
   tasks,
   selectedId,
   onSelect,
+  onNewTask,
   queueOnline,
   className = '',
 }: TaskSidebarProps) {
@@ -26,10 +29,19 @@ export function TaskSidebar({
 
   return (
     <aside className={`flex min-h-0 flex-col bg-amber-50 ${className}`}>
-      {/* 队列概况 */}
-      <div className="flex items-center justify-between px-4 py-3">
+      {/* 队列概况 + 「＋新建任务」入口（蓝图 v2） */}
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
         <h2 className="text-xs font-medium text-amber-900">队列概况</h2>
-        <QueueIndicator queueOnline={queueOnline} anyActive={anyActive} />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onNewTask}
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-accent/90 hover:shadow-md"
+          >
+            ＋ 新建任务
+          </button>
+          <QueueIndicator queueOnline={queueOnline} anyActive={anyActive} />
+        </div>
       </div>
 
       {/* 任务列表标题 */}

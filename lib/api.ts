@@ -38,3 +38,19 @@ export async function createTask(
   if (!res.ok) throw await toError(res, '提交失败');
   return (await res.json()) as { id: string; status: string };
 }
+
+/** 删除任务：移除记录 + 清理该任务产物。 */
+export async function deleteTask(id: string): Promise<void> {
+  const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw await toError(res, '删除失败');
+}
+
+/** 逐任务暂停 / 恢复。 */
+export async function setTaskPaused(id: string, paused: boolean): Promise<void> {
+  const res = await fetch(`/api/tasks/${id}/pause`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paused }),
+  });
+  if (!res.ok) throw await toError(res, paused ? '暂停失败' : '恢复失败');
+}

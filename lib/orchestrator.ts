@@ -2,6 +2,7 @@ import type { Job } from 'bullmq';
 import path from 'node:path';
 import type { TaskData, TaskResult } from './types';
 import { videoGraph } from '@/lib/agent/graph';
+import { pausePoint } from '@/lib/pause';
 
 /**
  * 核心编排器 — 调用 LangGraph 管线完成端到端视频生成。
@@ -20,6 +21,7 @@ export async function executeTask(
 
   await job.updateProgress(10);
   await job.log('LangGraph 管线启动');
+  await pausePoint(jobId); // 排队中即被暂停的任务在此挂起，直到恢复或删除
   const result = await videoGraph.invoke({ userPrompt: text, jobId });
 
   const videoPath = (result.mergedVideoUrl as string) ?? '';

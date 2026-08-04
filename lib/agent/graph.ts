@@ -9,6 +9,7 @@ import {
   sceneJsonAssemblerNode,
   shotVideoGenNode,
   videoMergeNode,
+  pauseGateNode,
 } from './nodes';
 
 /**
@@ -33,6 +34,8 @@ import {
  *   video_merge           ← FFmpeg 拼接逐镜头视频 + 合成音轨 → storage/output/{jobId}.mp4
  *       │
  *      END
+ *
+ * 阶段间插入 pause_gate_1..4（逐任务暂停/恢复检查点：暂停阻塞、恢复放行、删除中止）。
  */
 
 // ── Fanout：asset_gen 和 tts 并行分发 ──
@@ -48,27 +51,35 @@ function fanoutAssetsTts(state: VideoGenStateType): Send[] {
 
 const workflow = new StateGraph(VideoGenState)
   .addNode('research', researchNode)
+  .addNode('pause_gate_1', pauseGateNode)
   .addNode('generate_proposal', proposalNode)
   .addNode('script_generation', scriptGenNode)
+  .addNode('pause_gate_2', pauseGateNode)
   .addNode('asset_gen', assetGenNode)
   .addNode('tts', ttsNode)
   .addNode('scene_json_assembler', sceneJsonAssemblerNode)
+  .addNode('pause_gate_3', pauseGateNode)
   .addNode('shot_video_gen', shotVideoGenNode)
+  .addNode('pause_gate_4', pauseGateNode)
   .addNode('video_merge', videoMergeNode)
 
-  // 顺序链
+  // 顺序链（阶段间插暂停点：暂停在此阻塞轮询，恢复放行，删除中止）
   .addEdge('__start__', 'research')
-  .addEdge('research', 'generate_proposal')
+  .addEdge('research', 'pause_gate_1')
+  .addEdge('pause_gate_1', 'generate_proposal')
   .addEdge('generate_proposal', 'script_generation')
+  .addEdge('script_generation', 'pause_gate_2')
 
-  // 并行：asset_gen + tts
-  .addConditionalEdges('script_generation', fanoutAssetsTts, ['asset_gen', 'tts'])
+  // 并行：asset_gen + tts（pause_gate_2 之后分发）
+  .addConditionalEdges('pause_gate_2', fanoutAssetsTts, ['asset_gen', 'tts'])
 
   // asset_gen 和 tts 都完成后 → 组装单镜头完整 JSON → 逐镜头视频 → 拼接 → END
   .addEdge('asset_gen', 'scene_json_assembler')
   .addEdge('tts', 'scene_json_assembler')
-  .addEdge('scene_json_assembler', 'shot_video_gen')
-  .addEdge('shot_video_gen', 'video_merge')
+  .addEdge('scene_json_assembler', 'pause_gate_3')
+  .addEdge('pause_gate_3', 'shot_video_gen')
+  .addEdge('shot_video_gen', 'pause_gate_4')
+  .addEdge('pause_gate_4', 'video_merge')
   .addEdge('video_merge', END);
 
 export const videoGraph = workflow.compile();

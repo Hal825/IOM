@@ -1,6 +1,6 @@
 const PIPELINE_STAGES = ['调研', '提案', '脚本', '素材', '逐镜头视频', '拼接'];
 
-type PipelineState = 'idle' | 'queued' | 'active' | 'done' | 'failed';
+type PipelineState = 'idle' | 'queued' | 'active' | 'paused' | 'done' | 'failed';
 
 function stateOf(status: string): PipelineState {
   switch (status) {
@@ -8,6 +8,8 @@ function stateOf(status: string): PipelineState {
       return 'queued';
     case 'active':
       return 'active';
+    case 'paused':
+      return 'paused';
     case 'completed':
       return 'done';
     case 'failed':
@@ -21,6 +23,7 @@ const CHIP: Record<PipelineState, string> = {
   idle: 'border-border bg-panel text-muted',
   queued: 'border-border bg-panel text-muted',
   active: 'border-accent/50 bg-accent/10 text-accent',
+  paused: 'border-border bg-muted/10 text-muted',
   done: 'border-success/50 bg-success/10 text-success',
   failed: 'border-danger/50 bg-danger/10 text-danger',
 };
@@ -29,6 +32,7 @@ const CAPTION: Record<PipelineState, string> = {
   idle: '',
   queued: '排队中',
   active: '处理中',
+  paused: '已暂停',
   done: '已完成',
   failed: '失败',
 };
