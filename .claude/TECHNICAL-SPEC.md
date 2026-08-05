@@ -148,6 +148,7 @@ npm test                  # vitest run
 | 调研 research | `RESEARCH_API_KEY` / `RESEARCH_BASE_URL` / `RESEARCH_LLM_MODEL` |
 | 提案 proposal | `PROPOSAL_API_KEY` / `PROPOSAL_BASE_URL` / `PROPOSAL_LLM_MODEL` |
 | 脚本 script | `SCRIPT_API_KEY` / `SCRIPT_BASE_URL` / `SCRIPT_LLM_MODEL` |
+| 对话 agent 点评 | `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL`（回退 SCRIPT_*）；`AGENT_COMMENTARY=on` 才开启（默认关，避免误调付费 API） |
 
 - 换模型 = 改 env 的 `*_MODEL`（和必要时的 `*_BASE_URL`/`*_API_KEY`）。
 - 模型行为差异 → 改对应 prompt（`lib/prompts/`），用 `scripts/eval-*.ts` 评测再落地。
@@ -188,5 +189,21 @@ npm test                  # vitest run
 - **主题**：`app/globals.css` 的 `@theme inline`（Tailwind v4）。色板：页头靛蓝 `#6366f1`、侧栏琥珀 `#fffbeb`、内容区绿 `#10b981`、状态栏石板 `#f1f5f9`。
 - **布局**：Grid 2×4 —— 页头 56 / 侧栏 280 通高 / 内容区 stage + 输入区 composer / 状态栏 28。桌面固定视口高度（`md:h-dvh`），移动端折叠为 页头→内容区→输入区→侧边栏→状态栏。
 - **Stage = 对话时间线**：现在只渲染「节点成果卡」（视频预览三态 + 元信息 + 流水线六阶段）；不设预留区域，未来多轮对话卡直接向下追加，滚动自然容纳。
-- **诚实约束**：后端进度仅 0/10/100 三档，流水线按任务状态整体着色、不伪造逐阶段百分比。
-- **前端数据契约**：`GET/POST /api/tasks`、`GET /api/tasks/[id]/download`；`TaskSummary` 见 `lib/types.ts`。
+- **诚实约束**：API 层进度仍 0/10/100 三档；流水线八节点按真实节点事件逐节点着色（节点产卡即标绿），不伪造未发生阶段。
+- **前端数据契约**：`GET/POST /api/tasks`、`GET /api/tasks/[id]/download`、`GET /api/tasks/[id]/stream`（SSE）、`POST /api/tasks/[id]/reply`、`GET /api/tasks/[id]/conversation`；`TaskSummary` 见 `lib/types.ts`（含 `awaitingReply?`）。
+
+---
+
+## 8. 对话 agent 层（方案 B）速查
+
+**架构**：Worker 是纯执行者（`videoGraph.stream("updates")` 逐节点发布原始事件到 Redis `om:events:<jobId>`）；`lib/coordinator.ts`（API 进程）订阅 → 节点结果转对话卡片（确定性卡片 + 可选点评）→ 决策点提问 → 用户回复放行。4 个暂停门升级为决策点。
+
+**关键文件**：`lib/agent/events.ts`（事件类型 + `nodeToCardType` + `GATE_QUESTIONS`）、`lib/agent/commentary.ts`（点评 Provider）、`lib/coordinator.ts`、`lib/conversations/`（消息模型 + JSON 存储）、`lib/sse/hub.ts`、`lib/events/bus.ts`、`lib/log/feedback.ts`、`lib/pause.ts`（`beginDecision`）。
+
+**消息模型**（`lib/conversations/types.ts`）：`ConversationMessage` = `NodeCardMessage | GateQuestionMessage | UserMessage | SystemMessage`；每任务存 `storage/conversations/{jobId}/conversation.json`。
+
+**SSE 事件协议**（`/api/tasks/[id]/stream`）：`hello`（重放）/ `card` / `gate` / `user` / `proceed` / `status`；心跳 25s；headers 需 `Cache-Control: no-cache` + `X-Accel-Buffering: no` + `dynamic='force-dynamic'`。
+
+**human-in-loop 流程**：图内门 → `beginDecision` 幂等置暂停标志 + 发 `gate` 事件 → 阻塞；协调器置 `om:awaiting:<jobId>` + 追加提问 → 前端 `等待回复` 徽标 + 回复框；`POST reply` → 追加用户消息 + 反馈落盘（`storage/feedback/{jobId}.json`）+ 清标志 → 放行。
+
+**测试纪律**：验证 = `npx tsc --noEmit` + `npx vitest run`（禁调付费 API）。协调器用内存 EventBus / 临时目录 store / 假 Provider 测；`AGENT_COMMENTARY` 默认关。相关 [[no-paid-api-during-verify]]。

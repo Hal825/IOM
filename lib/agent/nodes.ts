@@ -11,7 +11,7 @@ import { synthesizeSpeech } from '@/lib/tools/tts-generator';
 import { buildShotSSML } from '@/lib/prompts/tts';
 import { AssetStore } from '@/lib/store/asset-store';
 import { saveStageLog, calculateCost, formatDurationSec } from '@/lib/log/procedure';
-import { pausePoint } from '@/lib/pause';
+import { beginDecision } from '@/lib/pause';
 import {
   generateSceneVideo,
   runWithConcurrency,
@@ -591,13 +591,16 @@ export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<
 }
 
 // ============================================================
-// 暂停门节点 — 逐任务暂停/恢复检查点
-// 被暂停时阻塞（pausePoint 轮询），恢复则放行，删除则抛错中止管线。
+// 暂停门节点（决策点）— human-in-loop 锚点
+// beginDecision：置暂停标志 + 发布 gate 事件（幂等）→ 阻塞等待用户回复；
+// 回复清标志放行，删除则抛错中止管线。4 个门各自带 gateId。
 // ============================================================
 
-export async function pauseGateNode(
-  state: VideoGenStateType
-): Promise<Partial<VideoGenStateUpdate>> {
-  await pausePoint(state.jobId);
-  return {};
+export function createPauseGateNode(gateId: string) {
+  return async function pauseGateNode(
+    state: VideoGenStateType
+  ): Promise<Partial<VideoGenStateUpdate>> {
+    await beginDecision(state.jobId, gateId);
+    return {};
+  };
 }

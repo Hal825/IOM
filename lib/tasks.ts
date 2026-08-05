@@ -2,7 +2,9 @@ import type { Job } from 'bullmq';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { TaskData, TaskResult, TaskSummary } from './types';
-import { isJobPaused } from './pause';
+import { isJobPaused, isJobAwaitingReply } from './pause';
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** 产物存储根目录（与 Worker 保持一致，均相对项目根） */
 export const STORAGE_DIR = path.resolve('./storage');
@@ -11,6 +13,7 @@ export const STORAGE_DIR = path.resolve('./storage');
 export async function jobToSummary(job: Job<TaskData>): Promise<TaskSummary> {
   const state = await job.getState();
   const paused = await isJobPaused(String(job.id));
+  const awaitingReply = await isJobAwaitingReply(String(job.id));
   return {
     id: String(job.id),
     // 逐任务暂停：waiting/active 且被暂停 → 展示为 paused（恢复后还原）
@@ -20,7 +23,32 @@ export async function jobToSummary(job: Job<TaskData>): Promise<TaskSummary> {
     createdAt: job.timestamp,
     result: (job.returnvalue as TaskResult | undefined) ?? undefined,
     failedReason: job.failedReason || undefined,
+    awaitingReply,
   };
+}
+
+/**
+ * 删除任务记录：BullMQ 的 job.remove() 对正被 worker 处理（持锁）的任务会抛
+ * `locked by another worker`。方案 C：锁错误重试 retries 次（间隔 delayMs），
+ * 仍失败返回 false —— 此时靠 `om:deleted` 标志让管线在暂停点中止（记录残留为 failed 属可接受）。
+ * 非锁错误直接抛（保持原 503 行为）。
+ */
+export async function removeJobWithRetry(
+  job: { remove(): Promise<void> },
+  retries = 3,
+  delayMs = 500
+): Promise<boolean> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      await job.remove();
+      return true;
+    } catch (err) {
+      const isLock = err instanceof Error && /locked by another worker/i.test(err.message);
+      if (!isLock) throw err;
+      if (attempt < retries - 1) await sleep(delayMs);
+    }
+  }
+  return false;
 }
 
 /**
@@ -40,6 +68,8 @@ export async function deleteTaskFiles(
     path.join(storageDir, 'scripts', jobId),
     path.join(storageDir, 'audio', jobId),
     path.join(storageDir, 'assets', jobId),
+    path.join(storageDir, 'conversations', jobId),
+    path.join(storageDir, 'feedback', `${jobId}.json`),
     path.join(logDir, `job-${jobId}`),
   ];
   for (const target of targets) {

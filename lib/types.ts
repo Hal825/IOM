@@ -29,6 +29,8 @@ export interface TaskSummary {
   createdAt: number;
   result?: TaskResult;
   failedReason?: string;
+  /** 是否正停在决策点等用户回复（human-in-loop） */
+  awaitingReply?: boolean;
 }
 
 // ── Research ─────────────────────────────────────────

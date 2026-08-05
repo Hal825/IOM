@@ -689,5 +689,54 @@ body {
   </div>
 </section>
 
+<!-- ============================================================
+     设计变更注解 v3 · 2026-08-05（对话 agent 层 · 已实现）
+     Stage = 所选任务的「对话时间线」，human-in-loop 落地：
+       ① 节点结果卡流式流入（agent 决定卡片类型 + 可选点评）
+       ② 4 个暂停门 = 决策点：提问气泡 + 回复框（等待回复徽标）
+       ③ 流水线八节点按真实节点事件逐节点着色
+       ④ 底部输入在决策点激活为「回复框」，否则占位提示
+============================================================ -->
+<section class="note">
+  <span class="tag">设计变更注解 v3 · 2026-08-05 · 对话 agent 层已实现</span>
+  <p class="note-title">Stage = 对话时间线：节点结果流式卡 + 决策点提问 + 回复框（human-in-loop）</p>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">① 节点结果卡（SSE 流式，agent 决定呈现形态）</p>
+    <div class="mock-queue">
+      <span class="q-btn">调研卡</span>
+      <span class="q-btn">提案卡</span>
+      <span class="q-btn">脚本卡</span>
+      <span class="q-btn">素材卡</span>
+    </div>
+    <p class="hint">每节点完成即向时间线追加一张卡片（标签 + 节点名 + 时间戳 + 可选一句点评 + 主体数据）。成片卡 = 播放器 + 时长 + 下载。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">② 决策点（4 暂停门）= 提问 + 等待回复</p>
+    <div class="mock-queue">
+      <span class="dot"></span> 已确认需求，开始设计提案？ <span class="q-btn">等待回复</span>
+    </div>
+    <p class="hint">管线停在门处（调研后 / 脚本后 / 组装后 / 镜头后），青色提问气泡 + 底部回复框激活；任意文本回复 = 继续 + 记录反馈；侧栏任务行显示「待回复」徽标。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">③ 流水线八节点逐节点着色（诚实）</p>
+    <ul class="mock-rule">
+      <li>节点已产卡 → 绿色</li>
+      <li>首个未完成节点：active 靛蓝脉冲 / failed 红 / paused 灰</li>
+      <li>未到 → 灰</li>
+    </ul>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">④ 输入区：初始/新建仍用 EmptyHero 大输入；详情视图底部在决策点切换为「回复框」</p>
+    <ul class="mock-rule">
+      <li>等待回复 → 回复框（青色描边，「回复 agent（任意文本 = 继续 + 记录反馈）」）</li>
+      <li>非等待回复 → 虚线占位提示（运行中 / 已完成）</li>
+    </ul>
+  </div>
+</section>
+
 </body>
 </html>

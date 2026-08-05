@@ -23,33 +23,46 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 ## 二、全局架构
 
 ```
-┌─────────────┐  POST /api/tasks   ┌──────────────────────┐
-│   Frontend   │ ────────────────► │  Next.js API Route    │
-│  (page.tsx)  │                   │  · 校验 text          │
-└──────┬───────┘                   │  · 入队 BullMQ         │
-       │  GET /api/tasks (轮询)     └──────────┬───────────┘
-       │                                      │ job.data = { text }
-       │                           ┌──────────┴───────────┐
-       │                           │  Worker (独立进程)     │
-       │                           │  executeTask()         │
-       │                           │  → videoGraph.invoke() │
-       │                           └──────────┬───────────┘
-       │                                      │ mergedVideoUrl 写回 job
-       │                           ┌──────────┴───────────┐
+┌─────────────┐  POST /api/tasks    ┌──────────────────────────┐
+│   Frontend   │ ────────────────►  │  Next.js API Route        │
+│  (page.tsx)  │                    │  · 校验 text / 入队        │
+└──────┬───────┘                    └────────────┬─────────────┘
+       │  GET /api/tasks (轮询，侧栏/状态兜底)        │ job.data = { text }
+       │  EventSource /api/tasks/[id]/stream        ▼
+       │  ◄────────── card/gate/status 事件 ─────────┐
+       │                              ┌─────────────┴─────────────┐
+       │                              │  Worker（纯执行者）          │
+       │                              │  videoGraph.stream("updates")│
+       │                              │  逐节点 publish 事件到 Redis │
+       │                              │  暂停门 publish gate 事件     │
+       │                              └─────────────┬─────────────┘
+       │                                    Redis pub/sub om:events:<jobId>
+       │                              ┌─────────────┴─────────────┐
+       │                              │  agent 协调器（API 进程）    │
+       │                              │  lib/coordinator.ts         │
+       │                              │  订阅 → 点评 → 落对话 → 广播  │
+       │                              │  reply → 清标志 → Worker 放行│
+       │                              └───────────────────────────┘
+       │                                      ▼  conversation.json + feedback
        ▼  GET /api/tasks/[id]/download │  本地存储 storage/ │
        (流式传输 MP4 / 307 重定向)      └──────────────────┘
 ```
 
-**关键架构决策**：LangGraph 管线在 **Worker 进程**中运行（非 API 请求内）。API 只负责校验 + 入队，前端通过轮询拿状态。
+**关键架构决策**：
+- LangGraph 管线在 **Worker 进程**中运行（非 API 请求内）。Worker 是**纯执行者**：用 `stream("updates")` 逐节点拿增量状态并发布原始事件（即发即弃），不负责呈现与协商。
+- **对话 agent 层（方案 B）**悬浮在图之上：API 进程的 `lib/coordinator.ts` 订阅 Redis 事件，把节点结果转成对话消息（确定性卡片 + 可选 LLM 点评），决策点提问、等用户回复、记录反馈。
+- 前端：侧栏靠 3s 轮询 `GET /api/tasks` 兜底；**内容区对话时间线靠 SSE 流式推送**。
 
 ### 核心流程
 
-1. **用户提交文本** → `POST /api/tasks` 校验后入队 BullMQ
-2. **Worker 消费任务** → `executeTask()` → `videoGraph.invoke({ userPrompt, jobId })`
-3. **图并行执行**：`asset_gen` 和 `tts` 通过 `Send` 并行分发，`scene_json_assembler` 汇聚
-4. **视频生成 + 拼接**：`shot_video_gen` 逐镜头真实调用视频生成 API（并发窗口）→ `video_merge` FFmpeg 拼接产出最终 MP4
-5. **前端轮询** `GET /api/tasks` → 任务状态 + 下载链接
-6. **下载**：远程 URL → 307 重定向；本地文件 → 流式传输
+1. **用户提交文本** → `POST /api/tasks` 校验后入队 BullMQ，并立即 `coordinator.subscribe(jobId)`（防漏收事件）
+2. **Worker 消费任务** → `executeTask()` → `videoGraph.stream({ userPrompt, jobId }, { streamMode: 'updates' })`，每个节点完成即发布 `node` 事件；暂停门（决策点）发布 `gate` 事件并阻塞等用户回复
+3. **agent 协调器**订阅到事件 → 节点结果转卡片消息 + LLM 点评（可选）→ 追加 `conversation.json` → 广播 SSE；决策点提问 → 置 `om:awaiting:<jobId>`
+4. **用户回复** `POST /api/tasks/[id]/reply` → 追加用户消息 + 反馈落盘（`storage/feedback/`）+ 清暂停/待回复标志 → Worker 放行继续
+5. **图并行执行**：`asset_gen` 和 `tts` 通过 `Send` 并行分发，`scene_json_assembler` 汇聚
+6. **视频生成 + 拼接**：`shot_video_gen` 逐镜头真实调用视频生成 API（并发窗口）→ `video_merge` FFmpeg 拼接产出最终 MP4
+7. **前端**：SSE 流式收卡片/提问/状态；3s 轮询作为侧栏与最终状态兜底
+8. **下载**：远程 URL → 307 重定向；本地文件 → 流式传输
 
 ---
 
@@ -63,35 +76,55 @@ openmontage/
 │   ├── components/               # 前端组件（Workbench 组装五区域）
 │   │   ├── workbench.tsx         # 顶层工作台：轮询任务 + 布局组装
 │   │   ├── task-sidebar.tsx      # 侧栏：队列概况（含「＋新建任务」）+ 任务列表（琥珀底）
-│   │   ├── task-item.tsx         # 侧栏任务行
-│   │   ├── task-detail.tsx       # 内容区节点成果卡（视频三态 + 元信息 + 流水线）
-│   │   ├── pipeline.tsx          # 流水线六阶段（诚实约束：三档进度整体着色）
-│   │   ├── composer.tsx          # 底部输入区（textarea + 提交）
+│   │   ├── task-item.tsx         # 侧栏任务行（含「待回复」徽标）
+│   │   ├── task-detail.tsx       # 旧节点成果卡（已被 ChatTimeline 取代，暂留）
+│   │   ├── chat-timeline.tsx     # 内容区对话时间线（任务头 + 节点卡 + 流水线 + 决策点回复框）
+│   │   ├── bubbles.tsx           # 用户气泡 / 决策点提问气泡 / 系统状态行
+│   │   ├── cards/                # 节点结果卡（agent 决定呈现形态）
+│   │   │   ├── registry.tsx      # CardType → 卡片组件映射 + 中文标签
+│   │   │   ├── node-card.tsx     # 卡片外壳（头部 + LLM 点评 + 主体）
+│   │   │   └── {research,proposal,script,assets,audio,scenes,shots,video}-card.tsx
+│   │   ├── pipeline.tsx          # 流水线八节点（真实节点事件逐节点着色）
+│   │   ├── composer.tsx          # 底部输入区（textarea + 提交，创建任务用）
 │   │   ├── new-task-page.tsx     # 初始/新建视图：EmptyHero 大输入（横跨内容区+输入区）
 │   │   ├── video-player.tsx      # 内联视频播放器
 │   │   ├── status-badge.tsx      # 任务状态芯片
 │   │   ├── queue-indicator.tsx   # 队列状态仪表（空闲/渲染中/离线）
 │   │   ├── status-bar.tsx        # 底部状态栏（队列状态 + 任务数/版本）
-│   │   └── format.ts             # 前端纯函数（formatRelativeTime）
+│   │   └── format.ts             # 前端纯函数（formatRelativeTime / formatClock）
 │   └── api/tasks/
-│       ├── route.ts              # POST 创建(入队) / GET 列表
+│       ├── route.ts              # POST 创建(入队+订阅事件) / GET 列表
 │       └── [id]/
-│           ├── route.ts          # GET 单个任务状态 / DELETE 删除（记录+产物）
-│           ├── pause/route.ts    # POST 暂停/恢复（逐任务）
-│           └── download/route.ts # GET 流式下载 MP4
+│           ├── route.ts          # GET 单个任务状态 / DELETE 删除（记录+产物+退订；运行中任务锁错误重试）
+│           ├── pause/route.ts    # POST 暂停/恢复（逐任务，恢复时清待回复）
+│           ├── download/route.ts # GET 流式下载 MP4
+│           ├── stream/route.ts   # GET SSE 流式（节点卡/决策点/状态）
+│           ├── reply/route.ts    # POST 回复决策点（追加消息+反馈落盘+放行）
+│           └── conversation/route.ts # GET 对话历史（初始加载）
 ├── workers/
 │   └── video-worker.ts           # BullMQ Worker（执行 LangGraph）
 ├── lib/
 │   ├── types.ts                  # 全部公共类型（TaskData/Proposal/VideoScript/AssetManifest…）
 │   ├── queue.ts                  # BullMQ 队列单例 + Redis 连接
-│   ├── tasks.ts                  # jobToSummary + STORAGE_DIR + deleteTaskFiles
-│   ├── pause.ts                  # 逐任务暂停/删除 Redis 标志 + pausePoint 暂停点
-│   ├── orchestrator.ts           # executeTask()：图调用入口（前置暂停点）
-│   ├── api.ts                    # 前端 API 客户端（listTasks / createTask）
+│   ├── tasks.ts                  # jobToSummary（含 awaitingReply）+ STORAGE_DIR + deleteTaskFiles + removeJobWithRetry（删除锁重试）
+│   ├── pause.ts                  # 暂停/删除/待回复 Redis 标志 + pausePoint + beginDecision（决策点）
+│   ├── orchestrator.ts           # executeTask()：stream("updates") 逐节点发布事件；drainGraphUpdates 纯函数
+│   ├── coordinator.ts            # agent 协调器（订阅事件→卡片/提问/状态→对话+SSE；reply 流程）
+│   ├── id.ts                     # newId()（randomUUID）
+│   ├── api.ts                    # 前端 API 客户端（listTasks/createTask/openTaskStream/replyToTask/…）
+│   ├── events/                   # 事件总线（ioredis pub/sub + 内存实现）
+│   │   └── bus.ts
+│   ├── sse/                      # SSE 订阅集（内存扇出）+ formatEvent
+│   │   └── hub.ts
+│   ├── conversations/            # 对话消息模型 + 每任务 JSON 存储
+│   │   ├── types.ts
+│   │   └── store.ts
 │   ├── agent/
-│   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派）
+│   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派 + 4 决策点门）
 │   │   ├── state.ts              # 状态通道定义 (Annotation.Root + 自定义 reducer)
-│   │   └── nodes.ts              # 节点实现（8 接线）
+│   │   ├── nodes.ts              # 节点实现（8 接线 + createPauseGateNode）
+│   │   ├── events.ts             # 管线事件类型 + eventChannel + nodeToCardType + 发布
+│   │   └── commentary.ts         # 节点结果点评（AGENT_* env 门控，默认关）
 │   ├── tools/
 │   │   ├── research-generator.ts # 调研工具
 │   │   ├── proposal-generator.ts # 提案工具
@@ -108,7 +141,8 @@ openmontage/
 │   │   ├── script-generation.ts  # 四子脚本 system prompt ★
 │   │   └── tts.ts                # TTS SSML 构建 + 默认参数
 │   └── log/
-│       └── procedure.ts          # 阶段审计日志 + 费用计算
+│       ├── procedure.ts          # 阶段审计日志 + 费用计算
+│       └── feedback.ts           # 用户反馈落盘（决策点回复记录）
 ├── new_prompts/                  # 新 prompt 迭代区（评测用，落地后进 lib/prompts）
 ├── old_prompts/                  # 历史 prompt 归档
 ├── scripts/
@@ -126,6 +160,8 @@ openmontage/
 │   ├── audio/<jobId>/            # TTS 音频
 │   ├── scripts/<jobId>/          # 脚本文本快照 (scene-texts.json)
 │   ├── scenes/<jobId>/           # 逐镜头视频（shot_video_gen 产物，含 scene-specs.json）
+│   ├── conversations/<jobId>/    # 对话线程（conversation.json，agent 层维护）
+│   ├── feedback/<jobId>.json     # 用户决策点反馈记录
 │   └── output/<jobId>.mp4        # 最终视频（video_merge 合并产物）
 ├── log/procedure/                # 流程审计日志 (gitignored)
 ├── docs/                         # 文档
@@ -482,6 +518,32 @@ SceneVideoSpec[]（每镜头完整视频生成规格，素材公网 URL + 音频
 // 路径校验: 确保不越出 STORAGE_DIR；文件缺失 → 410
 ```
 
+### `GET /api/tasks/[id]/stream` — SSE 流式（对话 agent 事件）
+
+```typescript
+// text/event-stream；先发 hello 重放对话历史，之后广播：
+//   card   → { message: NodeCardMessage }
+//   gate   → { message: GateQuestionMessage }
+//   user   → { message: UserMessage }
+//   proceed→ { gateId, resumedAt }
+//   status → { status: completed|failed, failedReason?, result? }
+// 心跳 : ping 每 25s；EventSource 自动重连
+```
+
+### `POST /api/tasks/[id]/reply` — 回复决策点
+
+```typescript
+// 请求体: { text: string }
+// 流程: 追加用户消息 + 反馈落盘(storage/feedback/) + 清暂停/待回复标志 → Worker 放行
+// 响应: { ok, conversation }
+```
+
+### `GET /api/tasks/[id]/conversation` — 对话历史
+
+```typescript
+// 响应: { conversation: ConversationFile | null }
+```
+
 ---
 
 ## 九、BullMQ 队列系统
@@ -523,6 +585,7 @@ return {
 | `PROPOSAL_API_KEY` / `PROPOSAL_BASE_URL` / `PROPOSAL_LLM_MODEL` | 提案 LLM |
 | `PROPOSAL_DEFAULT_DURATION_PER_SCENE` / `PROPOSAL_MAX_SCENES` | 提案默认参数 |
 | `SCRIPT_API_KEY` / `SCRIPT_BASE_URL` / `SCRIPT_LLM_MODEL` | 脚本 LLM ★ |
+| `AGENT_COMMENTARY` / `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL` | 对话 agent 点评 LLM（`AGENT_COMMENTARY=on` 开启，回退 SCRIPT_*） |
 
 ### AI 服务（DashScope）
 | 变量 | 说明 |
@@ -594,6 +657,8 @@ log/procedure/job-<jobId>/procedure.json
 9. **视频模型抽象层**：不同视频模型 API 结构各异，统一收敛为 `VideoGenRequest` + `VideoModelAdapter` 接口 + `createVideoAdapter(model)` 工厂；当前仅实现 `happyhorse-1.1-r2v`，未知模型零容错抛错。
 
 10. **端到端到视频**：`scene_json_assembler → shot_video_gen（并发真实生成 + ffprobe 校验）→ video_merge（FFmpeg 拼接）→ END`，任务产出可下载 MP4。
+
+11. **对话 agent 悬浮在图之上（方案 B）**：Worker 是纯执行者（`stream("updates")` 逐节点发布事件），agent 协调器在 API 进程订阅 Redis → 节点结果转对话卡片（确定性卡片 + 可选 LLM 点评）→ 决策点提问 → 用户回复后放行。4 个暂停门升级为决策点（`beginDecision` 幂等置标志 + 发 gate 事件）。一个任务 = 一条对话线程（`storage/conversations/{jobId}/`）。点评软失败不 fail 任务。
 
 ---
 

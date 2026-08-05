@@ -9,7 +9,7 @@ import {
   sceneJsonAssemblerNode,
   shotVideoGenNode,
   videoMergeNode,
-  pauseGateNode,
+  createPauseGateNode,
 } from './nodes';
 
 /**
@@ -51,16 +51,16 @@ function fanoutAssetsTts(state: VideoGenStateType): Send[] {
 
 const workflow = new StateGraph(VideoGenState)
   .addNode('research', researchNode)
-  .addNode('pause_gate_1', pauseGateNode)
+  .addNode('pause_gate_1', createPauseGateNode('pause_gate_1'))
   .addNode('generate_proposal', proposalNode)
   .addNode('script_generation', scriptGenNode)
-  .addNode('pause_gate_2', pauseGateNode)
+  .addNode('pause_gate_2', createPauseGateNode('pause_gate_2'))
   .addNode('asset_gen', assetGenNode)
   .addNode('tts', ttsNode)
   .addNode('scene_json_assembler', sceneJsonAssemblerNode)
-  .addNode('pause_gate_3', pauseGateNode)
+  .addNode('pause_gate_3', createPauseGateNode('pause_gate_3'))
   .addNode('shot_video_gen', shotVideoGenNode)
-  .addNode('pause_gate_4', pauseGateNode)
+  .addNode('pause_gate_4', createPauseGateNode('pause_gate_4'))
   .addNode('video_merge', videoMergeNode)
 
   // 顺序链（阶段间插暂停点：暂停在此阻塞轮询，恢复放行，删除中止）

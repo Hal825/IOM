@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getQueue } from '@/lib/queue';
 import { jobToSummary } from '@/lib/tasks';
+import { getCoordinator } from '@/lib/coordinator';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,9 @@ export async function POST(request: Request) {
     const queue = getQueue();
     const job = await queue.add('video-generation', { text });
     console.log(`[api] 任务 ${job.id} 已入队: "${text.slice(0, 40)}..."`);
+
+    // 立即订阅该任务的管线事件通道，防漏收即发即弃的节点事件
+    await getCoordinator().subscribe(String(job.id));
 
     return NextResponse.json(
       { id: String(job.id), status: 'waiting' },

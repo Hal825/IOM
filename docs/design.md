@@ -13,8 +13,8 @@ OpenMontage = 文本生成视频的「单屏工作台」。用户提交一段文
 设计原则：
 
 1. **创作优先**：手机上内容区 / 输入区优先，任务列表退居下方（单列堆叠顺序 = 页头 → 内容区 → 输入区 → 侧边栏 → 状态栏）。
-2. **诚实约束**：后端进度只有 `0 / 10 / 100` 三档（见 `lib/agent/orchestrator.ts`），UI 不伪造逐阶段百分比。
-3. **为未来留结构**：内容区按「对话时间线」建模，现在只渲染「节点成果卡」（每轮任务一张）；**不设预留区域**，将来 human-in-loop 的「流式输出卡 + 等待用户回复」直接向下追加、由时间线滚动自然容纳，但不渲染任何未实现的交互。
+2. **诚实约束**：API 层进度字段仍只有 `0 / 10 / 100` 三档；但流水线八阶段按**真实节点事件**逐节点着色（节点一旦产卡即标绿），不伪造未发生阶段的进度。
+3. **对话时间线（human-in-loop 已实现）**：内容区按任务渲染对话时间线 —— 用户描述气泡 → 节点结果卡逐张流入（agent 决定卡片类型 + 可选点评）→ 决策点提问气泡（`等待回复`）→ 用户回复 → … → 成片卡。向下追加、由时间线滚动自然容纳。
 4. **单屏不滚动**：整体 Grid 填满视口（`min-height: 100dvh`），滚动只发生在内部区域（任务列表、对话时间线）。
 
 ---
@@ -112,40 +112,52 @@ CSS Grid `2 列 × 4 行`，`gap: 0`（真实界面由卡片间距承担，不�
 |------|------|-------------|
 | Header | `workbench.tsx` 内联 | 品牌区（左）↔ 队列状态仪表（右，三态圆点） |
 | Rail | `TaskSidebar` + `TaskItem` | 顶部「队列概况」（含「＋新建任务」按钮）+ 可滚动「任务列表」；琥珀浅底 |
-| Stage | `TaskDetail` + `VideoPlayer` + `Pipeline` + `EmptyHero`（新） | 两态：初始/新建大输入 / 节点成果卡 |
-| Composer | `Composer` | 移到右列**底部**（编辑器式），白底 + 靛蓝主按钮；初始/新建视图被 EmptyHero 大输入取代 |
+| Stage | `ChatTimeline` + `cards/*` + `Pipeline` + `EmptyHero` | 两态：初始/新建大输入 / 对话时间线（节点卡 + 决策点回复框） |
+| Composer | `EmptyHero` 大输入 | 初始/新建视图用；详情视图的「回复框」内嵌在 ChatTimeline 底部（决策点出现时才激活） |
 | Status | `StatusBar`（新） | 左队列 / Worker 状态；右任务数 / 版本 |
 
 ---
 
 ## 7. 组件细节规格
 
-### 7.1 视频预览三态（TaskDetail 内）
+### 7.1 成片播放（对话时间线内）
 
-| 状态 | 外观 |
-|------|------|
-| 空态（无任务 / 失败无产物） | 16:9 虚线框 + 圆环 `▷` 占位 + 「暂无视频 · 提交描述后在此生成」 |
-| 处理中（waiting / active） | 16:9 骨架占位（`animate-pulse`）+ 「视频渲染中」 |
-| 完成（completed） | `<video controls>`（`aspect-video`，黑底） |
+成片卡 = 对话时间线的最后一张节点卡，内含 `<video controls>`（`aspect-video` 黑底）+ 时长 + 「⬇ 下载 MP4」。只在真正产出成片（`video_merge` 节点事件）后渲染，不渲染虚假的「等待视频」。
 
-视频区三种状态统一 `max-width: 576px`（`max-w-xl`）并居中，避免 16:9 在宽 Stage 里过高、完整视频无需滚动即可看到。
+### 7.2 流水线八节点（Pipeline）
 
-只在完成任务时渲染真 `<video>`；不渲染虚假的「等待回复」。
+节点：`调研 → 提案 → 脚本 → 素材 → 配音 → 组装 → 逐镜头视频 → 拼接`。
 
-### 7.2 流水线六阶段（Pipeline，新组件）
+**诚实约束（升级）**：不再整条统一着色 —— 对话时间线里每张节点卡来自真实节点事件，流水线据此逐节点着色：
 
-阶段：`调研 → 提案 → 脚本 → 素材 → 逐镜头视频 → 拼接`。
+| 节点状态 | 外观 |
+|----------|------|
+| 已完成（节点已产卡） | 绿 chip |
+| 当前阶段（首个未完成） | active → 靛蓝 + 脉冲；failed → 红；paused → 灰 |
+| 未到 | 灰（idle） |
 
-**诚实约束**：后端只返回 `0/10/100`，无法定位具体阶段，因此整条流水线按任务状态统一着色、不伪造逐阶段：
+每节点为一个小芯片（flex 横排，窄屏 `flex-wrap`）；active 时附加不确定进度条。
 
-| 任务状态 | 六阶段芯片 | 附加 |
-|----------|-----------|------|
-| waiting | 灰（queued） | 小字「排队中」 |
-| active | 靛蓝描边 + 脉冲 | 小字「处理中」+ 不确定进度条 |
-| completed | 全绿 | — |
-| failed | 红 | 失败原因块 |
+### 7.7 对话时间线 + 节点卡（ChatTimeline，2026-08-05）
 
-每阶段为一个小芯片（flex 横排，窄屏 `flex-wrap`）。
+**结构**（自上而下）：
+
+1. **任务头**：`#id` + 状态芯片 + （决策点时）`等待回复` 徽标 + 相对时间 + 操作行（暂停/继续、删除两步确认、完成后下载）。
+2. **消息列表**（滚动）：用户描述气泡（靛蓝右对齐，`你的描述` 标注）→ 节点卡逐张流入 → 决策点提问气泡（青色描边，`?` 徽标）→ 用户回复气泡 → 系统状态行（居中灰字）。
+3. **流水线八节点**（真实事件着色）。
+4. **决策点回复框**：出现 `等待回复` 时激活（青色描边，`回复 agent（任意文本 = 继续 + 记录反馈）`）；否则显示虚线占位提示。
+
+**节点卡**（agent 决定呈现形态）：卡片外壳 = 标签（调研/提案/脚本/素材/配音/场景规格/逐镜头视频/成片）+ 节点名 + 时间戳 + 可选 LLM 点评行（斜体灰字）+ 卡主体。主体由 `cards/registry.tsx` 按 CardType 映射：
+- research：需求提取 + 就绪度分数（绿/琥珀/红）+ 短板
+- proposal：标题 + 角色数 + 空间/镜头数 + 时长/比例 + 风格
+- script：镜头数 + 四子脚本 + 含台词镜头数 + 开场叙事
+- assets：角色素材/场景背景数量（库/AI 分类）
+- audio：配音段数 + 每段 sceneId/时长
+- scenes：镜头规格数 + 分辨率/引擎
+- shots：已生成镜头数 + 每镜实测时长
+- video：播放器 + 时长 + 下载
+
+**气泡/状态用色**：用户气泡靛蓝实底白字；决策点提问 `info` 青描边浅底；系统行灰。
 
 ### 7.3 任务元信息
 `#id` + 状态芯片 + 提交时间 + 用户原始文本（`whitespace-pre-wrap`）。
@@ -170,7 +182,7 @@ CSS Grid `2 列 × 4 行`，`gap: 0`（真实界面由卡片间距承担，不�
 | 状态 | 内容区 | 输入区 |
 |------|--------|--------|
 | 初始 / 新建（默认进入） | 置空 | `EmptyHero`：大输入框横跨「内容区 + 输入区」，`max-w-xl` 居中 |
-| 详情 | `TaskDetail` 节点成果卡 | `Composer` 照常 |
+| 详情 | `ChatTimeline` 对话时间线（任务头 + 节点卡 + 流水线 + 决策点回复框） | 回复框内嵌（决策点 `等待回复` 时激活） |
 
 **默认进入初始状态页**（而非自动选中最新任务）：点选侧栏任务 → 详情；点「＋新建任务」→ 回初始状态页；提交成功 → 详情。
 
@@ -189,10 +201,12 @@ CSS Grid `2 列 × 4 行`，`gap: 0`（真实界面由卡片间距承担，不�
 | 下载 | `GET /api/tasks/[id]/download` | `completed` |
 
 **逐任务暂停机制**：`lib/pause.ts` 的 Redis 标志 + 管线内 4 个暂停门（research→proposal、script→asset/tts fanout、assembler→shot、shot→merge）+ `executeTask` 前置暂停点。暂停 = 阻塞轮询，恢复 = 放行，删除 = 抛错中止（零容错）。
+
+**4 个暂停门 = 决策点（human-in-loop，2026-08-05）**：`beginDecision(jobId, gateId)` 在进门时自动置暂停标志 + 发布 `gate` 事件（幂等）→ 管线停住；前端显示 `等待回复` 徽标 + 激活回复框；用户回复（或手动「继续」）清标志放行。任意文本回复 = 继续 + 反馈记录（`storage/feedback/{jobId}.json`）。
 - 诚实约束：暂停「阶段间生效」——当前阶段跑完后在下一个暂停门停下；视频生成中途暂停要等当前镜头批完成。
 - Worker 并发为 1，暂停任务会占住 worker，其他排队任务随之等待。
 
-**删除清理**：`deleteTaskFiles(jobId)` 删 `output/{id}.mp4`、`scenes|scripts|audio|assets/{id}/`、`log/procedure/job-{id}/`；**不动**共享素材库。
+**删除清理**：`deleteTaskFiles(jobId)` 删 `output/{id}.mp4`、`scenes|scripts|audio|assets/{id}/`、`conversations/{id}/`、`feedback/{id}.json`、`log/procedure/job-{id}/`；**不动**共享素材库。
 
 ---
 
@@ -201,9 +215,12 @@ CSS Grid `2 列 × 4 行`，`gap: 0`（真实界面由卡片间距承担，不�
 - `GET /api/tasks` → `{ tasks: TaskSummary[] }`（最近 50 条，新 → 旧）
 - `POST /api/tasks { text }` → `{ id, status }`（成功 201 / 400 文本为空 / 503 队列不可用）
 - `GET /api/tasks/[id]/download` → mp4 流（或 OSS 307）
-- `POST /api/tasks/[id]/pause { paused }` → `{ ok, status }`（逐任务暂停/恢复）
-- `DELETE /api/tasks/[id]` → `{ ok }`（删除记录 + 清理产物，幂等）
-- `TaskSummary = { id, status, progress, text, createdAt, result?, failedReason? }`，`status` 额外取值 `paused`（waiting/active 被暂停时）
+- `POST /api/tasks/[id]/pause { paused }` → `{ ok, status }`（逐任务暂停/恢复；恢复时清待回复并广播 proceed）
+- `DELETE /api/tasks/[id]` → `{ ok }`（删除记录 + 清理产物 + 退订事件，幂等）
+- `GET /api/tasks/[id]/stream` → SSE 流（`hello` 重放 + `card`/`gate`/`user`/`proceed`/`status` 事件）
+- `POST /api/tasks/[id]/reply { text }` → `{ ok, conversation }`（回复决策点：追加消息 + 反馈落盘 + 放行）
+- `GET /api/tasks/[id]/conversation` → `{ conversation: ConversationFile | null }`
+- `TaskSummary = { id, status, progress, text, createdAt, result?, failedReason?, awaitingReply? }`，`status` 额外取值 `paused`（waiting/active 被暂停时）
 
 ---
 

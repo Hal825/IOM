@@ -23,7 +23,14 @@ export function TaskItem({ task, selected, onSelect }: TaskItemProps) {
     >
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-[11px] text-muted">#{task.id}</span>
-        <StatusBadge status={task.status} />
+        <span className="flex items-center gap-1.5">
+          {task.awaitingReply ? (
+            <span className="rounded-full border border-info/40 bg-info/10 px-1.5 py-0.5 text-[10px] text-info">
+              待回复
+            </span>
+          ) : null}
+          <StatusBadge status={task.status} />
+        </span>
       </div>
       <p className="mt-1 truncate text-[13px] text-foreground/90">{task.text}</p>
       <p className="mt-0.5 font-mono text-[10px] text-muted">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getQueue } from '@/lib/queue';
-import { setJobPaused } from '@/lib/pause';
+import { setJobPaused, setJobAwaitingReply } from '@/lib/pause';
+import { getSseHub } from '@/lib/sse/hub';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,11 @@ export async function POST(
       return NextResponse.json({ error: '任务不存在' }, { status: 404 });
     }
     await setJobPaused(id, paused);
+    if (!paused) {
+      // 手动恢复 = 在决策点放行：清待回复标志并广播 proceed（前端收起回复框）
+      await setJobAwaitingReply(id, false);
+      getSseHub().broadcast(id, { event: 'proceed', data: { gateId: '', resumedAt: new Date().toISOString() } });
+    }
     return NextResponse.json({ ok: true, status: paused ? 'paused' : await job.getState() });
   } catch (err) {
     console.error(`[api] 暂停/恢复任务 ${id} 失败:`, err);

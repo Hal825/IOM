@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { TaskSummary } from '@/lib/types';
 import { createTask, deleteTask, listTasks, setTaskPaused } from '@/lib/api';
-import { Composer } from './composer';
 import { EmptyHero } from './new-task-page';
 import { QueueIndicator } from './queue-indicator';
 import { StatusBar } from './status-bar';
-import { TaskDetail } from './task-detail';
+import { ChatTimeline } from './chat-timeline';
 import { TaskSidebar } from './task-sidebar';
 
 const POLL_INTERVAL_MS = 3000;
@@ -131,22 +130,17 @@ export function Workbench() {
 
         {/* 右列：内容区 + 输入区（蓝图 v2 两态）
              初始 / 新建 → EmptyHero 大输入横跨内容区+输入区（无独立 Composer）
-             详情 → TaskDetail + Composer 照常 */}
+             详情 → ChatTimeline 对话时间线（任务头 + 节点卡 + 流水线 + 决策点回复框） */}
         <main className="order-1 flex min-w-0 flex-col gap-4 p-4 md:order-none md:min-h-0 md:p-6">
           {contentView === 'create' ? (
             <EmptyHero onSubmit={handleSubmit} submitting={submitting} error={error} />
           ) : (
-            <>
-              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
-                <TaskDetail
-                  key={selected?.id ?? 'empty'}
-                  task={selected}
-                  onTogglePause={handleTogglePause}
-                  onDelete={handleDelete}
-                />
-              </div>
-              <Composer onSubmit={handleSubmit} submitting={submitting} error={error} />
-            </>
+            <ChatTimeline
+              key={selected?.id ?? 'empty'}
+              task={selected}
+              onTogglePause={handleTogglePause}
+              onDelete={handleDelete}
+            />
           )}
         </main>
       </div>

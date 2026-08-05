@@ -9,3 +9,10 @@ export function formatRelativeTime(createdAt: number): string {
   if (hours < 24) return `${hours} 小时前`;
   return `${Math.floor(hours / 24)} 天前`;
 }
+
+/** ISO 时间戳 → "HH:MM"（节点卡/气泡的时间戳）。 */
+export function formatClock(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toTimeString().slice(0, 5);
+}
