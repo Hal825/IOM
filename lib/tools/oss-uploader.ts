@@ -13,6 +13,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fetchWithTimeout } from './http';
 
 // ── 配置 ────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ export async function uploadFile(localPath: string, remoteKey: string): Promise<
 
   console.log(`[oss] 上传: ${path.basename(localPath)} → ${remoteKey}`);
 
-  const resp = await fetch(url, {
+  const resp = await fetchWithTimeout(url, {
     method: 'PUT',
     headers: {
       'Content-Type': contentType,

@@ -16,6 +16,7 @@
 
 import { AssetStore, VIEW_ORDER, type CharacterViews } from '@/lib/store/asset-store';
 import type { Proposal, VideoScript, AssetManifest } from '@/lib/types';
+import { fetchWithTimeout } from './http';
 
 // ── 配置（全部来自环境变量）─────────────────────────
 
@@ -41,7 +42,7 @@ async function callImageAPI(prompt: string): Promise<string> {
 
   console.log(`[asset-gen] 生成中: "${prompt.slice(0, 60)}..."`);
 
-  const resp = await fetch(AI_ASSET_BASE_URL, {
+  const resp = await fetchWithTimeout(AI_ASSET_BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

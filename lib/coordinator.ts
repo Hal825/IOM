@@ -16,7 +16,7 @@ import { createCommentaryProvider } from './agent/commentary';
 import type { EventBus } from './events/bus';
 import { createRedisEventBus } from './events/bus';
 import { getSseHub, type SseHub } from './sse/hub';
-import { setJobAwaitingReply, setJobPaused } from './pause';
+import { isJobAwaitingReply, setJobAwaitingReply, setJobPaused } from './pause';
 import { saveFeedback } from './log/feedback';
 import { newId } from './id';
 import {
@@ -44,6 +44,7 @@ export interface CoordinatorDeps {
   hub: SseHub;
   /** 测试注入内存标志；缺省走 Redis（pause.ts） */
   flags?: {
+    isAwaiting(jobId: string): Promise<boolean>;
     setAwaiting(jobId: string, v: boolean): Promise<void>;
     setPaused(jobId: string, v: boolean): Promise<void>;
   };
@@ -60,6 +61,7 @@ export interface Coordinator {
 
 export function createCoordinator(deps: CoordinatorDeps): Coordinator {
   const flags = deps.flags ?? {
+    isAwaiting: isJobAwaitingReply,
     setAwaiting: setJobAwaitingReply,
     setPaused: setJobPaused,
   };
@@ -210,6 +212,14 @@ export function createCoordinator(deps: CoordinatorDeps): Coordinator {
       }
     }
 
+    // R2 幂等守卫：同一决策点已有回复（双击 / 网络重试）→ 直接返回现状，不再追加/放行
+    if (gateId) {
+      const lastUser = [...conv.messages].reverse().find((m) => m.kind === 'text');
+      if (lastUser && lastUser.kind === 'text' && lastUser.feedback.gateId === gateId) {
+        return conv;
+      }
+    }
+
     const msg: UserMessage = {
       id: newId(),
       jobId,
@@ -221,10 +231,17 @@ export function createCoordinator(deps: CoordinatorDeps): Coordinator {
     };
     const updated = await deps.store.append(jobId, msg);
     await saveFeedback(jobId, { gateId, nodeName, userText: text, cardPayload }, deps.feedbackDir);
-    await flags.setPaused(jobId, false);
-    await flags.setAwaiting(jobId, false);
+    // R2 竞态守卫：仅在任务确实停在决策点等待回复时才放行管线（清 paused + proceed）。
+    // 手动暂停 / 陈旧重复回复 → 不清 paused，避免决策点被静默跳过或手动暂停被误恢复。
+    const awaiting = await flags.isAwaiting(jobId);
+    if (awaiting) {
+      await flags.setPaused(jobId, false);
+      await flags.setAwaiting(jobId, false);
+    }
     deps.hub.broadcast(jobId, { event: 'user', data: { message: msg } });
-    deps.hub.broadcast(jobId, { event: 'proceed', data: { gateId, resumedAt: now } });
+    if (awaiting) {
+      deps.hub.broadcast(jobId, { event: 'proceed', data: { gateId, resumedAt: now } });
+    }
     return updated;
   };
 

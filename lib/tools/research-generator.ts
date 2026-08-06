@@ -1,6 +1,7 @@
 import { RESEARCH_SYSTEM } from '@/lib/prompts/research';
 import type { ResearchReport } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
+import { fetchWithTimeout, extractJsonObject } from './http';
 
 /**
  * Research 工具 — 调用 LLM 进行文本内容分析与结构识别。
@@ -53,14 +54,11 @@ function isValidRecommendation(v: unknown): v is ResearchReport['content_readine
 }
 
 function parseAndValidateResearch(raw: string): ResearchReport {
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('[research] 响应中未找到 JSON 对象');
-  }
+  const jsonStr = extractJsonObject(raw); // 找不到对象时直接抛错
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
+    parsed = JSON.parse(jsonStr);
   } catch {
     throw new Error('[research] JSON 解析失败');
   }
@@ -174,7 +172,7 @@ async function callResearchLLM(
     );
   }
 
-  const resp = await fetch(`${RESEARCH_BASE_URL}/chat/completions`, {
+  const resp = await fetchWithTimeout(`${RESEARCH_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

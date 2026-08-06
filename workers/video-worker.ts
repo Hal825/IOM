@@ -42,11 +42,13 @@ async function main() {
   });
   worker.on('failed', (job, err) => {
     console.error(`[worker] ✗ 任务 ${job?.id} 失败: ${err.message}`);
-    // 展开 LangGraph 多节点并行错误
-    const detail = (err as any).errors ?? (err as any).cause?.errors;
+    // 展开 LangGraph 多节点并行错误（错误对象可能带 errors / cause.errors 聚合字段）
+    type LangGraphError = { errors?: unknown[]; cause?: { errors?: unknown[] } };
+    const detail = (err as LangGraphError).errors ?? (err as LangGraphError).cause?.errors;
     if (Array.isArray(detail)) {
       for (const e of detail) {
-        console.error(`  ↳ ${e?.message ?? String(e)}`);
+        const msg = (e as { message?: string })?.message ?? String(e);
+        console.error(`  ↳ ${msg}`);
       }
     }
   });

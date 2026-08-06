@@ -1,6 +1,7 @@
 import { SCRIPT_SYSTEM } from '@/lib/prompts/script-generation';
 import type { ResearchReport, Proposal, VideoScript } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
+import { fetchWithTimeout, extractJsonObject } from './http';
 
 /**
  * Script 工具 — 基于 Proposal + ResearchReport 调用 LLM 生成逐镜头生产脚本。
@@ -37,15 +38,12 @@ interface ChatResponse {
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
 
-function parseAndValidateScript(raw: string): VideoScript {
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('[script] 响应中未找到 JSON 对象');
-  }
+export function parseAndValidateScript(raw: string): VideoScript {
+  const jsonStr = extractJsonObject(raw); // 找不到对象时直接抛错
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
+    parsed = JSON.parse(jsonStr);
   } catch {
     throw new Error('[script] JSON 解析失败');
   }
@@ -108,8 +106,10 @@ function parseAndValidateScript(raw: string): VideoScript {
     if (!rRefs || typeof rRefs.sceneImageRef !== 'string' || !rRefs.sceneImageRef.trim()) {
       throw new Error(`[script] storyboardScript.scenes[${i}].resourceRefs.sceneImageRef 缺失`);
     }
-    if (!Array.isArray(rRefs.characterImageRefs)) {
-      throw new Error(`[script] storyboardScript.scenes[${i}].resourceRefs.characterImageRefs 缺失`);
+    // C1：旧 schema 的 characterImageRefs 已由 appearCharId 取代（asset-gen 重构），
+    // 幽灵校验会让每次 script_generation 必失败。改验真实契约字段 appearCharId。
+    if (!Array.isArray(b.appearCharId)) {
+      throw new Error(`[script] storyboardScript.scenes[${i}].appearCharId 缺失`);
     }
     const shot = b.shot as Record<string, unknown> | undefined;
     if (!shot || typeof shot.type !== 'string' || !shot.type.trim()) {
@@ -179,7 +179,7 @@ async function callScriptLLM(
   ];
   const userContent = contextParts.join('\n\n');
 
-  const resp = await fetch(`${SCRIPT_BASE_URL}/chat/completions`, {
+  const resp = await fetchWithTimeout(`${SCRIPT_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

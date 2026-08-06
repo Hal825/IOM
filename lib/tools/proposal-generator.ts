@@ -1,6 +1,7 @@
 import { PROPOSAL_SYSTEM } from '@/lib/prompts/proposal';
 import type { ResearchReport, Proposal, Character } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
+import { fetchWithTimeout, extractJsonObject } from './http';
 
 /**
  * Proposal 工具 — 基于 ResearchReport 调用 LLM 生成视频制作提案。
@@ -46,14 +47,11 @@ function isValidTone(v: unknown): v is Proposal['styleProfile']['tone'] {
 }
 
 function parseAndValidateProposal(raw: string): Proposal {
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('[proposal] 响应中未找到 JSON 对象');
-  }
+  const jsonStr = extractJsonObject(raw); // 找不到对象时直接抛错
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
+    parsed = JSON.parse(jsonStr);
   } catch {
     throw new Error('[proposal] JSON 解析失败');
   }
@@ -225,7 +223,7 @@ async function callProposalLLM(
     userContent += `\n\n用户偏好风格：${styleHint}`;
   }
 
-  const resp = await fetch(`${PROPOSAL_BASE_URL}/chat/completions`, {
+  const resp = await fetchWithTimeout(`${PROPOSAL_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

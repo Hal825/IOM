@@ -13,6 +13,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { uploadFile, isOssConfigured, relToOssKey } from '@/lib/tools/oss-uploader';
 import type { AssetManifest, CharacterAsset } from '@/lib/types';
+import { fetchWithTimeout } from '@/lib/tools/http';
 
 const STORAGE_ROOT = path.resolve(process.cwd(), 'storage');
 
@@ -64,7 +65,7 @@ export class AssetStore {
 
   /** 下载 URL 到本地，返回相对路径 */
   async storeFromUrl(url: string, relPath: string): Promise<string> {
-    const resp = await fetch(url);
+    const resp = await fetchWithTimeout(url);
     if (!resp.ok) throw new Error(`下载素材失败: HTTP ${resp.status} ${url}`);
     const buffer = Buffer.from(await resp.arrayBuffer());
     return this.store(relPath, buffer);

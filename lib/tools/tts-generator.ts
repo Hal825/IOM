@@ -6,6 +6,8 @@
  * 零容错：任何异常直接抛出。
  */
 
+import { fetchWithTimeout } from './http';
+
 // ── 配置 ────────────────────────────────────────────
 
 const AI_TTS_API_KEY = process.env.AI_TTS_API_KEY!;
@@ -101,7 +103,7 @@ export async function synthesizeSpeech(text: string): Promise<TtsResult> {
     },
   };
 
-  const resp = await fetch(AI_TTS_BASE_URL, {
+  const resp = await fetchWithTimeout(AI_TTS_BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

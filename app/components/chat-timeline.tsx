@@ -39,7 +39,8 @@ function MessageItem({ message }: { message: ConversationMessage }) {
  */
 export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProps) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [awaiting, setAwaiting] = useState(false);
+  // 父组件按 task.id 加 key 重挂载，初始值直接取自 prop，无需在 effect 里同步 setState
+  const [awaiting, setAwaiting] = useState(task?.awaitingReply ?? false);
   const [replyText, setReplyText] = useState('');
   const [replying, setReplying] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
@@ -52,8 +53,6 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
   // 打开 SSE 订阅（仅随任务 id 变化重连；3s 轮询只刷新 task 对象，不会重建连接）
   useEffect(() => {
     if (!taskId) return;
-    setMessages([]);
-    setAwaiting(task?.awaitingReply ?? false);
     const close = openTaskStream(taskId, {
       onHello(conv) {
         setMessages(conv?.messages ?? []);

@@ -23,20 +23,22 @@ import {
 
 // ── FFmpeg 辅助 ──────────────────────────────────────
 
-type FfmpegFn = (opts?: any) => any;
-let _ffmpeg: FfmpegFn | null = null;
+// 懒加载 fluent-ffmpeg：仅在使用时 require，避免无 ffmpeg 环境下模块级加载即失败。
+// 类型用 typeof import 推断（@types/fluent-ffmpeg），不引入运行时依赖。
+type FfmpegModule = typeof import('fluent-ffmpeg');
+let _ffmpeg: FfmpegModule | null = null;
 
 /** ffmpeg.exe 路径：环境变量 FFMPEG_PATH 优先，否则用系统 PATH 自动查找 */
 const FFMPEG_PATH = process.env.FFMPEG_PATH;
 
-function ffmpeg(...args: any[]): any {
+function ffmpeg(...args: Parameters<FfmpegModule>): ReturnType<FfmpegModule> {
   if (!_ffmpeg) {
     try {
-      const ffmpegModule = require('fluent-ffmpeg');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- 懒加载设计
+      _ffmpeg = require('fluent-ffmpeg') as FfmpegModule;
       if (FFMPEG_PATH) {
-        ffmpegModule.setFfmpegPath(FFMPEG_PATH);
+        _ffmpeg.setFfmpegPath(FFMPEG_PATH);
       }
-      _ffmpeg = ffmpegModule;
     } catch {
       throw new Error('fluent-ffmpeg 未安装，请运行 npm install fluent-ffmpeg');
     }

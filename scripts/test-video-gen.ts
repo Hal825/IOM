@@ -10,7 +10,11 @@
  *
  * 需要 .env：AI_ASSET_*（生图）、OSS_*（发布）、AI_VIDEO_*（视频生成）、ffmpeg。
  * 用法：npx tsx --env-file=.env scripts/test-video-gen.ts
+ *
+ * 注：dev 检视/构造脚本，直接读取 API 响应未定型 JSON 并构造部分 state，
+ * 对 no-explicit-any 豁免（生产代码不适用）。
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import path from 'node:path';
 import fs from 'node:fs';

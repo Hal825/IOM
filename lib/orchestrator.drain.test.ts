@@ -63,4 +63,12 @@ describe('drainGraphUpdates', () => {
     await expect(drainGraphUpdates(failing as AsyncIterable<Record<string, unknown>>, onNodeEvent)).rejects.toThrow('boom');
     expect(stream).toBeDefined();
   });
+
+  it('onNodeEvent 抛错（发布事件失败）→ 直接抛，不吞错（零容错契约）', async () => {
+    const onNodeEvent = vi.fn(async () => {
+      throw new Error('publish failed');
+    });
+    const stream = fakeStream([{ research: { researchReport: { ok: true } } }]);
+    await expect(drainGraphUpdates(stream, onNodeEvent)).rejects.toThrow('publish failed');
+  });
 });

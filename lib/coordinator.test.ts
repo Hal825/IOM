@@ -13,6 +13,7 @@ import type { CommentaryProvider } from './agent/commentary';
 function memoryFlags() {
   const store = new Map<string, boolean>();
   return {
+    isAwaiting: (id: string) => Promise.resolve(store.get(`await:${id}`) ?? false),
     setAwaiting: vi.fn(async (id: string, v: boolean) => {
       store.set(`await:${id}`, v);
     }),
@@ -39,7 +40,7 @@ describe('coordinator', () => {
       provider,
       store: createConversationStore(tmpDir),
       hub,
-      flags: { setAwaiting: flags.setAwaiting, setPaused: flags.setPaused },
+      flags: { isAwaiting: flags.isAwaiting, setAwaiting: flags.setAwaiting, setPaused: flags.setPaused },
       feedbackDir: tmpDir,
     };
   });
@@ -147,9 +148,65 @@ describe('coordinator', () => {
     const coord = createCoordinator(deps);
     await coord.subscribe('42');
     await coord.subscribe('42');
-    const bus = deps.bus as MemoryEventBus;
-    // MemoryEventBus 内部 handlers 不可直接访问，但重复 subscribe 不应抛错即幂等
+    // 重复 subscribe 不应抛错即幂等
     await coord.unsubscribe('42');
     await coord.unsubscribe('42'); // 再次取消也不抛
+  });
+
+  it('未映射节点 / 空 output 的 node 事件不产卡、不落盘、不广播', async () => {
+    const coord = createCoordinator(deps);
+    const broadcast = vi.fn();
+    hub.broadcast = broadcast;
+
+    // 暂停门等无卡片映射节点（nodeToCardType 返回 null）
+    await coord.handleEvent('42', {
+      type: 'node', jobId: '42', nodeName: 'pause_gate_1', output: {}, seq: 9,
+    });
+    // 有卡片映射但 output 为空对象
+    await coord.handleEvent('42', {
+      type: 'node', jobId: '42', nodeName: 'research', output: {}, seq: 10,
+    });
+
+    const conv = await deps.store.read('42');
+    expect(conv).toBeNull(); // 什么都没写
+    expect(broadcast).not.toHaveBeenCalled();
+  });
+
+  it('未知 event.type 静默忽略，不抛错', async () => {
+    const coord = createCoordinator(deps);
+    await expect(
+      coord.handleEvent('42', { type: 'unknown', jobId: '42' } as never)
+    ).resolves.toBeUndefined();
+    const conv = await deps.store.read('42');
+    expect(conv).toBeNull();
+  });
+
+  // ── 竞态回归测试（Wave 3 审查发现 R2，修复后转正）────────────────
+  it('R2a 非决策点回复不应清除暂停（手动暂停不会被误恢复）', async () => {
+    const coord = createCoordinator(deps);
+    // 用户手动暂停任务（pause 路由），此时无 gate、无 awaiting
+    await deps.flags!.setPaused('42', true);
+    // 前端误触发 / 恶意 / 重放 POST reply
+    await coord.submitReply('42', '继续');
+    // 未处于决策点 → 不清 paused，手动暂停保持
+    expect(deps.flags!.setPaused).not.toHaveBeenCalledWith('42', false);
+  });
+
+  it('R2b 陈旧重复回复不会清掉后续决策点的暂停', async () => {
+    const coord = createCoordinator(deps);
+    // gate1 提问并已放行 → 管线进入 gate2 → worker 端 beginDecision 置 paused=true
+    await coord.handleEvent('42', {
+      type: 'gate', jobId: '42', gateId: 'pause_gate_1', stage: '调研完成', seq: 1,
+    });
+    await coord.submitReply('42', '继续');
+    await deps.flags!.setPaused('42', true); // 模拟 beginDecision(pause_gate_2)
+
+    // 客户端重复 / 重试再发一次 gate1 的回复 → 幂等守卫拦截，不清 gate2 的暂停
+    await coord.submitReply('42', '继续');
+    expect(deps.flags!.setPaused).not.toHaveBeenLastCalledWith('42', false);
+    // 且不重复追加用户消息
+    const conv = await deps.store.read('42');
+    const texts = conv!.messages.filter((m) => m.kind === 'text');
+    expect(texts).toHaveLength(1);
   });
 });

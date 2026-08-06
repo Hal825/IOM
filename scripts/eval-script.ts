@@ -1,7 +1,11 @@
 /**
  * Script 串联评测 — Proposal → Script.
  * 用法：npx tsx --env-file=.env scripts/eval-script.ts "测试文本..."
+ *
+ * 注：这是 dev 检视脚本，直接读取 LLM 返回的未定型 JSON 做打印，
+ * 对 no-explicit-any 豁免（生产代码不适用）。
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import fs from 'node:fs';
 import path from 'node:path';

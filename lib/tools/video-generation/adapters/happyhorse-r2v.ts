@@ -8,6 +8,7 @@
 
 import type { VideoGenRequest, VideoGenResult } from '../types';
 import { registerAdapter, type VideoModelAdapter } from '../adapter';
+import { fetchWithTimeout } from '../../http';
 
 export const MODEL = 'happyhorse-1.1-r2v';
 
@@ -99,7 +100,7 @@ export class HappyhorseR2vAdapter implements VideoModelAdapter {
         await new Promise((r) => setTimeout(r, delay));
       }
 
-      const createResp = await fetch(baseUrl, {
+      const createResp = await fetchWithTimeout(baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +133,7 @@ export class HappyhorseR2vAdapter implements VideoModelAdapter {
     while (Date.now() - startTime < MAX_WAIT_MS) {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-      const pollResp = await fetch(`${taskUrl}/${taskId}`, {
+      const pollResp = await fetchWithTimeout(`${taskUrl}/${taskId}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
 
@@ -167,7 +168,7 @@ export class HappyhorseR2vAdapter implements VideoModelAdapter {
 
   // ── 下载 ────────────────────────────────────────────
   private async downloadVideo(url: string): Promise<Buffer> {
-    const resp = await fetch(url);
+    const resp = await fetchWithTimeout(url);
     if (!resp.ok) throw new Error(`下载视频失败: HTTP ${resp.status}`);
     return Buffer.from(await resp.arrayBuffer());
   }

@@ -131,6 +131,7 @@ openmontage/
 │   │   ├── script-generator.ts   # 四子脚本生成 + 结构校验 ★
 │   │   ├── asset-generator.ts    # 素材生成（本地库引用 + AI 生成，产出 AssetManifest）
 │   │   ├── oss-uploader.ts       # OSS 上传（REST+HMAC，公网 URL）
+│   │   ├── http.ts               # 共享 HTTP：fetchWithTimeout 统一超时 + extractJsonObject（H2/L3 修复）
 │   │   ├── tts-generator.ts      # 语音合成 (DashScope qwen3-tts-flash)
 │   │   └── video-generation/     # 视频生成抽象层（统一请求 + Adapter 工厂 + happyhorse-r2v，预留）
 │   ├── store/
