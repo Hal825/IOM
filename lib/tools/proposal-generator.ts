@@ -1,22 +1,24 @@
-import { PROPOSAL_SYSTEM } from '@/lib/prompts/proposal';
+import { buildPipelineConversation } from '@/lib/prompts/pipeline';
 import type { ResearchReport, Proposal, Character } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
-import { fetchWithTimeout, extractJsonObject } from './http';
+import { extractJsonObject } from './http';
+import { callChatCompletion, withRetry } from './llm';
 
 /**
  * Proposal 工具 — 基于 ResearchReport 调用 LLM 生成视频制作提案。
  *
  * 策略：
- * 1. 调用 AI API，要求返回 Proposal JSON（新版结构：characters / blueprint / sceneVisuals / styleProfile）
- * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
+ * 1. 用 buildPipelineConversation 构造追加式对话（[0..5]：research 的完整前缀 + TASK_PROPOSAL），
+ *    命中 research 轮缓存；styleHint 作为 per-task 消息插在 assistant(research) 之后、TASK_PROPOSAL 之前。
+ * 2. 要求返回 Proposal JSON，轻量结构校验 → 不合法则重试（最多 3 次，指数退避）。
  */
 
-// ── 配置（全部来自环境变量）─────────────────────────
+// ── 配置（三文本节点共用 LLM_TEXT_*，前缀一致的前提）──
 
-const PROPOSAL_API_KEY = process.env.PROPOSAL_API_KEY;
-const PROPOSAL_BASE_URL = process.env.PROPOSAL_BASE_URL;
-const PROPOSAL_LLM_MODEL = process.env.PROPOSAL_LLM_MODEL;
-const MAX_RETRIES = 3;
+const LLM_TEXT_API_KEY = process.env.LLM_TEXT_API_KEY;
+const LLM_TEXT_BASE_URL = process.env.LLM_TEXT_BASE_URL;
+const LLM_TEXT_MODEL = process.env.LLM_TEXT_MODEL;
+
 const MAX_TOKENS = 20000;
 
 // ── 类型 ────────────────────────────────────────────
@@ -26,13 +28,6 @@ export interface ProposalResult {
   model: string;
   retries: number;
   tokenUsage?: TokenUsage;
-}
-
-interface ChatResponse {
-  choices: Array<{
-    message: { content: string };
-  }>;
-  usage?: TokenUsage;
 }
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
@@ -199,91 +194,6 @@ function parseAndValidateProposal(raw: string): Proposal {
   };
 }
 
-// ── LLM API 调用 ────────────────────────────────────
-
-async function callProposalLLM(
-  researchReport: ResearchReport | null,
-  userPrompt: string,
-  styleHint?: string
-): Promise<{ content: string; usage?: TokenUsage }> {
-  if (!PROPOSAL_API_KEY || !PROPOSAL_BASE_URL || !PROPOSAL_LLM_MODEL) {
-    throw new Error(
-      'Proposal 环境变量未配置（PROPOSAL_API_KEY / PROPOSAL_BASE_URL / PROPOSAL_LLM_MODEL）'
-    );
-  }
-
-  let userContent: string;
-  if (researchReport) {
-    userContent = `以下是对用户文本的调研分析报告（JSON 格式）：\n${JSON.stringify(researchReport, null, 2)}\n\n请基于以上报告生成视频制作方案。`;
-  } else {
-    userContent = `用户文本：\n${userPrompt}\n\n请基于以上文本直接生成视频制作方案（先自行分析文本结构）。`;
-  }
-
-  if (styleHint) {
-    userContent += `\n\n用户偏好风格：${styleHint}`;
-  }
-
-  const resp = await fetchWithTimeout(`${PROPOSAL_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${PROPOSAL_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: PROPOSAL_LLM_MODEL,
-      messages: [
-        { role: 'system', content: PROPOSAL_SYSTEM },
-        { role: 'user', content: userContent },
-      ],
-      max_tokens: MAX_TOKENS,
-      temperature: 0.6,
-    }),
-  });
-
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    throw new Error(
-      `Proposal API 返回 ${resp.status}: ${errText.slice(0, 200)}`
-    );
-  }
-
-  const data = (await resp.json()) as ChatResponse;
-  const content = data.choices?.[0]?.message?.content;
-  if (!content?.trim()) {
-    throw new Error('Proposal API 返回空内容');
-  }
-
-  return { content, usage: data.usage };
-}
-
-// ── 指数退避重试 ────────────────────────────────────
-
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES
-): Promise<{ result: T; retries: number }> {
-  let lastError: Error | undefined;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await fn();
-      return { result, retries: attempt };
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt === maxRetries) break;
-
-      const delay = Math.pow(2, attempt) * 1000;
-      console.warn(
-        `[proposal] 第 ${attempt + 1} 次失败: ${lastError.message}，` +
-          `${delay / 1000}s 后重试...`
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-
-  throw lastError ?? new Error('[proposal] 未知错误');
-}
-
 // ── 公开 API ────────────────────────────────────────
 
 /**
@@ -295,15 +205,28 @@ export async function generateProposal(
   userPrompt: string,
   styleHint?: string
 ): Promise<ProposalResult> {
-  if (!PROPOSAL_API_KEY || !PROPOSAL_BASE_URL || !PROPOSAL_LLM_MODEL) {
-    throw new Error('Proposal 环境变量未配置（PROPOSAL_API_KEY / PROPOSAL_BASE_URL / PROPOSAL_LLM_MODEL）');
+  if (!LLM_TEXT_API_KEY || !LLM_TEXT_BASE_URL || !LLM_TEXT_MODEL) {
+    throw new Error('文本 LLM 环境变量未配置（LLM_TEXT_API_KEY / LLM_TEXT_BASE_URL / LLM_TEXT_MODEL）');
   }
 
-  const { result, retries } = await withRetry(async () => {
-    const { content, usage } = await callProposalLLM(report, userPrompt, styleHint);
-    const proposal = parseAndValidateProposal(content);
-    return { ...proposal, usage };
-  });
+  const messages = buildPipelineConversation({ userPrompt, styleHint, researchReport: report });
+
+  const { result, retries } = await withRetry(
+    async () => {
+      const { content, usage } = await callChatCompletion({
+        apiKey: LLM_TEXT_API_KEY,
+        baseUrl: LLM_TEXT_BASE_URL,
+        model: LLM_TEXT_MODEL,
+        messages,
+        maxTokens: MAX_TOKENS,
+        temperature: 0.6,
+        label: 'proposal',
+      });
+      const proposal = parseAndValidateProposal(content);
+      return { ...proposal, usage };
+    },
+    { label: 'proposal' }
+  );
 
   const sceneCount = result.sceneVisuals.reduce((sum, sv) => sum + sv.scenes.length, 0);
   const charInfo = result.characters.length
@@ -311,7 +234,7 @@ export async function generateProposal(
     : '';
 
   console.log(
-    `[proposal] ${PROPOSAL_LLM_MODEL} 生成完成：` +
+    `[proposal] ${LLM_TEXT_MODEL} 生成完成：` +
       `${result.sceneVisuals.length} 个空间，${sceneCount} 个镜头，` +
       `${result.blueprint.totalDuration}s${charInfo}` +
       (retries > 0 ? `（重试 ${retries} 次）` : '')
@@ -324,7 +247,7 @@ export async function generateProposal(
       sceneVisuals: result.sceneVisuals,
       styleProfile: result.styleProfile,
     },
-    model: PROPOSAL_LLM_MODEL,
+    model: LLM_TEXT_MODEL,
     retries,
     tokenUsage: result.usage,
   };

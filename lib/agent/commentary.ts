@@ -3,7 +3,7 @@
  *
  * 点评是表现层：失败/未启用时软省略（卡片照常渲染），不 fail 任务（与图内零容错解耦）。
  * 通过 `AGENT_COMMENTARY=on` 开启（默认关，避免验证/测试误调付费 API）；
- * 模型用 AGENT_* env，未配置时回退 SCRIPT_*。
+ * 模型用 AGENT_* env，未配置时回退 LLM_TEXT_*（三文本节点共用）。
  */
 import type { CardType } from '@/lib/conversations/types';
 
@@ -17,15 +17,15 @@ export interface CommentaryProvider {
   comment(input: CommentaryInput): Promise<string>;
 }
 
-const AGENT_API_KEY = process.env.AGENT_API_KEY ?? process.env.SCRIPT_API_KEY;
-const AGENT_BASE_URL = process.env.AGENT_BASE_URL ?? process.env.SCRIPT_BASE_URL;
-const AGENT_LLM_MODEL = process.env.AGENT_LLM_MODEL ?? process.env.SCRIPT_LLM_MODEL;
+const AGENT_API_KEY = process.env.AGENT_API_KEY ?? process.env.LLM_TEXT_API_KEY;
+const AGENT_BASE_URL = process.env.AGENT_BASE_URL ?? process.env.LLM_TEXT_BASE_URL;
+const AGENT_LLM_MODEL = process.env.AGENT_LLM_MODEL ?? process.env.LLM_TEXT_MODEL;
 
 const COMMENTARY_SYSTEM = `你是视频制作工作流里的助理。用户提交文本后，系统会逐个节点产出结果。请为刚完成的节点结果写一句中文点评（30-60 字），自然、具体、不夸张，像在和一个创作者对话。只输出点评本身，不要任何前缀或引号。`;
 
 async function callCommentaryLLM(input: CommentaryInput): Promise<string> {
   if (!AGENT_API_KEY || !AGENT_BASE_URL || !AGENT_LLM_MODEL) {
-    throw new Error('Agent 点评 LLM 未配置（AGENT_* 或回退 SCRIPT_*）');
+    throw new Error('Agent 点评 LLM 未配置（AGENT_* 或回退 LLM_TEXT_*）');
   }
   const resp = await fetch(`${AGENT_BASE_URL}/chat/completions`, {
     method: 'POST',

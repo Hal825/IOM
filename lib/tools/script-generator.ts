@@ -1,23 +1,24 @@
-import { SCRIPT_SYSTEM } from '@/lib/prompts/script-generation';
+import { buildPipelineConversation } from '@/lib/prompts/pipeline';
 import type { ResearchReport, Proposal, VideoScript } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
-import { fetchWithTimeout, extractJsonObject } from './http';
+import { extractJsonObject } from './http';
+import { callChatCompletion, withRetry } from './llm';
 
 /**
  * Script 工具 — 基于 Proposal + ResearchReport 调用 LLM 生成逐镜头生产脚本。
  *
  * 策略：
- * 1. 调用 AI API，要求返回 VideoScript JSON（新版四子脚本：storyScript / storyboardScript / audioScript / pacingScript）
- * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
+ * 1. 用 buildPipelineConversation 构造追加式对话（[0..7]：proposal 的完整前缀 + TASK_SCRIPT），
+ *    命中 research/proposal 轮缓存；styleHint 必须与 proposal 轮传同一值（保持前缀一致）。
+ * 2. 要求返回 VideoScript JSON（四子脚本），轻量结构校验 → 不合法则重试（最多 3 次，指数退避）。
  */
 
-// ── 配置（全部来自环境变量）─────────────────────────
+// ── 配置（三文本节点共用 LLM_TEXT_*，前缀一致的前提）──
 
-const SCRIPT_API_KEY = process.env.SCRIPT_API_KEY;
-const SCRIPT_BASE_URL = process.env.SCRIPT_BASE_URL;
-const SCRIPT_LLM_MODEL = process.env.SCRIPT_LLM_MODEL;
+const LLM_TEXT_API_KEY = process.env.LLM_TEXT_API_KEY;
+const LLM_TEXT_BASE_URL = process.env.LLM_TEXT_BASE_URL;
+const LLM_TEXT_MODEL = process.env.LLM_TEXT_MODEL;
 
-const MAX_RETRIES = 3;
 const MAX_TOKENS = 24000;
 
 // ── 类型 ────────────────────────────────────────────
@@ -27,13 +28,6 @@ export interface ScriptResult {
   model: string;
   retries: number;
   tokenUsage?: TokenUsage;
-}
-
-interface ChatResponse {
-  choices: Array<{
-    message: { content: string };
-  }>;
-  usage?: TokenUsage;
 }
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
@@ -159,87 +153,6 @@ export function parseAndValidateScript(raw: string): VideoScript {
   };
 }
 
-// ── LLM API 调用 ────────────────────────────────────
-
-async function callScriptLLM(
-  proposal: Proposal,
-  researchReport: ResearchReport | null,
-  userPrompt: string
-): Promise<{ content: string; usage?: TokenUsage }> {
-  if (!SCRIPT_API_KEY || !SCRIPT_BASE_URL || !SCRIPT_LLM_MODEL) {
-    throw new Error(
-      'Script 环境变量未配置（SCRIPT_API_KEY / SCRIPT_BASE_URL / SCRIPT_LLM_MODEL）'
-    );
-  }
-
-  const contextParts = [
-    `## 用户原始文本\n${userPrompt}`,
-    `## 调研报告\n${JSON.stringify(researchReport, null, 2)}`,
-    `## 视频提案\n${JSON.stringify(proposal, null, 2)}`,
-  ];
-  const userContent = contextParts.join('\n\n');
-
-  const resp = await fetchWithTimeout(`${SCRIPT_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SCRIPT_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: SCRIPT_LLM_MODEL,
-      messages: [
-        { role: 'system', content: SCRIPT_SYSTEM },
-        { role: 'user', content: userContent },
-      ],
-      max_tokens: MAX_TOKENS,
-      temperature: 0.6,
-    }),
-  });
-
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    throw new Error(
-      `Script API 返回 ${resp.status}: ${errText.slice(0, 200)}`
-    );
-  }
-
-  const data = (await resp.json()) as ChatResponse;
-  const content = data.choices?.[0]?.message?.content;
-  if (!content?.trim()) {
-    throw new Error('Script API 返回空内容');
-  }
-
-  return { content, usage: data.usage };
-}
-
-// ── 指数退避重试 ────────────────────────────────────
-
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES
-): Promise<{ result: T; retries: number }> {
-  let lastError: Error | undefined;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await fn();
-      return { result, retries: attempt };
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt === maxRetries) break;
-
-      const delay = Math.pow(2, attempt) * 1000;
-      console.warn(
-        `[script] 第 ${attempt + 1} 次失败: ${lastError.message}，` +
-          `${delay / 1000}s 后重试...`
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-
-  throw lastError ?? new Error('[script] 未知错误');
-}
-
 // ── 公开 API ────────────────────────────────────────
 
 /**
@@ -249,20 +162,34 @@ async function withRetry<T>(
 export async function generateScript(
   proposal: Proposal,
   researchReport: ResearchReport | null,
-  userPrompt: string
+  userPrompt: string,
+  styleHint?: string
 ): Promise<ScriptResult> {
-  if (!SCRIPT_API_KEY || !SCRIPT_BASE_URL || !SCRIPT_LLM_MODEL) {
-    throw new Error('Script 环境变量未配置（SCRIPT_API_KEY / SCRIPT_BASE_URL / SCRIPT_LLM_MODEL）');
+  if (!LLM_TEXT_API_KEY || !LLM_TEXT_BASE_URL || !LLM_TEXT_MODEL) {
+    throw new Error('文本 LLM 环境变量未配置（LLM_TEXT_API_KEY / LLM_TEXT_BASE_URL / LLM_TEXT_MODEL）');
   }
 
-  const { result, retries } = await withRetry(async () => {
-    const { content, usage } = await callScriptLLM(proposal, researchReport, userPrompt);
-    const script = parseAndValidateScript(content);
-    return { ...script, usage };
-  });
+  const messages = buildPipelineConversation({ userPrompt, styleHint, researchReport, proposal });
+
+  const { result, retries } = await withRetry(
+    async () => {
+      const { content, usage } = await callChatCompletion({
+        apiKey: LLM_TEXT_API_KEY,
+        baseUrl: LLM_TEXT_BASE_URL,
+        model: LLM_TEXT_MODEL,
+        messages,
+        maxTokens: MAX_TOKENS,
+        temperature: 0.6,
+        label: 'script',
+      });
+      const script = parseAndValidateScript(content);
+      return { ...script, usage };
+    },
+    { label: 'script' }
+  );
 
   console.log(
-    `[script] ${SCRIPT_LLM_MODEL} 生成完成：` +
+    `[script] ${LLM_TEXT_MODEL} 生成完成：` +
       `${result.storyboardScript.scenes.length} 个镜头脚本` +
       (retries > 0 ? `（重试 ${retries} 次）` : '')
   );
@@ -274,7 +201,7 @@ export async function generateScript(
       audioScript: result.audioScript,
       pacingScript: result.pacingScript,
     },
-    model: SCRIPT_LLM_MODEL,
+    model: LLM_TEXT_MODEL,
     retries,
     tokenUsage: result.usage,
   };

@@ -170,7 +170,8 @@ export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<V
   const result = await generateScript(
     state.proposal,
     state.researchReport ?? null,
-    state.userPrompt
+    state.userPrompt,
+    state.style ?? undefined // styleHint 必须与 proposal 轮同值，保持追加式对话前缀一致
   );
   const videoScript = result.script;
 

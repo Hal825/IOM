@@ -141,18 +141,17 @@ npm test                  # vitest run
 
 ## 5. 模型切换指南
 
-**各节点 LLM（独立配置，互不影响）**
+**文本节点 LLM（research/proposal/script 共用同一模型，前缀一致 → KV Cache 命中）**
 
 | 节点 | env |
 |------|-----|
-| 调研 research | `RESEARCH_API_KEY` / `RESEARCH_BASE_URL` / `RESEARCH_LLM_MODEL` |
-| 提案 proposal | `PROPOSAL_API_KEY` / `PROPOSAL_BASE_URL` / `PROPOSAL_LLM_MODEL` |
-| 脚本 script | `SCRIPT_API_KEY` / `SCRIPT_BASE_URL` / `SCRIPT_LLM_MODEL` |
-| 对话 agent 点评 | `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL`（回退 SCRIPT_*）；`AGENT_COMMENTARY=on` 才开启（默认关，避免误调付费 API） |
+| 调研 research / 提案 proposal / 脚本 script | `LLM_TEXT_API_KEY` / `LLM_TEXT_BASE_URL` / `LLM_TEXT_MODEL`（三节点共用，追加式对话见 `lib/prompts/pipeline.ts`） |
+| 对话 agent 点评 | `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL`（回退 LLM_TEXT_*）；`AGENT_COMMENTARY=on` 才开启（默认关，避免误调付费 API） |
 
-- 换模型 = 改 env 的 `*_MODEL`（和必要时的 `*_BASE_URL`/`*_API_KEY`）。
-- 模型行为差异 → 改对应 prompt（`lib/prompts/`），用 `scripts/eval-*.ts` 评测再落地。
+- 换模型 = 改 `LLM_TEXT_MODEL`（三节点一起换；前缀缓存与模型绑定，换模型后缓存失效一次）。
+- 模型行为差异 → 改对应阶段指令（`lib/prompts/pipeline.ts` 的 `TASK_RESEARCH` / `TASK_PROPOSAL` / `TASK_SCRIPT`），用 `scripts/eval-*.ts` 评测再落地。
 - 费用：`lib/log/procedure.ts` 的 `calculateCost(model, usage)` 按 DeepSeek 定价表计算，换模型后核对价格表。
+- **追加式对话铁律**：`buildPipelineConversation` 只追加不改写前缀；`styleHint` 必须同时传给 proposal 与 script 两轮；`TASK_*` 常量不做逐请求插值（仅保留 `AI_VIDEO_MODEL` 的模块加载期插值，供 engine 字段）。
 
 **素材/视频/TTS（DashScope）**
 - 图片素材：`AI_ASSET_*`；TTS：`AI_TTS_*`（qwen3-tts-flash，SSML）。

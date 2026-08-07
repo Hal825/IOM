@@ -1,23 +1,24 @@
-import { RESEARCH_SYSTEM } from '@/lib/prompts/research';
+import { buildPipelineConversation } from '@/lib/prompts/pipeline';
 import type { ResearchReport } from '@/lib/types';
 import type { TokenUsage } from '@/lib/log/procedure';
-import { fetchWithTimeout, extractJsonObject } from './http';
+import { extractJsonObject } from './http';
+import { callChatCompletion, withRetry } from './llm';
 
 /**
  * Research 工具 — 调用 LLM 进行文本内容分析与结构识别。
  *
  * 策略：
- * 1. 调用 AI API，要求返回 ResearchReport JSON（新版结构：user_text / user_demand / content_readiness_assessment）
- * 2. 轻量结构校验 → 不合法则重试（最多 3 次，指数退避）
+ * 1. 用 buildPipelineConversation 构造追加式对话（[0..2]：system + 用户原文 + TASK_RESEARCH），
+ *    前缀与后续 proposal/script 调用一致 → KV Cache 命中。
+ * 2. 要求返回 ResearchReport JSON，轻量结构校验 → 不合法则重试（最多 3 次，指数退避）。
  */
 
-// ── 配置（全部来自环境变量）─────────────────────────
+// ── 配置（三文本节点共用 LLM_TEXT_*，前缀一致的前提）──
 
-const RESEARCH_API_KEY = process.env.RESEARCH_API_KEY;
-const RESEARCH_BASE_URL = process.env.RESEARCH_BASE_URL;
-const RESEARCH_LLM_MODEL = process.env.RESEARCH_LLM_MODEL;
+const LLM_TEXT_API_KEY = process.env.LLM_TEXT_API_KEY;
+const LLM_TEXT_BASE_URL = process.env.LLM_TEXT_BASE_URL;
+const LLM_TEXT_MODEL = process.env.LLM_TEXT_MODEL;
 
-const MAX_RETRIES = 3;
 const MAX_TOKENS = 8000;
 
 // ── 类型 ────────────────────────────────────────────
@@ -27,13 +28,6 @@ export interface ResearchResult {
   model: string;
   retries: number;
   tokenUsage?: TokenUsage;
-}
-
-interface ChatResponse {
-  choices: Array<{
-    message: { content: string };
-  }>;
-  usage?: TokenUsage;
 }
 
 // ── JSON 解析 + 结构校验 ───────────────────────────
@@ -160,101 +154,38 @@ function parseAndValidateResearch(raw: string): ResearchReport {
   };
 }
 
-// ── LLM API 调用 ────────────────────────────────────
-
-async function callResearchLLM(
-  userPrompt: string,
-  systemPrompt?: string,
-): Promise<{ content: string; usage?: TokenUsage }> {
-  if (!RESEARCH_API_KEY || !RESEARCH_BASE_URL || !RESEARCH_LLM_MODEL) {
-    throw new Error(
-      'Research 环境变量未配置（RESEARCH_API_KEY / RESEARCH_BASE_URL / RESEARCH_LLM_MODEL）'
-    );
-  }
-
-  const resp = await fetchWithTimeout(`${RESEARCH_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${RESEARCH_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: RESEARCH_LLM_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt ?? RESEARCH_SYSTEM },
-        { role: 'user', content: userPrompt },
-      ],
-      max_tokens: MAX_TOKENS,
-      temperature: 0.5,
-    }),
-  });
-
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    throw new Error(
-      `Research API 返回 ${resp.status}: ${errText.slice(0, 200)}`
-    );
-  }
-
-  const data = (await resp.json()) as ChatResponse;
-  const content = data.choices?.[0]?.message?.content;
-  if (!content?.trim()) {
-    throw new Error('Research API 返回空内容');
-  }
-
-  return { content, usage: data.usage };
-}
-
-// ── 指数退避重试 ────────────────────────────────────
-
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES
-): Promise<{ result: T; retries: number }> {
-  let lastError: Error | undefined;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await fn();
-      return { result, retries: attempt };
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt === maxRetries) break;
-
-      const delay = Math.pow(2, attempt) * 1000;
-      console.warn(
-        `[research] 第 ${attempt + 1} 次失败: ${lastError.message}，` +
-          `${delay / 1000}s 后重试...`
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-
-  throw lastError ?? new Error('[research] 未知错误');
-}
-
 // ── 公开 API ────────────────────────────────────────
 
 /**
  * 分析用户文本，返回结构化的 ResearchReport。
  * 零容错：API Key 未配置或调用失败直接抛异常。
  */
-export async function analyzeContent(
-  userPrompt: string,
-  systemPrompt?: string,
-): Promise<ResearchResult> {
-  if (!RESEARCH_API_KEY || !RESEARCH_BASE_URL || !RESEARCH_LLM_MODEL) {
-    throw new Error('Research 环境变量未配置（RESEARCH_API_KEY / RESEARCH_BASE_URL / RESEARCH_LLM_MODEL）');
+export async function analyzeContent(userPrompt: string): Promise<ResearchResult> {
+  if (!LLM_TEXT_API_KEY || !LLM_TEXT_BASE_URL || !LLM_TEXT_MODEL) {
+    throw new Error('文本 LLM 环境变量未配置（LLM_TEXT_API_KEY / LLM_TEXT_BASE_URL / LLM_TEXT_MODEL）');
   }
 
-  const { result, retries } = await withRetry(async () => {
-    const { content, usage } = await callResearchLLM(userPrompt, systemPrompt);
-    const report = parseAndValidateResearch(content);
-    return { ...report, usage };
-  });
+  const messages = buildPipelineConversation({ userPrompt });
+
+  const { result, retries } = await withRetry(
+    async () => {
+      const { content, usage } = await callChatCompletion({
+        apiKey: LLM_TEXT_API_KEY,
+        baseUrl: LLM_TEXT_BASE_URL,
+        model: LLM_TEXT_MODEL,
+        messages,
+        maxTokens: MAX_TOKENS,
+        temperature: 0.5,
+        label: 'research',
+      });
+      const report = parseAndValidateResearch(content);
+      return { ...report, usage };
+    },
+    { label: 'research' }
+  );
 
   console.log(
-    `[research] ${RESEARCH_LLM_MODEL} 分析完成：` +
+    `[research] ${LLM_TEXT_MODEL} 分析完成：` +
       `需求提取: ${result.user_demand.hasExplicitDemand ? '是' : '否'}` +
       ` (${result.user_demand.demands.length} 条), ` +
       `就绪度: ${result.content_readiness_assessment.overallScore}` +
@@ -268,7 +199,7 @@ export async function analyzeContent(
       user_demand: result.user_demand,
       content_readiness_assessment: result.content_readiness_assessment,
     },
-    model: RESEARCH_LLM_MODEL,
+    model: LLM_TEXT_MODEL,
     retries,
     tokenUsage: result.usage,
   };

@@ -25,12 +25,26 @@
   /* 不定进度条（后端进度仅 0/10/100 三档，不展示伪造百分比） */
   --animate-indeterminate: indeterminate 1.4s ease-in-out infinite;
 
+  /* 思考卡对话行切换淡入 */
+  --animate-fade-in: fade-in 0.4s ease-out both;
+
   @keyframes indeterminate {
     0% {
       transform: translateX(-100%);
     }
     100% {
       transform: translateX(400%);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
 }

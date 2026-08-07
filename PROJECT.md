@@ -78,8 +78,9 @@ openmontage/
 │   │   ├── task-sidebar.tsx      # 侧栏：队列概况（含「＋新建任务」）+ 任务列表（琥珀底）
 │   │   ├── task-item.tsx         # 侧栏任务行（含「待回复」徽标）
 │   │   ├── task-detail.tsx       # 旧节点成果卡（已被 ChatTimeline 取代，暂留）
-│   │   ├── chat-timeline.tsx     # 内容区对话时间线（任务头 + 节点卡 + 流水线 + 决策点回复框）
+│   │   ├── chat-timeline.tsx     # 内容区对话时间线（任务头 + 节点卡 + 流水线 + 决策点回复框；busy 无成果时显示思考卡片）
 │   │   ├── bubbles.tsx           # 用户气泡 / 决策点提问气泡 / 系统状态行
+│   │   ├── thinking-card.tsx     # 思考中卡片（转圈 + 轮播趣味对话，busy 且无成果卡时显示）
 │   │   ├── cards/                # 节点结果卡（agent 决定呈现形态）
 │   │   │   ├── registry.tsx      # CardType → 卡片组件映射 + 中文标签
 │   │   │   ├── node-card.tsx     # 卡片外壳（头部 + LLM 点评 + 主体）
@@ -118,7 +119,7 @@ openmontage/
 │   │   └── hub.ts
 │   ├── conversations/            # 对话消息模型 + 每任务 JSON 存储
 │   │   ├── types.ts
-│   │   └── store.ts
+│   │   └── store.ts              # 对话存储（每任务 JSON；并发安全：串行化追加 + 原子写）
 │   ├── agent/
 │   │   ├── graph.ts              # LangGraph 状态图（含 Send 并行分派 + 4 决策点门）
 │   │   ├── state.ts              # 状态通道定义 (Annotation.Root + 自定义 reducer)
@@ -126,6 +127,7 @@ openmontage/
 │   │   ├── events.ts             # 管线事件类型 + eventChannel + nodeToCardType + 发布
 │   │   └── commentary.ts         # 节点结果点评（AGENT_* env 门控，默认关）
 │   ├── tools/
+│   │   ├── llm.ts                # 共享 LLM 客户端（统一 ChatInput(messages) + callChatCompletion + withRetry）
 │   │   ├── research-generator.ts # 调研工具
 │   │   ├── proposal-generator.ts # 提案工具
 │   │   ├── script-generator.ts   # 四子脚本生成 + 结构校验 ★
@@ -137,9 +139,7 @@ openmontage/
 │   ├── store/
 │   │   └── asset-store.ts        # AssetStore：存储 / 库访问 / OSS 发布
 │   ├── prompts/
-│   │   ├── research.ts           # 调研 system prompt
-│   │   ├── proposal.ts           # 提案 system prompt（scene 含 appearCharId）
-│   │   ├── script-generation.ts  # 四子脚本 system prompt ★
+│   │   ├── pipeline.ts           # 三文本节点追加式对话（PIPELINE_SYSTEM + TASK_RESEARCH/PROPOSAL/SCRIPT + buildPipelineConversation）★
 │   │   └── tts.ts                # TTS SSML 构建 + 默认参数
 │   └── log/
 │       ├── procedure.ts          # 阶段审计日志 + 费用计算
@@ -247,8 +247,8 @@ function fanoutAssetsTts(state): Send[] {
 | 属性 | 值 |
 |------|-----|
 | 工具 | `analyzeContent()` |
-| Prompt | `lib/prompts/research.ts` |
-| LLM | `RESEARCH_LLM_MODEL` |
+| Prompt | `lib/prompts/pipeline.ts`（`TASK_RESEARCH`，追加式对话 M0-M2） |
+| LLM | `LLM_TEXT_MODEL`（三文本节点共用） |
 
 **输入**: `userPrompt`
 
@@ -265,8 +265,8 @@ function fanoutAssetsTts(state): Send[] {
 | 属性 | 值 |
 |------|-----|
 | 工具 | `generateProposal()` |
-| Prompt | `lib/prompts/proposal.ts` |
-| LLM | `PROPOSAL_LLM_MODEL` |
+| Prompt | `lib/prompts/pipeline.ts`（`TASK_PROPOSAL`，追加式对话 M0-M5） |
+| LLM | `LLM_TEXT_MODEL`（三文本节点共用） |
 
 **输入**: `researchReport` + `userPrompt` + `style`
 
@@ -288,11 +288,11 @@ styleProfile  → tone / visualStyle / suggestedBGM
 | 属性 | 值 |
 |------|-----|
 | 工具 | `generateScript()` |
-| Prompt | `lib/prompts/script-generation.ts` |
-| LLM | `SCRIPT_LLM_MODEL` |
+| Prompt | `lib/prompts/pipeline.ts`（`TASK_SCRIPT`，追加式对话 M0-M7） |
+| LLM | `LLM_TEXT_MODEL`（三文本节点共用） |
 | 重试 | 最多 3 次，指数退避 |
 
-**输入**: `proposal` + `researchReport` + `userPrompt`
+**输入**: `proposal` + `researchReport` + `userPrompt` + `style`（styleHint 与 proposal 轮同值，保持前缀一致）
 
 **输出** (`VideoScript`)：四子脚本，`scenes[]` 长度一致、sceneId 顺序一致：
 ```
@@ -579,14 +579,11 @@ return {
 
 ## 十、环境变量一览
 
-### LLM（调研/提案/脚本）
+### LLM（research/proposal/script 三节点共用同一模型）
 | 变量 | 说明 |
 |------|------|
-| `RESEARCH_API_KEY` / `RESEARCH_BASE_URL` / `RESEARCH_LLM_MODEL` | 调研 LLM |
-| `PROPOSAL_API_KEY` / `PROPOSAL_BASE_URL` / `PROPOSAL_LLM_MODEL` | 提案 LLM |
-| `PROPOSAL_DEFAULT_DURATION_PER_SCENE` / `PROPOSAL_MAX_SCENES` | 提案默认参数 |
-| `SCRIPT_API_KEY` / `SCRIPT_BASE_URL` / `SCRIPT_LLM_MODEL` | 脚本 LLM ★ |
-| `AGENT_COMMENTARY` / `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL` | 对话 agent 点评 LLM（`AGENT_COMMENTARY=on` 开启，回退 SCRIPT_*） |
+| `LLM_TEXT_API_KEY` / `LLM_TEXT_BASE_URL` / `LLM_TEXT_MODEL` | 三文本节点共用 LLM（追加式对话前缀一致 → KV Cache 命中）★ |
+| `AGENT_COMMENTARY` / `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL` | 对话 agent 点评 LLM（`AGENT_COMMENTARY=on` 开启，回退 LLM_TEXT_*） |
 
 ### AI 服务（DashScope）
 | 变量 | 说明 |

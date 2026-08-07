@@ -9,6 +9,7 @@ import { Pipeline } from './pipeline';
 import { StatusBadge } from './status-badge';
 import { NodeCard } from './cards/node-card';
 import { UserBubble, QuestionBubble, SystemLine } from './bubbles';
+import { ThinkingCard } from './thinking-card';
 
 interface ChatTimelineProps {
   task: TaskSummary | null;
@@ -98,6 +99,9 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
   const completedNodes = messages
     .filter((m) => m.kind === 'card')
     .map((m) => m.nodeName);
+  // 思考中：任务在跑但还没有任何成果卡 → 显示转圈 + 趣味对话（首卡到达自动切回时间线）
+  const hasCards = messages.some((m) => m.kind === 'card');
+  const thinking = busy && !hasCards;
 
   const runAction = async (fn: () => Promise<void>) => {
     try {
@@ -194,7 +198,7 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
       {/* ② 对话消息列表（用户描述 → 节点卡 → 提问 → 回复 → …） */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
         <UserBubble text={task.text} original />
-        {messages.map((m) => (
+        {thinking ? <ThinkingCard /> : messages.map((m) => (
           <MessageItem key={m.id} message={m} />
         ))}
         <div ref={endRef} />
@@ -244,7 +248,7 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
             </p>
           ) : null}
         </form>
-      ) : (
+      ) : thinking ? null : (
         <p className="rounded-xl border border-dashed border-border bg-panel/50 px-4 py-2.5 text-center text-xs text-muted">
           {task.status === 'completed'
             ? '视频已完成 · 可在左侧新建任务'

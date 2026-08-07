@@ -33,6 +33,14 @@ export interface TaskSummary {
   awaitingReply?: boolean;
 }
 
+// ── Chat 消息（LLM 追加式对话）────────────────────────
+
+/** OpenAI 兼容的单条消息。用于 research/proposal/script 三节点共享的追加式对话（前缀一致 → KV Cache 命中）。 */
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
 // ── Research ─────────────────────────────────────────
 
 /**
