@@ -146,7 +146,7 @@ npm test                  # vitest run
 | 节点 | env |
 |------|-----|
 | 调研 research / 提案 proposal / 脚本 script | `LLM_TEXT_API_KEY` / `LLM_TEXT_BASE_URL` / `LLM_TEXT_MODEL`（三节点共用，追加式对话见 `lib/prompts/pipeline.ts`） |
-| 对话 agent 点评 | `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL`（回退 LLM_TEXT_*）；`AGENT_COMMENTARY=on` 才开启（默认关，避免误调付费 API） |
+| 前端 agent 呈现 | `FRONTEND_AGENT=on` 开启（默认开，每次节点结果调一次 LLM）；模型 `AGENT_API_KEY` / `AGENT_BASE_URL` / `AGENT_LLM_MODEL`（回退 LLM_TEXT_*）；关闭/失败时 `fallbackSummary` 模板兜底（不调 API） |
 
 - 换模型 = 改 `LLM_TEXT_MODEL`（三节点一起换；前缀缓存与模型绑定，换模型后缓存失效一次）。
 - 模型行为差异 → 改对应阶段指令（`lib/prompts/pipeline.ts` 的 `TASK_RESEARCH` / `TASK_PROPOSAL` / `TASK_SCRIPT`），用 `scripts/eval-*.ts` 评测再落地。
@@ -195,14 +195,16 @@ npm test                  # vitest run
 
 ## 8. 对话 agent 层（方案 B）速查
 
-**架构**：Worker 是纯执行者（`videoGraph.stream("updates")` 逐节点发布原始事件到 Redis `om:events:<jobId>`）；`lib/coordinator.ts`（API 进程）订阅 → 节点结果转对话卡片（确定性卡片 + 可选点评）→ 决策点提问 → 用户回复放行。4 个暂停门升级为决策点。
+**架构**：Worker 是纯执行者（`videoGraph.stream("updates")` 逐节点发布原始事件到 Redis `om:events:<jobId>`）；`lib/coordinator.ts`（API 进程）订阅 → 节点**完整输出**交给前端 agent（`frontend-agent.ts`）组织成自然语言并**流式**转发（SSE `agent_delta`/`agent`）→ 决策点提问 → 用户回复放行。4 个暂停门升级为决策点。
 
-**关键文件**：`lib/agent/events.ts`（事件类型 + `nodeToCardType` + `GATE_QUESTIONS`）、`lib/agent/commentary.ts`（点评 Provider）、`lib/coordinator.ts`、`lib/conversations/`（消息模型 + JSON 存储）、`lib/sse/hub.ts`、`lib/events/bus.ts`、`lib/log/feedback.ts`、`lib/pause.ts`（`beginDecision`）。
+**关键文件**：`lib/agent/events.ts`（事件类型 + `nodeToCardType` + `GATE_QUESTIONS`）、`lib/agent/frontend-agent.ts`（前端 agent：完整输出→自然语言流式，`streamChatCompletion` 在 `lib/tools/llm.ts`）、`lib/coordinator.ts`、`lib/conversations/`（消息模型 `card/agent/gate/text/status` + JSON 存储）、`lib/sse/hub.ts`、`lib/events/bus.ts`、`lib/log/feedback.ts`、`lib/pause.ts`（`beginDecision`）。
 
 **消息模型**（`lib/conversations/types.ts`）：`ConversationMessage` = `NodeCardMessage | GateQuestionMessage | UserMessage | SystemMessage`；每任务存 `storage/conversations/{jobId}/conversation.json`。
 
-**SSE 事件协议**（`/api/tasks/[id]/stream`）：`hello`（重放）/ `card` / `gate` / `user` / `proceed` / `status`；心跳 25s；headers 需 `Cache-Control: no-cache` + `X-Accel-Buffering: no` + `dynamic='force-dynamic'`。
+**SSE 事件协议**（`/api/tasks/[id]/stream`）：`hello`（重放）/ `card`（旧）/ `agent_delta`（前端 agent 流式增量）/ `agent`（前端 agent 消息完成）/ `gate` / `user` / `proceed` / `status` / `rerun`（重跑标记）；心跳 25s；headers 需 `Cache-Control: no-cache` + `X-Accel-Buffering: no` + `dynamic='force-dynamic'`。
 
 **human-in-loop 流程**：图内门 → `beginDecision` 幂等置暂停标志 + 发 `gate` 事件 → 阻塞；协调器置 `om:awaiting:<jobId>` + 追加提问 → 前端 `等待回复` 徽标 + 回复框；`POST reply` → 追加用户消息 + 反馈落盘（`storage/feedback/{jobId}.json`）+ 清标志 → 放行。
 
-**测试纪律**：验证 = `npx tsc --noEmit` + `npx vitest run`（禁调付费 API）。协调器用内存 EventBus / 临时目录 store / 假 Provider 测；`AGENT_COMMENTARY` 默认关。相关 [[no-paid-api-during-verify]]。
+**重跑节点**（`POST /api/tasks/[id]/rerun { nodeName }`，`lib/agent/rerun.ts`）：X 及之后全部重新生成、上游保留。机制 = `job.updateData(rerunFrom + resumeState)` + `job.retry(state)` **原地**重入队 —— 保留同一 jobId（绕开 BullMQ「Custom Id cannot be integers」限制），`resumeState` 从对话卡 payload 重建；Worker 以该初始状态跑同一张全图，8 节点顶部按「输出通道已有值」跳过，门按位置 `shouldFireGate` 决定是否提问（上游门跳过）。暂停在门上的任务：`markJobDeleted` 触发旧跑中止 → 轮询至 failed → updateData+retry → 清 `om:paused`/`om:awaiting`/决策点幂等键。对话线程保留旧卡 + 追加新结果（`rerun` SSE 事件插标记行）。
+
+**测试纪律**：验证 = `npx tsc --noEmit` + `npx vitest run`（禁调付费 API）。协调器用内存 EventBus / 临时目录 store / 假前端 agent Provider 测；`FRONTEND_AGENT` 默认关（测试注入假 provider，不调 LLM）。相关 [[no-paid-api-during-verify]]。

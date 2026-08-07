@@ -11,8 +11,8 @@
  */
 import type { ConversationStore } from './conversations/store';
 import { createConversationStore } from './conversations/store';
-import type { CommentaryProvider } from './agent/commentary';
-import { createCommentaryProvider } from './agent/commentary';
+import type { FrontendAgentProvider } from './agent/frontend-agent';
+import { createFrontendAgentProvider } from './agent/frontend-agent';
 import type { EventBus } from './events/bus';
 import { createRedisEventBus } from './events/bus';
 import { getSseHub, type SseHub } from './sse/hub';
@@ -29,9 +29,11 @@ import {
   type ErrorEvent,
   type StatusEvent,
 } from './agent/events';
+import { NODE_LABELS } from './agent/rerun';
 import type {
   ConversationFile,
   NodeCardMessage,
+  AgentMessage,
   GateQuestionMessage,
   UserMessage,
   SystemMessage,
@@ -39,7 +41,8 @@ import type {
 
 export interface CoordinatorDeps {
   bus: EventBus;
-  provider: CommentaryProvider;
+  /** 前端 agent：把节点完整输出组织成自然语言（流式） */
+  frontendAgent: FrontendAgentProvider;
   store: ConversationStore;
   hub: SseHub;
   /** 测试注入内存标志；缺省走 Redis（pause.ts） */
@@ -57,6 +60,11 @@ export interface Coordinator {
   unsubscribe(jobId: string): Promise<void>;
   handleEvent(jobId: string, event: PipelineEvent): Promise<void>;
   submitReply(jobId: string, text: string): Promise<ConversationFile>;
+  /**
+   * 重跑节点：追加「已从 X 重跑」标记 + 广播 rerun 事件。
+   * 队列层面的删旧/重入队与 resumeState 计算由 route 负责。
+   */
+  rerunTask(jobId: string, nodeName: string): Promise<void>;
 }
 
 export function createCoordinator(deps: CoordinatorDeps): Coordinator {
@@ -73,26 +81,28 @@ export function createCoordinator(deps: CoordinatorDeps): Coordinator {
     if (!cardType || !output || typeof output !== 'object' || Object.keys(output).length === 0) {
       return; // 无卡片映射或空 output（如暂停门）→ 不渲染
     }
-    let comment = '';
-    try {
-      comment = await deps.provider.comment({ cardType, nodeName: event.nodeName, output });
-    } catch {
-      /* 点评软失败：卡片照常渲染 */
-    }
-    const msg: NodeCardMessage = {
+    // 前端 agent：把完整输出组织成自然语言，逐 token 转发为 agent_delta，完成后持久化 agent 消息
+    const { text } = await deps.frontendAgent.stream(
+      { nodeName: event.nodeName, cardType, output },
+      (delta) => {
+        deps.hub.broadcast(event.jobId, {
+          event: 'agent_delta',
+          data: { nodeName: event.nodeName, delta },
+        });
+      }
+    );
+    const msg: AgentMessage = {
       id: newId(),
       jobId: event.jobId,
       role: 'assistant',
-      kind: 'card',
-      cardType,
+      kind: 'agent',
       nodeName: event.nodeName,
+      text,
       payload: output,
-      status: 'done',
       createdAt: new Date().toISOString(),
-      ...(comment ? { comment } : {}),
     };
     await deps.store.append(event.jobId, msg);
-    deps.hub.broadcast(event.jobId, { event: 'card', data: { message: msg } });
+    deps.hub.broadcast(event.jobId, { event: 'agent', data: { message: msg } });
   };
 
   const handleGateEvent = async (event: GateEvent): Promise<void> => {
@@ -202,7 +212,8 @@ export function createCoordinator(deps: CoordinatorDeps): Coordinator {
         gateId = m.gateId;
         for (let j = i - 1; j >= 0; j--) {
           const card = conv.messages[j];
-          if (card.kind === 'card') {
+          // 旧 card 与新 agent 消息都携带 nodeName + payload（反馈上下文）
+          if (card.kind === 'card' || card.kind === 'agent') {
             nodeName = card.nodeName;
             cardPayload = card.payload;
             break;
@@ -245,7 +256,21 @@ export function createCoordinator(deps: CoordinatorDeps): Coordinator {
     return updated;
   };
 
-  return { subscribe, unsubscribe, handleEvent, submitReply };
+  const rerunTask = async (jobId: string, nodeName: string): Promise<void> => {
+    const label = NODE_LABELS[nodeName] ?? nodeName;
+    const msg: SystemMessage = {
+      id: newId(),
+      jobId,
+      role: 'system',
+      kind: 'status',
+      text: `已从「${label}」重跑，正在重新生成…`,
+      createdAt: new Date().toISOString(),
+    };
+    await deps.store.append(jobId, msg);
+    deps.hub.broadcast(jobId, { event: 'rerun', data: { nodeName, label } });
+  };
+
+  return { subscribe, unsubscribe, handleEvent, submitReply, rerunTask };
 }
 
 /** API 进程内 coordinator 单例（Next.js dev 热重载用 globalThis 缓存） */
@@ -254,7 +279,7 @@ export function getCoordinator(): Coordinator {
   if (!globalForCoordinator.__omCoordinator) {
     globalForCoordinator.__omCoordinator = createCoordinator({
       bus: createRedisEventBus(),
-      provider: createCommentaryProvider(),
+      frontendAgent: createFrontendAgentProvider(),
       store: createConversationStore(),
       hub: getSseHub(),
     });

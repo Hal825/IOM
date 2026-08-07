@@ -7,7 +7,8 @@ import { MemoryEventBus } from './events/bus';
 import { createConversationStore } from './conversations/store';
 import { SseHub } from './sse/hub';
 import type { NodeEvent, GateEvent, StatusEvent } from './agent/events';
-import type { CommentaryProvider } from './agent/commentary';
+import type { FrontendAgentProvider } from './agent/frontend-agent';
+import type { NodeCardMessage } from './conversations/types';
 
 /** 内存标志（替代 Redis） */
 function memoryFlags() {
@@ -34,10 +35,16 @@ describe('coordinator', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'om-coord-'));
     flags = memoryFlags();
     hub = new SseHub();
-    const provider: CommentaryProvider = { comment: async () => '点评：看起来不错' };
+    // 假前端 agent：逐段流式输出 + 返回全文
+    const frontendAgent: FrontendAgentProvider = {
+      stream: async (_input, onDelta) => {
+        onDelta('调研完成，提取需求 2 条。');
+        return { text: '调研完成，提取需求 2 条。' };
+      },
+    };
     deps = {
       bus: new MemoryEventBus(),
-      provider,
+      frontendAgent,
       store: createConversationStore(tmpDir),
       hub,
       flags: { isAwaiting: flags.isAwaiting, setAwaiting: flags.setAwaiting, setPaused: flags.setPaused },
@@ -49,7 +56,7 @@ describe('coordinator', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('node 事件 → 追加卡片消息 + 广播 card', async () => {
+  it('node 事件 → 前端 agent 流式 NL → 追加 agent 消息 + 广播 agent_delta/agent', async () => {
     const coord = createCoordinator(deps);
     const broadcast = vi.fn();
     hub.broadcast = broadcast;
@@ -66,15 +73,20 @@ describe('coordinator', () => {
     const conv = await deps.store.read('42');
     expect(conv?.messages).toHaveLength(1);
     const m = conv!.messages[0];
-    expect(m.kind).toBe('card');
-    if (m.kind === 'card') {
-      expect(m.cardType).toBe('research');
+    expect(m.kind).toBe('agent');
+    if (m.kind === 'agent') {
       expect(m.nodeName).toBe('research');
-      expect(m.comment).toBe('点评：看起来不错');
+      expect(m.text).toBe('调研完成，提取需求 2 条。');
+      expect(m.payload).toEqual({ researchReport: { ok: true } });
     }
+    // 流式增量逐段广播 + 最终 agent 事件
     expect(broadcast).toHaveBeenCalledWith(
       '42',
-      expect.objectContaining({ event: 'card' })
+      expect.objectContaining({ event: 'agent_delta' })
+    );
+    expect(broadcast).toHaveBeenCalledWith(
+      '42',
+      expect.objectContaining({ event: 'agent' })
     );
   });
 
@@ -208,5 +220,34 @@ describe('coordinator', () => {
     const conv = await deps.store.read('42');
     const texts = conv!.messages.filter((m) => m.kind === 'text');
     expect(texts).toHaveLength(1);
+  });
+
+  it('rerunTask 追加重跑标记 + 广播 rerun 事件', async () => {
+    const coord = createCoordinator(deps);
+    const broadcast = vi.fn();
+    hub.broadcast = broadcast;
+
+    await deps.store.append('42', {
+      id: 'c1',
+      jobId: '42',
+      role: 'assistant',
+      kind: 'card',
+      cardType: 'research',
+      nodeName: 'research',
+      payload: { researchReport: { ok: true } },
+      status: 'done',
+      createdAt: new Date().toISOString(),
+    } as NodeCardMessage);
+
+    await coord.rerunTask('42', 'generate_proposal');
+
+    const conv = await deps.store.read('42');
+    const last = conv!.messages[conv!.messages.length - 1];
+    expect(last.kind).toBe('status');
+    if (last.kind === 'status') expect(last.text).toContain('重跑');
+    expect(broadcast).toHaveBeenCalledWith('42', {
+      event: 'rerun',
+      data: { nodeName: 'generate_proposal', label: '提案' },
+    });
   });
 });

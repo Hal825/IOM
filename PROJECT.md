@@ -50,7 +50,7 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 
 **关键架构决策**：
 - LangGraph 管线在 **Worker 进程**中运行（非 API 请求内）。Worker 是**纯执行者**：用 `stream("updates")` 逐节点拿增量状态并发布原始事件（即发即弃），不负责呈现与协商。
-- **对话 agent 层（方案 B）**悬浮在图之上：API 进程的 `lib/coordinator.ts` 订阅 Redis 事件，把节点结果转成对话消息（确定性卡片 + 可选 LLM 点评），决策点提问、等用户回复、记录反馈。
+- **对话 agent 层（方案 B）**悬浮在图之上：API 进程的 `lib/coordinator.ts` 订阅 Redis 事件，把节点**完整输出**交给前端 agent（`lib/agent/frontend-agent.ts`）组织成自然语言并**流式**转发（SSE `agent_delta`/`agent`），决策点提问、等用户回复、记录反馈。
 - 前端：侧栏靠 3s 轮询 `GET /api/tasks` 兜底；**内容区对话时间线靠 SSE 流式推送**。
 
 ### 核心流程
@@ -101,6 +101,7 @@ openmontage/
 │           ├── download/route.ts # GET 流式下载 MP4
 │           ├── stream/route.ts   # GET SSE 流式（节点卡/决策点/状态）
 │           ├── reply/route.ts    # POST 回复决策点（追加消息+反馈落盘+放行）
+│           ├── rerun/route.ts    # POST 重跑节点（updateData+retry 原地重入队，携带 rerunFrom+resumeState）
 │           └── conversation/route.ts # GET 对话历史（初始加载）
 ├── workers/
 │   └── video-worker.ts           # BullMQ Worker（执行 LangGraph）
@@ -110,7 +111,7 @@ openmontage/
 │   ├── tasks.ts                  # jobToSummary（含 awaitingReply）+ STORAGE_DIR + deleteTaskFiles + removeJobWithRetry（删除锁重试）
 │   ├── pause.ts                  # 暂停/删除/待回复 Redis 标志 + pausePoint + beginDecision（决策点）
 │   ├── orchestrator.ts           # executeTask()：stream("updates") 逐节点发布事件；drainGraphUpdates 纯函数
-│   ├── coordinator.ts            # agent 协调器（订阅事件→卡片/提问/状态→对话+SSE；reply 流程）
+│   ├── coordinator.ts            # agent 协调器（订阅事件→前端 agent 流式 NL/提问/状态/重跑→对话+SSE；reply/rerun 流程）
 │   ├── id.ts                     # newId()（randomUUID）
 │   ├── api.ts                    # 前端 API 客户端（listTasks/createTask/openTaskStream/replyToTask/…）
 │   ├── events/                   # 事件总线（ioredis pub/sub + 内存实现）
@@ -125,9 +126,10 @@ openmontage/
 │   │   ├── state.ts              # 状态通道定义 (Annotation.Root + 自定义 reducer)
 │   │   ├── nodes.ts              # 节点实现（8 接线 + createPauseGateNode）
 │   │   ├── events.ts             # 管线事件类型 + eventChannel + nodeToCardType + 发布
-│   │   └── commentary.ts         # 节点结果点评（AGENT_* env 门控，默认关）
+│   │   ├── rerun.ts              # 重跑节点（位置表 + shouldFireGate + buildResumeState 纯函数）
+│   │   └── frontend-agent.ts     # 前端 agent（完整输出→自然语言流式；FRONTEND_AGENT 门控 + 模板兜底）
 │   ├── tools/
-│   │   ├── llm.ts                # 共享 LLM 客户端（统一 ChatInput(messages) + callChatCompletion + withRetry）
+│   │   ├── llm.ts                # 共享 LLM 客户端（ChatInput(messages) + callChatCompletion + streamChatCompletion + withRetry）
 │   │   ├── research-generator.ts # 调研工具
 │   │   ├── proposal-generator.ts # 提案工具
 │   │   ├── script-generator.ts   # 四子脚本生成 + 结构校验 ★
@@ -528,6 +530,9 @@ SceneVideoSpec[]（每镜头完整视频生成规格，素材公网 URL + 音频
 //   user   → { message: UserMessage }
 //   proceed→ { gateId, resumedAt }
 //   status → { status: completed|failed, failedReason?, result? }
+//   rerun  → { nodeName, label? }  // 已请求重跑节点（协调器追加「重跑」标记后广播）
+//   agent_delta → { nodeName, delta }  // 前端 agent 流式增量（打字机效果）
+//   agent  → { message: AgentMessage } // 前端 agent 消息完成（全文，前端用全文替换流式部分）
 // 心跳 : ping 每 25s；EventSource 自动重连
 ```
 

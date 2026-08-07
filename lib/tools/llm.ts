@@ -87,6 +87,104 @@ export async function callChatCompletion(input: ChatInput): Promise<ChatResult> 
   return { content, usage: data.usage };
 }
 
+// ── 流式调用（前端 agent 用）──────────────────────────
+
+/** 流式调用输入（与 ChatInput 同构；timeoutMs 缺省给 300s，长输出） */
+export type StreamChatInput = ChatInput;
+
+/** 解析 text/event-stream 的一行 `data: ...` → JSON；非 data 行 / `[DONE]` → null。 */
+export function parseSSELine(line: string): Record<string, unknown> | null {
+  if (!line.startsWith('data:')) return null;
+  const payload = line.slice(5).trim();
+  if (!payload || payload === '[DONE]') return null;
+  try {
+    return JSON.parse(payload) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/** 从 text/event-stream 文本块提取所有 content delta（供测试直接喂模拟串）。 */
+export function parseSSEDeltas(chunk: string): string[] {
+  const deltas: string[] = [];
+  for (const event of chunk.split('\n\n')) {
+    for (const line of event.split('\n')) {
+      const json = parseSSELine(line);
+      if (!json) continue;
+      const delta = (json as { choices?: Array<{ delta?: { content?: string } }> })
+        .choices?.[0]?.delta?.content;
+      if (typeof delta === 'string' && delta.length > 0) deltas.push(delta);
+    }
+  }
+  return deltas;
+}
+
+/**
+ * 流式调用 OpenAI 兼容 chat/completions（`stream: true`），逐 token 调 onDelta，返回拼接全文。
+ * 读取 resp.body（getReader）→ 按 `\n\n` 事件块切分 → 解析 `data:` 行 → 取 choices[0].delta.content。
+ * 零容错：非 2xx / 空输出抛错（带 label 前缀）。
+ */
+export async function streamChatCompletion(
+  input: StreamChatInput,
+  onDelta: (delta: string) => void
+): Promise<string> {
+  const label = input.label ?? 'llm';
+
+  const resp = await fetchWithTimeout(
+    `${input.baseUrl}/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${input.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: input.model,
+        messages: input.messages,
+        max_tokens: input.maxTokens,
+        temperature: input.temperature,
+        stream: true,
+      }),
+    },
+    input.timeoutMs ?? 300_000 // 流式默认 300s（长输出）
+  );
+
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`[${label}] API 返回 ${resp.status}: ${errText.slice(0, 200)}`);
+  }
+  if (!resp.body) throw new Error(`[${label}] API 无流式 body`);
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let full = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
+      for (const part of parts) {
+        for (const delta of parseSSEDeltas(part)) {
+          full += delta;
+          onDelta(delta);
+        }
+      }
+    }
+    for (const delta of parseSSEDeltas(buffer)) {
+      full += delta;
+      onDelta(delta);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (!full.trim()) throw new Error(`[${label}] API 流式返回空内容`);
+  return full;
+}
+
 // ── 指数退避重试 ────────────────────────────────────
 
 export interface RetryOptions {

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { TaskSummary } from '@/lib/types';
-import type { ConversationMessage } from '@/lib/conversations/types';
-import { openTaskStream, replyToTask } from '@/lib/api';
+import type { ConversationMessage, AgentMessage, SystemMessage } from '@/lib/conversations/types';
+import { openTaskStream, replyToTask, rerunTask } from '@/lib/api';
 import { formatRelativeTime } from './format';
 import { Pipeline } from './pipeline';
 import { StatusBadge } from './status-badge';
 import { NodeCard } from './cards/node-card';
-import { UserBubble, QuestionBubble, SystemLine } from './bubbles';
+import { UserBubble, QuestionBubble, SystemLine, AgentBubble } from './bubbles';
 import { ThinkingCard } from './thinking-card';
 
 interface ChatTimelineProps {
@@ -17,10 +17,20 @@ interface ChatTimelineProps {
   onDelete?: (id: string) => Promise<void>;
 }
 
-function MessageItem({ message }: { message: ConversationMessage }) {
+function MessageItem({
+  message,
+  onRerun,
+}: {
+  message: ConversationMessage;
+  onRerun?: (nodeName: string) => void;
+}) {
   switch (message.kind) {
     case 'card':
-      return <NodeCard message={message} />;
+      return <NodeCard message={message} onRerun={onRerun} />;
+    case 'agent':
+      return (
+        <AgentBubble text={message.text} nodeName={message.nodeName} onRerun={onRerun} />
+      );
     case 'gate':
       return <QuestionBubble message={message} />;
     case 'text':
@@ -47,6 +57,8 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
   const [replyError, setReplyError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // 前端 agent 流式：正在生成的文本（打字机效果），agent 完成事件后用全文替换
+  const [streaming, setStreaming] = useState<{ nodeName: string; text: string } | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const taskId = task?.id ?? null;
@@ -74,6 +86,31 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
       onStatus(d) {
         if (d.status === 'failed') setAwaiting(false);
       },
+      onRerun(d) {
+        const label = d.label ?? d.nodeName;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `rerun-${Date.now()}`,
+            jobId: taskId,
+            role: 'system',
+            kind: 'status',
+            text: `已从「${label}」重跑，正在重新生成…`,
+            createdAt: new Date().toISOString(),
+          } satisfies SystemMessage,
+        ]);
+      },
+      onAgentDelta(d) {
+        setStreaming((s) =>
+          s?.nodeName === d.nodeName
+            ? { ...s, text: s.text + d.delta }
+            : { nodeName: d.nodeName, text: d.delta }
+        );
+      },
+      onAgent(m: AgentMessage) {
+        setMessages((prev) => [...prev, m]);
+        setStreaming((s) => (s?.nodeName === m.nodeName ? null : s));
+      },
     });
     return close;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,12 +133,15 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
   }
 
   const busy = task.status === 'waiting' || task.status === 'active';
+  // 节点事件来源：旧 card 与新 agent 消息都算（流水线着色 / 思考中判断）
   const completedNodes = messages
-    .filter((m) => m.kind === 'card')
+    .filter((m) => m.kind === 'card' || m.kind === 'agent')
     .map((m) => m.nodeName);
-  // 思考中：任务在跑但还没有任何成果卡 → 显示转圈 + 趣味对话（首卡到达自动切回时间线）
-  const hasCards = messages.some((m) => m.kind === 'card');
-  const thinking = busy && !hasCards;
+  // 思考中：任务在跑且还没有任何节点消息、也还没开始流式 → 显示转圈 + 趣味对话
+  const hasCards = messages.some((m) => m.kind === 'card' || m.kind === 'agent');
+  const thinking = busy && !hasCards && !streaming;
+  // 重跑：任务非运行中时卡片显示「重跑」按钮
+  const canRerun = !busy;
 
   const runAction = async (fn: () => Promise<void>) => {
     try {
@@ -110,6 +150,11 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '操作失败');
     }
+  };
+
+  /** 重跑节点：nodeName → 该节点及之后重新生成（上游保留） */
+  const handleRerun = (nodeName: string) => {
+    void runAction(() => rerunTask(task.id, nodeName));
   };
 
   const handleDelete = () => {
@@ -199,8 +244,11 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
         <UserBubble text={task.text} original />
         {thinking ? <ThinkingCard /> : messages.map((m) => (
-          <MessageItem key={m.id} message={m} />
+          <MessageItem key={m.id} message={m} onRerun={canRerun ? handleRerun : undefined} />
         ))}
+        {streaming ? (
+          <AgentBubble text={streaming.text} nodeName={streaming.nodeName} streaming />
+        ) : null}
         <div ref={endRef} />
       </div>
 

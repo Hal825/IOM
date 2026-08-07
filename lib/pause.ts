@@ -72,6 +72,19 @@ export async function markJobDeleted(jobId: string): Promise<void> {
   await redis.set(deletedKey(jobId), '1', 'EX', 3600);
 }
 
+/** 清除删除标志（重跑重新入队前调用，避免新跑被误判删除） */
+export async function clearJobDeleted(jobId: string): Promise<void> {
+  const redis = getRedisConnection();
+  await redis.del(deletedKey(jobId));
+}
+
+/** 清除该任务全部决策点幂等键（重跑时让 X 及之后的门能重新提问） */
+export async function clearJobDecisions(jobId: string): Promise<void> {
+  const redis = getRedisConnection();
+  const gates = ['pause_gate_1', 'pause_gate_2', 'pause_gate_3', 'pause_gate_4'];
+  await redis.del(...gates.map((g) => decisionKey(jobId, g)));
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**

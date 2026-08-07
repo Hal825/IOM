@@ -6,6 +6,7 @@ import type { TaskSummary } from '@/lib/types';
 import type {
   ConversationFile,
   NodeCardMessage,
+  AgentMessage,
   GateQuestionMessage,
   UserMessage,
 } from '@/lib/conversations/types';
@@ -61,6 +62,16 @@ export async function setTaskPaused(id: string, paused: boolean): Promise<void> 
   if (!res.ok) throw await toError(res, paused ? '暂停失败' : '恢复失败');
 }
 
+/** 重跑节点：nodeName → 该节点及之后重新生成（上游保留）。 */
+export async function rerunTask(id: string, nodeName: string): Promise<void> {
+  const res = await fetch(`/api/tasks/${id}/rerun`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nodeName }),
+  });
+  if (!res.ok) throw await toError(res, '重跑失败');
+}
+
 // ── 对话 / 流式（human-in-loop）────────────────────────
 
 export interface TaskStreamHandlers {
@@ -71,6 +82,12 @@ export interface TaskStreamHandlers {
   onUser?(message: UserMessage): void;
   onProceed?(data: { gateId: string; resumedAt: string }): void;
   onStatus?(data: { status: string; failedReason?: string }): void;
+  /** 已请求重跑节点（协调器追加标记时广播） */
+  onRerun?(data: { nodeName: string; label?: string }): void;
+  /** 前端 agent 流式增量：逐 token 追加到当前流式气泡 */
+  onAgentDelta?(data: { nodeName: string; delta: string }): void;
+  /** 前端 agent 消息完成（用全文替换流式部分） */
+  onAgent?(message: AgentMessage): void;
 }
 
 /**
@@ -99,6 +116,11 @@ export function openTaskStream(id: string, handlers: TaskStreamHandlers): () => 
       d as { status: string; failedReason?: string }
     )
   );
+  on('rerun', (d) => handlers.onRerun?.(d as { nodeName: string; label?: string }));
+  on('agent_delta', (d) =>
+    handlers.onAgentDelta?.(d as { nodeName: string; delta: string })
+  );
+  on('agent', (d) => handlers.onAgent?.((d as { message: AgentMessage }).message));
   return () => es.close();
 }
 

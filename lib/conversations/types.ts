@@ -65,8 +65,21 @@ export interface SystemMessage extends BaseMsg {
   text: string;
 }
 
+/** 前端 agent 消息（assistant）：把节点完整输出组织成自然语言，流式输出给用户 */
+export interface AgentMessage extends BaseMsg {
+  role: 'assistant';
+  kind: 'agent';
+  /** LangGraph 节点名（research / generate_proposal / …） */
+  nodeName: string;
+  /** 前端 agent 生成的自然语言（可含少量 Markdown） */
+  text: string;
+  /** 节点完整输出（重跑恢复状态 / 可选详情用） */
+  payload: Record<string, unknown>;
+}
+
 export type ConversationMessage =
   | NodeCardMessage
+  | AgentMessage
   | GateQuestionMessage
   | UserMessage
   | SystemMessage;

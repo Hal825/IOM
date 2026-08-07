@@ -66,10 +66,14 @@ export async function executeTask(
   let durationSec = 0;
 
   try {
-    const stream = await videoGraph.stream(
-      { userPrompt: text, jobId },
-      { streamMode: 'updates' }
-    );
+    // 重跑：以「上游产出 + rerunFrom」为初始状态跑同一张全图（上游节点因产出已存在而跳过）
+    const initial: Record<string, unknown> = {
+      userPrompt: text,
+      jobId,
+      ...(job.data.resumeState ?? {}),
+      ...(job.data.rerunFrom ? { rerunFrom: job.data.rerunFrom } : {}),
+    };
+    const stream = await videoGraph.stream(initial, { streamMode: 'updates' });
     const drained = await drainGraphUpdates(stream, async (nodeName, output) => {
       await publishPipelineEvent(jobId, { type: 'node', nodeName, output });
     });

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { type VideoGenStateType, type VideoGenStateUpdate, type SceneAudioSegment, type SceneVideoResult } from './state';
 import type { SceneVideoSpec } from '@/lib/types';
+import { shouldFireGate } from './rerun';
 import { analyzeContent } from '@/lib/tools/research-generator';
 import { generateProposal } from '@/lib/tools/proposal-generator';
 import { generateScript } from '@/lib/tools/script-generator';
@@ -96,6 +97,7 @@ const SCRIPTS_DIR = path.resolve(process.cwd(), 'storage', 'scripts');
 // ============================================================
 
 export async function researchNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.researchReport) return {}; // 重跑：上游产出已存在 → 跳过
   const startedAt = new Date().toISOString();
   const t0 = Date.now();
 
@@ -139,6 +141,7 @@ export async function researchNode(state: VideoGenStateType): Promise<Partial<Vi
 // ============================================================
 
 export async function proposalNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.proposal) return {}; // 重跑：上游产出已存在 → 跳过
   const result = await generateProposal(
     state.researchReport ?? null,
     state.userPrompt,
@@ -165,6 +168,7 @@ export async function proposalNode(state: VideoGenStateType): Promise<Partial<Vi
 // ============================================================
 
 export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.videoScript) return {}; // 重跑：上游产出已存在 → 跳过
   if (!state.proposal) throw new Error('缺少 Proposal');
 
   const result = await generateScript(
@@ -216,6 +220,7 @@ export async function scriptGenNode(state: VideoGenStateType): Promise<Partial<V
 // ============================================================
 
 export async function assetGenNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.assetManifest) return {}; // 重跑：上游产出已存在 → 跳过
   if (!state.proposal) throw new Error('缺少 Proposal');
   if (!state.videoScript) throw new Error('缺少 VideoScript');
 
@@ -269,6 +274,7 @@ async function alignAudioDuration(inputPath: string, outputPath: string, targetD
 }
 
 export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.audioSegments?.length) return {}; // 重跑：上游产出已存在 → 跳过
   if (!state.proposal) throw new Error('缺少 Proposal');
   if (!state.videoScript) throw new Error('缺少 VideoScript');
 
@@ -346,6 +352,7 @@ export async function ttsNode(state: VideoGenStateType): Promise<Partial<VideoGe
  * 图到此为止（不进入 video_merge）。
  */
 export async function sceneJsonAssemblerNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.sceneSpecs?.length) return {}; // 重跑：上游产出已存在 → 跳过
   if (!state.videoScript) throw new Error('缺少 VideoScript');
   if (!state.assetManifest) throw new Error('缺少 AssetManifest');
 
@@ -442,6 +449,7 @@ export async function sceneJsonAssemblerNode(state: VideoGenStateType): Promise<
  * 同时写盘 scene-specs.json（视频生成脚本包，审计/复用用）。任一镜头失败 → 整体失败（零容错）。
  */
 export async function shotVideoGenNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.sceneVideos?.length) return {}; // 重跑：上游产出已存在 → 跳过
   const sceneSpecs = state.sceneSpecs ?? [];
   if (sceneSpecs.length === 0) throw new Error('缺少 SceneSpecs（shot_video_gen）');
   if (!state.jobId) throw new Error('缺少 jobId（shot_video_gen）');
@@ -507,6 +515,7 @@ export async function shotVideoGenNode(state: VideoGenStateType): Promise<Partia
 // ============================================================
 
 export async function videoMergeNode(state: VideoGenStateType): Promise<Partial<VideoGenStateUpdate>> {
+  if (state.mergedVideoUrl) return {}; // 重跑：上游产出已存在 → 跳过
   if (!state.proposal) throw new Error('缺少 Proposal');
   if (!state.videoScript) throw new Error('缺少 VideoScript');
 
@@ -603,6 +612,8 @@ export function createPauseGateNode(gateId: string) {
   return async function pauseGateNode(
     state: VideoGenStateType
   ): Promise<Partial<VideoGenStateUpdate>> {
+    // 重跑时跳过上游门（避免重复确认）；正常跑全部提问
+    if (!shouldFireGate(gateId, state.rerunFrom)) return {};
     await beginDecision(state.jobId, gateId);
     return {};
   };

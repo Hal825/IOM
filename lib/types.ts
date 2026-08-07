@@ -9,6 +9,10 @@ export const QUEUE_NAME = 'video-generation';
 export interface TaskData {
   /** 用户输入的原始文本 */
   text: string;
+  /** 重跑起点节点（如 'script_generation'）；缺省 = 正常全跑 */
+  rerunFrom?: string;
+  /** 重跑时的上游产出（来自对话卡 payload，重跑时恢复用） */
+  resumeState?: Record<string, unknown>;
 }
 
 /** 任务完成后的返回值（存于 BullMQ job.returnvalue） */

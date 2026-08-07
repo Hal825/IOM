@@ -1,0 +1,1096 @@
+{
+  "jobId": "38",
+  "createdAt": "2026-08-07T07:22:26.747Z",
+  "updatedAt": "2026-08-07T07:30:55.191Z",
+  "messages": [
+    {
+      "id": "9fe6c22b-8245-4fc0-b44f-343cf8edb06b",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_1",
+      "stage": "调研完成",
+      "question": "已确认需求，开始设计提案？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-07T07:22:26.745Z"
+    },
+    {
+      "id": "58433b8b-c44c-467a-81d7-9ed1d2f71d39",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "research",
+      "text": "好的，research 节点已经跑完了，整体结论是：**你的创意可以顺利进入视频生成环节**，内容就绪度评分 **88/100**，状态为“ready”。\n\n简单总结一下这个节点帮你梳理出的核心信息：\n\n- **画面主体**：红色渐变敦煌飞天服饰的东方舞者，在金色沙漠落日中起舞，逆光剪影、衣袂如火焰飘动、绸带划出 S 形弧线，沙粒低空形成薄雾——视觉元素非常具体，几乎可以直接映射为镜头画面。\n- **运镜方式**：以舞者为中心缓慢 360° 环绕推进（Dolly Zoom In），背景沙丘线条延伸至远方，结构明确。\n- **画质风格**：史诗感、胶片颗粒、8K、杜比视界、浅景深、超现实光影，技术参数完整，风格识别清晰。\n\n从各维度评估来看，**视觉可转化性**（95 分）和**逻辑流畅性**（",
+      "payload": {
+        "researchReport": {
+          "user_text": "提示词（中/英对照思维）：\n电影级广角镜头，一位身穿红色渐变敦煌飞天服饰的东方舞者，在金色沙漠的落日余晖中翩翩起舞。衣袂如火焰般飘动，绸带在空中划出流畅的S形弧线。夕阳在她身后形成耀眼的逆光剪影，沙粒在低空被风吹起形成薄雾。\n动态指令： 摄影机以舞者为中心，进行缓慢的360度环绕推进（Dolly Zoom In），背景中的沙丘线条延伸至无尽远方。\n画质参数： 史诗感，胶片颗粒，8k分辨率，杜比视界，浅景深，超现实光影。（Cinematic, Epic, Golden Hour, Shallow Depth of Field, 8k, Dolby Vision）",
+          "user_demand": {
+            "hasExplicitDemand": true,
+            "demands": [
+              {
+                "category": "visual",
+                "description": "电影级广角镜头，红色渐变敦煌飞天服饰，金色沙漠落日，逆光剪影，沙粒薄雾等具体视觉元素",
+                "originalPhrase": "电影级广角镜头，一位身穿红色渐变敦煌飞天服饰的东方舞者，在金色沙漠的落日余晖中翩翩起舞"
+              },
+              {
+                "category": "style",
+                "description": "史诗感、超现实光影的电影风格",
+                "originalPhrase": "史诗感，超现实光影"
+              },
+              {
+                "category": "content",
+                "description": "敦煌飞天舞者在沙漠中起舞，衣袂飘动，绸带划出S形弧线",
+                "originalPhrase": "衣袂如火焰般飘动，绸带在空中划出流畅的S形弧线"
+              },
+              {
+                "category": "format",
+                "description": "8k分辨率，杜比视界，浅景深，胶片颗粒",
+                "originalPhrase": "胶片颗粒，8k分辨率，杜比视界，浅景深"
+              },
+              {
+                "category": "other",
+                "description": "摄影机以舞者为中心，进行缓慢的360度环绕推进（Dolly Zoom In），背景沙丘线条延伸至无尽远方",
+                "originalPhrase": "摄影机以舞者为中心，进行缓慢的360度环绕推进（Dolly Zoom In），背景中的沙丘线条延伸至无尽远方"
+              }
+            ],
+            "summary": "用户要求制作一个电影级、史诗感的敦煌飞天舞者沙漠起舞短片，强调逆光剪影、360度环绕运镜，以及8K杜比视界的高画质规格"
+          },
+          "content_readiness_assessment": {
+            "overallScore": 88,
+            "level": "ready",
+            "dimensions": {
+              "information_sufficiency": {
+                "score": 85,
+                "comment": "文本包含具体的视觉元素、人物动作、场景环境、镜头运动和画质参数，足以支撑视频生成"
+              },
+              "visual_convertibility": {
+                "score": 95,
+                "comment": "画面感极强，人物、服饰、动作、光线、沙丘、绸带等元素可高度转化为视觉镜头"
+              },
+              "structural_integrity": {
+                "score": 70,
+                "comment": "这是一个单一场景的镜头描述，没有完整的起承转合叙事结构，但作为独立镜头片段结构清晰"
+              },
+              "logical_fluency": {
+                "score": 90,
+                "comment": "从人物出场到动态指令再到画质参数，层次分明，逻辑连贯，无跳跃或断裂"
+              },
+              "emotional_clarity": {
+                "score": 85,
+                "comment": "通过落日、逆光、火焰般的衣袂等意象传递出强烈而明确的史诗感与唯美氛围"
+              },
+              "creativity_richness": {
+                "score": 90,
+                "comment": "红色渐变敦煌飞天、S形绸带弧线、Dolly Zoom In等元素兼具文化底蕴和视觉创意"
+              }
+            },
+            "strengths": [
+              "视觉元素极其丰富且具体，极易转化为画面",
+              "镜头运动指令明确（360度环绕推进）",
+              "风格与画质参数完整，技术表达清晰",
+              "文化意象与光影氛围独特，富有史诗气质"
+            ],
+            "weaknesses": [
+              "缺乏叙事性内容，仅覆盖单一场景",
+              "未明确视频时长、配音/音乐等音频要求"
+            ],
+            "recommendation": "ready"
+          }
+        }
+      },
+      "createdAt": "2026-08-07T07:22:32.824Z"
+    },
+    {
+      "id": "3c5a9d9f-467c-4d4f-8347-a1159a56ec3b",
+      "jobId": "38",
+      "role": "user",
+      "kind": "text",
+      "text": "继续",
+      "feedback": {
+        "gateId": "pause_gate_1",
+        "nodeName": ""
+      },
+      "createdAt": "2026-08-07T07:23:03.673Z"
+    },
+    {
+      "id": "29aa448c-e45a-4364-b1b1-a6e1276190be",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "generate_proposal",
+      "text": "节点提案已经生成好了，整体方向相当有质感——一支 30 秒的敦煌飞天风格短片，16:9 横屏，主题定为「沙漠落日·敦煌飞天」。\n\n主角是一位名叫飞霞的东方舞者，25 岁，赤足、红衣、金步摇，身披数丈红绸，设定上是一位专注而忘我的舞蹈艺术家，气质在虔诚与自由之间流转。\n\n全片由 4 个连续镜头组成：从沙丘脊线上的逆光剪影开始，镜头围绕舞者做 360 度缓慢环绕，伴随她舒展起舞、红绸翻飞，再到侧后方低角度仰拍强化轮廓，最后回到正面并拉远收尾，在橙紫暮色中落幕。镜头总时长正好 30 秒，前两个场景各 8 秒，后两个各 7 秒，节奏均匀。\n\n视觉上主打金色逆光剪影与超现实史诗沙漠光影，配乐建议用气势恢宏的管弦乐加浑厚人声，尾声渐缓。\n\n至此，视频的整体蓝图、角色和叙事结构都已确定，下一步就可以进入实际画面生成了。",
+      "payload": {
+        "proposal": {
+          "characters": [
+            {
+              "characterId": "char-1",
+              "name": "飞霞",
+              "type": "protagonist",
+              "appearance": "25岁东方女性，墨黑长发高盘飞天髻，斜插一支金步摇；柳眉凤目，面容清丽；身姿修长婀娜，赤足。身穿红色渐变敦煌飞天服，束胸短襦配飘曳长裙，双臂环绕数丈红绸披帛，行动间金铃轻响。",
+              "personality": "专注而忘我的舞蹈艺术家，动作舒展大气，神态在虔诚与自由间流转；沉浸于乐舞时眼神明亮、唇角微扬，每个旋转都饱含张力与情感。",
+              "role": "以敦煌飞天舞姿诠释沙漠落日中极致东方美的主角"
+            }
+          ],
+          "blueprint": {
+            "title": "沙漠落日·敦煌飞天",
+            "totalDuration": 30,
+            "aspectRatio": "16:9"
+          },
+          "sceneVisuals": [
+            {
+              "visualId": "visual-1",
+              "description": "开阔无垠的金色沙漠，连绵沙丘呈柔缓波浪状延伸至地平线。舞者位于沙丘脊线上，半径十米内沙面平整，周围零星点缀沙棘草。夕阳低垂于舞者正后方，形成强烈逆光，光线穿过被西北风卷起的沙粒，在低空形成金色薄雾。远处沙丘脊线层层叠叠，明暗交界清晰，暖橙金与深紫暮色渐变。整体氛围空旷、神圣、具有史诗感。",
+              "visualHints": "Vast open golden desert at sunset, rolling sand dunes extending to horizon, lone dancer on a sand dune ridge, flat smooth sand surface within ten meters, scattered sparse shrubs, low sun directly behind dancer creating intense backlight silhouette, wind-blown sand particles forming golden mist near ground, layered distant dune ridges with sharp light-shadow contrast, warm orange-gold to deep purple dusk gradient, epic and sacred atmosphere, cinematic wide-angle composition, film grain, 8k resolution, shallow depth of field, Dolby Vision, surreal volumetric lighting",
+              "scenes": [
+                {
+                  "sceneId": "scene-1",
+                  "sceneDescription": "广角全景，舞者飞霞立于沙丘脊线中央，红色舞衣与飘带被风扬起，夕阳从她身后洒下金色逆光，构成醒目剪影。镜头以舞者为中心，从正面开始缓慢向右做360度环绕推进，同时焦距轻微拉伸，背景沙丘线条随之产生扭曲延伸感，低空沙粒薄雾在光线中漂浮。",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 8
+                },
+                {
+                  "sceneId": "scene-2",
+                  "sceneDescription": "镜头环绕至舞者左侧，飞霞开始舒展双臂旋转起舞，数丈红绸披帛在空中划出流畅的S形弧线，衣袂如火焰般翻飞。夕阳逆光为她的发丝与绸带镀上金边，沙粒被风卷起形成低空薄雾。镜头继续环绕且逐渐推近，浅景深将背景沙丘虚化为绵延的色块，强调舞者身姿的动感。",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 8
+                },
+                {
+                  "sceneId": "scene-3",
+                  "sceneDescription": "接近舞者正侧方的中近景，飞霞仰首张开双臂，裙摆与长绸在风中向后飞扬，神情专注而自由。逆光在发丝间形成炫光，金色沙粒如星尘般在镜头前景漂浮。镜头环绕至舞者侧后方并缓慢抬起，以低角度仰拍强化其雕像般的轮廓，同时焦距缓缓变化，让背景沙丘呈梦境般弯曲延伸。",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 7
+                },
+                {
+                  "sceneId": "scene-4",
+                  "sceneDescription": "镜头完成360度环绕回到舞者正面，并逐渐拉远至大全景。飞霞的身影在落日余晖中化为小巧而庄严的剪影，红色舞衣与沙丘的金色融为一体。沙丘脊线如流动的曲线延伸至无尽远方，低空沙雾在暮色中泛着微光。画面缓慢淡出到柔和橙紫色晚霞，留下一片史诗般的宁静。",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 7
+                }
+              ]
+            }
+          ],
+          "styleProfile": {
+            "tone": "inspirational",
+            "visualStyle": "金色逆光剪影与超现实史诗沙漠光影",
+            "suggestedBGM": "气势恢宏的管弦乐与浑厚人声，尾声渐缓"
+          }
+        }
+      },
+      "createdAt": "2026-08-07T07:23:54.034Z"
+    },
+    {
+      "id": "9055292d-eed1-455e-b633-e24b9a8718db",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_2",
+      "stage": "脚本就绪",
+      "question": "提案与脚本就绪，开始生成素材与配音？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-07T07:24:10.910Z"
+    },
+    {
+      "id": "2bb98e31-5cbc-4454-9d24-5310e7d1eeac",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "script_generation",
+      "text": "脚本已经完成啦，整个视频的故事、分镜、音效和节奏都定好了，帮你梳理一下核心内容：\n\n**整体概况**\n- 共 **4 个分镜场景**，总时长 **30 秒**（8s + 8s + 7s + 7s）\n- 主题：沙漠落日下，飞天舞者「飞霞」的一段史诗级独舞\n- 镜头语言：以舞者为中心，完成一次 **360° 环绕推进**，从大全景开场 → 中景动态舞姿 → 低角度仰拍特写 → 拉远至壮阔沙丘收尾\n\n**四场戏的叙事线**\n1. **开场（8s）**：广角全景，舞者立于沙丘脊线，夕阳逆光形成剪影，镜头开始环绕，氛围庄严神秘\n2. **起舞（8s）**：飞霞旋转舞动，红绸在空中划出 S 形弧线，镜头推近、背景虚化，动态美感拉满\n3. **定格（7s）**：低角度仰拍，舞者仰首张开双臂，逆光炫光 + 金色沙粒如星尘漂浮，神圣感爆棚\n4. **收尾（7s）**：镜头回正拉远，舞者化为暮",
+      "payload": {
+        "videoScript": {
+          "storyScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "广角全景，舞者飞霞立于沙丘脊线中央，红色舞衣与飘带被风扬起，夕阳从她身后洒下金色逆光，构成醒目剪影。镜头以舞者为中心，从正面开始缓慢向右做360度环绕推进，同时焦距轻微拉伸，背景沙丘线条随之产生扭曲延伸感，低空沙粒薄雾在光线中漂浮。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "立于沙丘脊线中央",
+                      "红色舞衣与飘带被风扬起",
+                      "保持开场舞姿"
+                    ],
+                    "emotions": [
+                      "庄严",
+                      "沉静"
+                    ]
+                  }
+                ],
+                "narrative": "开场建立沙漠落日与飞天舞者的宏大场景，奠定史诗氛围"
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "镜头环绕至舞者左侧，飞霞开始舒展双臂旋转起舞，数丈红绸披帛在空中划出流畅的S形弧线，衣袂如火焰般翻飞。夕阳逆光为她的发丝与绸带镀上金边，沙粒被风卷起形成低空薄雾。镜头继续环绕且逐渐推近，浅景深将背景沙丘虚化为绵延的色块，强调舞者身姿的动感。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "舒展双臂",
+                      "旋转起舞",
+                      "舞动红绸披帛在空中划出S形弧线"
+                    ],
+                    "emotions": [
+                      "自由",
+                      "专注"
+                    ]
+                  }
+                ],
+                "narrative": "舞者开始展现飞天舞姿，动态美感与逆光剪影融为一体"
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "接近舞者正侧方的中近景，飞霞仰首张开双臂，裙摆与长绸在风中向后飞扬，神情专注而自由。逆光在发丝间形成炫光，金色沙粒如星尘般在镜头前景漂浮。镜头环绕至舞者侧后方并缓慢抬起，以低角度仰拍强化其雕像般的轮廓，同时焦距缓缓变化，让背景沙丘呈梦境般弯曲延伸。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "仰首张开双臂",
+                      "裙摆与长绸在风中向后飞扬",
+                      "保持舒展姿态"
+                    ],
+                    "emotions": [
+                      "虔诚",
+                      "忘我"
+                    ]
+                  }
+                ],
+                "narrative": "以仰拍定格舞者如雕塑般的轮廓，突出神圣感与超现实光影"
+              },
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "镜头完成360度环绕回到舞者正面，并逐渐拉远至大全景。飞霞的身影在落日余晖中化为小巧而庄严的剪影，红色舞衣与沙丘的金色融为一体。沙丘脊线如流动的曲线延伸至无尽远方，低空沙雾在暮色中泛着微光。画面缓慢淡出到柔和橙紫色晚霞，留下一片史诗般的宁静。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "保持收束动作",
+                      "剪影在落日余晖中逐渐变小"
+                    ],
+                    "emotions": [
+                      "宁静",
+                      "释然"
+                    ]
+                  }
+                ],
+                "narrative": "镜头回正拉远，以壮阔沙丘与晚霞收尾，余韵悠长"
+              }
+            ]
+          },
+          "storyboardScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "visualSource": "visual-1",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-1"
+                },
+                "shot": {
+                  "type": "wide full shot",
+                  "angle": "eye-level",
+                  "movement": "slow orbital pan right with slight dolly in and subtle focal length pull",
+                  "focus": "the dancer's silhouette against the setting sun"
+                },
+                "composition": "central composition, dancer centered on dune ridge, golden sun directly behind, dune lines radiating toward edges",
+                "lighting": "strong golden backlight from low sun, warm rim light on dancer's silhouette, wind-blown sand particles catching light",
+                "visualElements": [
+                  "red gradient robe and flowing silk ribbons",
+                  "sun disk behind dancer",
+                  "S-curve sand dune ridges",
+                  "low mist of sand particles"
+                ],
+                "atmosphere": "epic, cinematic, golden hour, shallow depth of field, 8k, Dolby Vision, surreal light, film grain",
+                "motionLevel": 3,
+                "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              },
+              {
+                "sceneId": "scene-2",
+                "visualSource": "visual-1",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-1"
+                },
+                "shot": {
+                  "type": "medium shot",
+                  "angle": "eye-level",
+                  "movement": "continued orbital pan to the left side, slow push-in",
+                  "focus": "the dancer's rotating body and flowing silk ribbons"
+                },
+                "composition": "dancer slightly off-center left, ribbons creating dynamic S-curve across frame, dune background softly blurred",
+                "lighting": "side backlit golden sun, hair and ribbons rimmed with warm gold, low sand mist glowing",
+                "visualElements": [
+                  "flowing red silk ribbons in S-shape",
+                  "flame-like robe movement",
+                  "spinning dancer",
+                  "golden sand particles in air"
+                ],
+                "atmosphere": "epic, dynamic, golden hour, shallow depth of field, 8k, Dolby Vision, film grain",
+                "motionLevel": 5,
+                "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              },
+              {
+                "sceneId": "scene-3",
+                "visualSource": "visual-1",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-1"
+                },
+                "shot": {
+                  "type": "medium close-up",
+                  "angle": "low angle",
+                  "movement": "orbital pan to side-back, slight tilt up",
+                  "focus": "the dancer's raised face and outstretched arms, lens flare through hair"
+                },
+                "composition": "dancer's silhouette filling lower third, upward angle emphasizing monumental pose, dune ridges curving in background bokeh",
+                "lighting": "intense golden backlight creating lens flare, hair rimmed with bright gold, floating sand specks glowing like stardust",
+                "visualElements": [
+                  "raised arms and open hands",
+                  "fluttering robe and long silk ribbons",
+                  "golden dust particles",
+                  "dreamy curved background dunes"
+                ],
+                "atmosphere": "surreal, sacred, monumental, golden hour, shallow depth of field, 8k, Dolby Vision, film grain",
+                "motionLevel": 3,
+                "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              },
+              {
+                "sceneId": "scene-4",
+                "visualSource": "visual-1",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-1"
+                },
+                "shot": {
+                  "type": "extreme wide shot",
+                  "angle": "eye-level",
+                  "movement": "slow pull back and zoom out, completing the orbit back to front",
+                  "focus": "the tiny dancer silhouette against vast desert and sunset"
+                },
+                "composition": "dancer as small central figure in vast landscape, sand dune curves leading to horizon, negative space above for dusk sky",
+                "lighting": "low golden sun disk partially below horizon, warm orange to purple dusk gradient, soft sand mist glowing",
+                "visualElements": [
+                  "dancer's red robe blending with golden dunes",
+                  "flowing sand dune lines to infinity",
+                  "low-lying sand mist",
+                  "orange-purple twilight sky"
+                ],
+                "atmosphere": "epic, quiet, majestic, golden hour fading to dusk, 8k, Dolby Vision, film grain, shallow depth of field",
+                "motionLevel": 3,
+                "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              }
+            ]
+          },
+          "audioScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "dialogue": null,
+                "sfx": [
+                  {
+                    "type": "soft desert wind",
+                    "timing": "throughout"
+                  },
+                  {
+                    "type": "fabric flapping",
+                    "timing": "at start, continuous"
+                  },
+                  {
+                    "type": "tinkling bells",
+                    "timing": "gentle, after 1s"
+                  }
+                ],
+                "bgm": {
+                  "style": "epic orchestral with ethnic Chinese instruments",
+                  "mood": "majestic, mysterious, slowly opening",
+                  "timing": "start with low strings and wind instrument, gradually build"
+                }
+              },
+              {
+                "sceneId": "scene-2",
+                "dialogue": null,
+                "sfx": [
+                  {
+                    "type": "whoosh",
+                    "timing": "as dancer spins"
+                  },
+                  {
+                    "type": "silk ribbon cracking",
+                    "timing": "at S-curve movement"
+                  },
+                  {
+                    "type": "sand rustling",
+                    "timing": "continuous underlay"
+                  }
+                ],
+                "bgm": {
+                  "style": "epic orchestral with ethnic Chinese instruments",
+                  "mood": "dynamic, flowing, rising energy",
+                  "timing": "tempo slightly increases, percussion enters softly"
+                }
+              },
+              {
+                "sceneId": "scene-3",
+                "dialogue": null,
+                "sfx": [
+                  {
+                    "type": "swirling wind",
+                    "timing": "throughout, slightly louder"
+                  },
+                  {
+                    "type": "ethereal shimmer",
+                    "timing": "as dust particles sparkle"
+                  }
+                ],
+                "bgm": {
+                  "style": "epic orchestral with ethereal choir",
+                  "mood": "sublime, breath-taking, awe-filled",
+                  "timing": "climax approaching, strings soar"
+                }
+              },
+              {
+                "sceneId": "scene-4",
+                "dialogue": null,
+                "sfx": [
+                  {
+                    "type": "wind fading",
+                    "timing": "at start, gradually silent"
+                  },
+                  {
+                    "type": "distant chime",
+                    "timing": "at final sunset moment"
+                  }
+                ],
+                "bgm": {
+                  "style": "epic orchestral with ethnic Chinese instruments",
+                  "mood": "peaceful resolution, sweeping grandeur",
+                  "timing": "climax then gradually fade to silence"
+                }
+              }
+            ]
+          },
+          "pacingScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "duration": 8,
+                "transitionIn": {
+                  "type": "fade-in",
+                  "durationSec": 1.5
+                },
+                "transitionOut": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "keyMoments": [
+                  {
+                    "time": 0,
+                    "event": "开画：沙漠落日全景，舞者剪影立定"
+                  },
+                  {
+                    "time": 3,
+                    "event": "镜头开始环绕推进，沙粒薄雾显形"
+                  }
+                ]
+              },
+              {
+                "sceneId": "scene-2",
+                "duration": 8,
+                "transitionIn": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "transitionOut": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "keyMoments": [
+                  {
+                    "time": 1,
+                    "event": "舞者旋转，红绸划出S形"
+                  },
+                  {
+                    "time": 5,
+                    "event": "镜头推近，背景虚化"
+                  }
+                ]
+              },
+              {
+                "sceneId": "scene-3",
+                "duration": 7,
+                "transitionIn": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "transitionOut": {
+                  "type": "dissolve",
+                  "durationSec": 0.5
+                },
+                "keyMoments": [
+                  {
+                    "time": 1,
+                    "event": "仰首张开双臂，逆光炫光"
+                  },
+                  {
+                    "time": 4,
+                    "event": "低角度仰拍，沙丘梦境般弯曲"
+                  }
+                ]
+              },
+              {
+                "sceneId": "scene-4",
+                "duration": 7,
+                "transitionIn": {
+                  "type": "dissolve",
+                  "durationSec": 0.5
+                },
+                "transitionOut": {
+                  "type": "fade-out",
+                  "durationSec": 1.5
+                },
+                "keyMoments": [
+                  {
+                    "time": 0,
+                    "event": "镜头回正并拉远，舞者化为剪影"
+                  },
+                  {
+                    "time": 4,
+                    "event": "沙丘线条延伸至无穷，晚霞渐显"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "scriptTextSnapshot": "[{\"sceneId\":\"scene-1\",\"duration\":8,\"narrative\":\"开场建立沙漠落日与飞天舞者的宏大场景，奠定史诗氛围\",\"shotType\":\"wide full shot\",\"dialogue\":[],\"sfx\":[\"soft desert wind\",\"fabric flapping\",\"tinkling bells\"]},{\"sceneId\":\"scene-2\",\"duration\":8,\"narrative\":\"舞者开始展现飞天舞姿，动态美感与逆光剪影融为一体\",\"shotType\":\"medium shot\",\"dialogue\":[],\"sfx\":[\"whoosh\",\"silk ribbon cracking\",\"sand rustling\"]},{\"sceneId\":\"scene-3\",\"duration\":7,\"narrative\":\"以仰拍定格舞者如雕塑般的轮廓，突出神圣感与超现实光影\",\"shotType\":\"medium close-up\",\"dialogue\":[],\"sfx\":[\"swirling wind\",\"ethereal shimmer\"]},{\"sceneId\":\"scene-4\",\"duration\":7,\"narrative\":\"镜头回正拉远，以壮阔沙丘与晚霞收尾，余韵悠长\",\"shotType\":\"extreme wide shot\",\"dialogue\":[],\"sfx\":[\"wind fading\",\"distant chime\"]}]"
+      },
+      "createdAt": "2026-08-07T07:24:19.125Z"
+    },
+    {
+      "id": "6d92d54b-48f2-48b6-9bd9-272096fd8391",
+      "jobId": "38",
+      "role": "user",
+      "kind": "text",
+      "text": "继续",
+      "feedback": {
+        "gateId": "pause_gate_2",
+        "nodeName": "generate_proposal"
+      },
+      "createdAt": "2026-08-07T07:25:27.663Z"
+    },
+    {
+      "id": "047175d2-5489-4ac8-b156-b9335e429da8",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "tts",
+      "text": "语音生成完成！共 4 个场景的配音，总时长约 30 秒：\n\n- 场景 1：8 秒\n- 场景 2：8 秒\n- 场景 3：7 秒\n- 场景 4：7 秒\n\n所有音频已按场景对齐并保存，可以直接进入下一步视频合成。",
+      "payload": {
+        "audioSegments": [
+          {
+            "sceneId": "scene-1",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-1_aligned.mp3",
+            "durationSec": 8
+          },
+          {
+            "sceneId": "scene-2",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-2_aligned.mp3",
+            "durationSec": 8
+          },
+          {
+            "sceneId": "scene-3",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-3_aligned.mp3",
+            "durationSec": 7
+          },
+          {
+            "sceneId": "scene-4",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-4_aligned.mp3",
+            "durationSec": 7
+          }
+        ]
+      },
+      "createdAt": "2026-08-07T07:25:37.019Z"
+    },
+    {
+      "id": "ea786f6a-26ff-4fc5-8037-a111b3016e7d",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_3",
+      "stage": "场景规格已组装",
+      "question": "场景规格已组装，开始逐镜头生成视频？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-07T07:25:46.353Z"
+    },
+    {
+      "id": "20fc2091-d226-4562-a019-462c2b7990c2",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "asset_gen",
+      "text": "素材准备完成，节点结果如下：\n\n**角色**\n- 已选用素材库中的 1 位女性角色\n- 包含 4 个视图：正面、背面、左侧、右侧，可满足多角度拍摄需求\n\n**场景**\n- 由 AI 生成 1 张场景图\n- 该场景图将复用于 4 个分镜（scene-1 至 scene-4），保持视觉统一\n\n当前阶段共锁定 1 个角色 + 1 个场景，已就绪，可以进入下一步分镜生成。",
+      "payload": {
+        "assetManifest": {
+          "jobId": "38",
+          "characters": {
+            "char-1": {
+              "source": "library",
+              "sourceRef": "library/characters/char_userd_1_female",
+              "views": {
+                "front": "library/characters/char_userd_1_female/front.jpeg",
+                "back": "library/characters/char_userd_1_female/back.jpeg",
+                "left": "library/characters/char_userd_1_female/left.jpeg",
+                "right": "library/characters/char_userd_1_female/right.jpeg"
+              }
+            }
+          },
+          "scenes": {
+            "scene_visual-1": {
+              "source": "ai",
+              "image": "assets/38/scenes/scene_visual-1.png"
+            }
+          },
+          "sceneRefs": {
+            "scene-1": "scene_visual-1",
+            "scene-2": "scene_visual-1",
+            "scene-3": "scene_visual-1",
+            "scene-4": "scene_visual-1"
+          }
+        }
+      },
+      "createdAt": "2026-08-07T07:25:47.941Z"
+    },
+    {
+      "id": "28dce329-f8c3-4ef9-900d-95f052da2384",
+      "jobId": "38",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "scene_json_assembler",
+      "text": "场景已全部组装完成，共 4 个镜头，总时长约 30 秒，统一为 1920×1080、24fps，采用 text-to-video 模式生成。\n\n整段视频围绕舞者“飞霞”在沙漠落日中的飞天舞展开，节奏和镜头设计如下：\n\n- **场景 1**：广角全景开场，舞者立于沙丘脊线，夕阳逆光剪影，镜头从正面开始 360 度环绕推进，奠定史诗氛围。\n- **场景 2**：环绕至左侧，舞者旋转起舞，红绸划出 S 形弧线，镜头继续推近，动态感最强。\n- **场景 3**：低角度仰拍特写，舞者仰首张开双臂，逆光炫光与金沙粒形成神圣、超现实的雕塑感。\n- **场景 4**：镜头回到正面并拉远成大远景，舞者融入暮色沙丘，以晚霞淡出收尾，余韵悠长。\n\n配乐采用中国民族乐器与史诗管弦乐，情绪从低沉展开逐步推向高潮、最后归于宁静；音效包括沙漠风声、绸缎翻飞、风铃等，已在各场景音频文件中对齐。\n\n下一步就可以基于这些场景规格进入视频生成了。",
+      "payload": {
+        "sceneSpecs": [
+          {
+            "sceneId": "scene-1",
+            "duration": 8,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/38/scenes/scene_visual-1.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-1_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "广角全景，舞者飞霞立于沙丘脊线中央，红色舞衣与飘带被风扬起，夕阳从她身后洒下金色逆光，构成醒目剪影。镜头以舞者为中心，从正面开始缓慢向右做360度环绕推进，同时焦距轻微拉伸，背景沙丘线条随之产生扭曲延伸感，低空沙粒薄雾在光线中漂浮。",
+              "narrative": "开场建立沙漠落日与飞天舞者的宏大场景，奠定史诗氛围",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "立于沙丘脊线中央",
+                    "红色舞衣与飘带被风扬起",
+                    "保持开场舞姿"
+                  ],
+                  "emotions": [
+                    "庄严",
+                    "沉静"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "wide full shot",
+                "angle": "eye-level",
+                "movement": "slow orbital pan right with slight dolly in and subtle focal length pull",
+                "focus": "the dancer's silhouette against the setting sun"
+              },
+              "composition": "central composition, dancer centered on dune ridge, golden sun directly behind, dune lines radiating toward edges",
+              "lighting": "strong golden backlight from low sun, warm rim light on dancer's silhouette, wind-blown sand particles catching light",
+              "visualElements": [
+                "red gradient robe and flowing silk ribbons",
+                "sun disk behind dancer",
+                "S-curve sand dune ridges",
+                "low mist of sand particles"
+              ],
+              "atmosphere": "epic, cinematic, golden hour, shallow depth of field, 8k, Dolby Vision, surreal light, film grain",
+              "motionLevel": 3,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape"
+            },
+            "audio": {
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "soft desert wind",
+                  "timing": "throughout"
+                },
+                {
+                  "type": "fabric flapping",
+                  "timing": "at start, continuous"
+                },
+                {
+                  "type": "tinkling bells",
+                  "timing": "gentle, after 1s"
+                }
+              ],
+              "bgm": {
+                "style": "epic orchestral with ethnic Chinese instruments",
+                "mood": "majestic, mysterious, slowly opening",
+                "timing": "start with low strings and wind instrument, gradually build"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "fade-in",
+                "durationSec": 1.5
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "开画：沙漠落日全景，舞者剪影立定"
+                },
+                {
+                  "time": 3,
+                  "event": "镜头开始环绕推进，沙粒薄雾显形"
+                }
+              ]
+            }
+          },
+          {
+            "sceneId": "scene-2",
+            "duration": 8,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/38/scenes/scene_visual-1.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-2_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "镜头环绕至舞者左侧，飞霞开始舒展双臂旋转起舞，数丈红绸披帛在空中划出流畅的S形弧线，衣袂如火焰般翻飞。夕阳逆光为她的发丝与绸带镀上金边，沙粒被风卷起形成低空薄雾。镜头继续环绕且逐渐推近，浅景深将背景沙丘虚化为绵延的色块，强调舞者身姿的动感。",
+              "narrative": "舞者开始展现飞天舞姿，动态美感与逆光剪影融为一体",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "舒展双臂",
+                    "旋转起舞",
+                    "舞动红绸披帛在空中划出S形弧线"
+                  ],
+                  "emotions": [
+                    "自由",
+                    "专注"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "medium shot",
+                "angle": "eye-level",
+                "movement": "continued orbital pan to the left side, slow push-in",
+                "focus": "the dancer's rotating body and flowing silk ribbons"
+              },
+              "composition": "dancer slightly off-center left, ribbons creating dynamic S-curve across frame, dune background softly blurred",
+              "lighting": "side backlit golden sun, hair and ribbons rimmed with warm gold, low sand mist glowing",
+              "visualElements": [
+                "flowing red silk ribbons in S-shape",
+                "flame-like robe movement",
+                "spinning dancer",
+                "golden sand particles in air"
+              ],
+              "atmosphere": "epic, dynamic, golden hour, shallow depth of field, 8k, Dolby Vision, film grain",
+              "motionLevel": 5,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape"
+            },
+            "audio": {
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "whoosh",
+                  "timing": "as dancer spins"
+                },
+                {
+                  "type": "silk ribbon cracking",
+                  "timing": "at S-curve movement"
+                },
+                {
+                  "type": "sand rustling",
+                  "timing": "continuous underlay"
+                }
+              ],
+              "bgm": {
+                "style": "epic orchestral with ethnic Chinese instruments",
+                "mood": "dynamic, flowing, rising energy",
+                "timing": "tempo slightly increases, percussion enters softly"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 1,
+                  "event": "舞者旋转，红绸划出S形"
+                },
+                {
+                  "time": 5,
+                  "event": "镜头推近，背景虚化"
+                }
+              ]
+            }
+          },
+          {
+            "sceneId": "scene-3",
+            "duration": 7,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/38/scenes/scene_visual-1.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-3_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "接近舞者正侧方的中近景，飞霞仰首张开双臂，裙摆与长绸在风中向后飞扬，神情专注而自由。逆光在发丝间形成炫光，金色沙粒如星尘般在镜头前景漂浮。镜头环绕至舞者侧后方并缓慢抬起，以低角度仰拍强化其雕像般的轮廓，同时焦距缓缓变化，让背景沙丘呈梦境般弯曲延伸。",
+              "narrative": "以仰拍定格舞者如雕塑般的轮廓，突出神圣感与超现实光影",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "仰首张开双臂",
+                    "裙摆与长绸在风中向后飞扬",
+                    "保持舒展姿态"
+                  ],
+                  "emotions": [
+                    "虔诚",
+                    "忘我"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "medium close-up",
+                "angle": "low angle",
+                "movement": "orbital pan to side-back, slight tilt up",
+                "focus": "the dancer's raised face and outstretched arms, lens flare through hair"
+              },
+              "composition": "dancer's silhouette filling lower third, upward angle emphasizing monumental pose, dune ridges curving in background bokeh",
+              "lighting": "intense golden backlight creating lens flare, hair rimmed with bright gold, floating sand specks glowing like stardust",
+              "visualElements": [
+                "raised arms and open hands",
+                "fluttering robe and long silk ribbons",
+                "golden dust particles",
+                "dreamy curved background dunes"
+              ],
+              "atmosphere": "surreal, sacred, monumental, golden hour, shallow depth of field, 8k, Dolby Vision, film grain",
+              "motionLevel": 3,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape"
+            },
+            "audio": {
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "swirling wind",
+                  "timing": "throughout, slightly louder"
+                },
+                {
+                  "type": "ethereal shimmer",
+                  "timing": "as dust particles sparkle"
+                }
+              ],
+              "bgm": {
+                "style": "epic orchestral with ethereal choir",
+                "mood": "sublime, breath-taking, awe-filled",
+                "timing": "climax approaching, strings soar"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "keyMoments": [
+                {
+                  "time": 1,
+                  "event": "仰首张开双臂，逆光炫光"
+                },
+                {
+                  "time": 4,
+                  "event": "低角度仰拍，沙丘梦境般弯曲"
+                }
+              ]
+            }
+          },
+          {
+            "sceneId": "scene-4",
+            "duration": 7,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/38/scenes/scene_visual-1.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\38\\scene-4_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "镜头完成360度环绕回到舞者正面，并逐渐拉远至大全景。飞霞的身影在落日余晖中化为小巧而庄严的剪影，红色舞衣与沙丘的金色融为一体。沙丘脊线如流动的曲线延伸至无尽远方，低空沙雾在暮色中泛着微光。画面缓慢淡出到柔和橙紫色晚霞，留下一片史诗般的宁静。",
+              "narrative": "镜头回正拉远，以壮阔沙丘与晚霞收尾，余韵悠长",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "保持收束动作",
+                    "剪影在落日余晖中逐渐变小"
+                  ],
+                  "emotions": [
+                    "宁静",
+                    "释然"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "extreme wide shot",
+                "angle": "eye-level",
+                "movement": "slow pull back and zoom out, completing the orbit back to front",
+                "focus": "the tiny dancer silhouette against vast desert and sunset"
+              },
+              "composition": "dancer as small central figure in vast landscape, sand dune curves leading to horizon, negative space above for dusk sky",
+              "lighting": "low golden sun disk partially below horizon, warm orange to purple dusk gradient, soft sand mist glowing",
+              "visualElements": [
+                "dancer's red robe blending with golden dunes",
+                "flowing sand dune lines to infinity",
+                "low-lying sand mist",
+                "orange-purple twilight sky"
+              ],
+              "atmosphere": "epic, quiet, majestic, golden hour fading to dusk, 8k, Dolby Vision, film grain, shallow depth of field",
+              "motionLevel": 3,
+              "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text, deformed face, modern clothing, cityscape"
+            },
+            "audio": {
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "wind fading",
+                  "timing": "at start, gradually silent"
+                },
+                {
+                  "type": "distant chime",
+                  "timing": "at final sunset moment"
+                }
+              ],
+              "bgm": {
+                "style": "epic orchestral with ethnic Chinese instruments",
+                "mood": "peaceful resolution, sweeping grandeur",
+                "timing": "climax then gradually fade to silence"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "transitionOut": {
+                "type": "fade-out",
+                "durationSec": 1.5
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "镜头回正并拉远，舞者化为剪影"
+                },
+                {
+                  "time": 4,
+                  "event": "沙丘线条延伸至无穷，晚霞渐显"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "createdAt": "2026-08-07T07:25:50.655Z"
+    },
+    {
+      "id": "e15b92f1-825a-4ad4-b3a7-30a0c8221490",
+      "jobId": "38",
+      "role": "system",
+      "kind": "status",
+      "text": "任务失败：任务已删除，管线中止",
+      "createdAt": "2026-08-07T07:30:55.190Z"
+    }
+  ]
+}

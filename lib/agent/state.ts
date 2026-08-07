@@ -26,6 +26,10 @@ export const VideoGenState = Annotation.Root({
   userPrompt: Annotation<string>,
   style: Annotation<string>,
 
+  // === 重跑 ===
+  /** 重跑起点节点（如 'script_generation'）；缺省 = 正常全跑。上游节点因产出已存在而跳过。 */
+  rerunFrom: Annotation<string | undefined>,
+
   // === 调研 & 提案 ===
   researchReport: Annotation<ResearchReport | null>,
   proposal: Annotation<Proposal | null>,

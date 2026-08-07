@@ -32,6 +32,42 @@ export function QuestionBubble({ message }: { message: GateQuestionMessage }) {
   );
 }
 
+/** 前端 agent 气泡：左侧助理样式，自然语言文本；streaming 时尾部光标闪烁。 */
+export function AgentBubble({
+  text,
+  streaming,
+  onRerun,
+  nodeName,
+}: {
+  text: string;
+  streaming?: boolean;
+  onRerun?: (nodeName: string) => void;
+  nodeName?: string;
+}) {
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-border bg-panel px-4 py-2.5 text-sm text-foreground shadow-sm">
+        <p className="mb-0.5 text-[10px] text-muted">助手</p>
+        <p className="whitespace-pre-wrap break-words">
+          {text}
+          {streaming ? (
+            <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-accent align-middle" />
+          ) : null}
+        </p>
+        {onRerun && nodeName && !streaming ? (
+          <button
+            type="button"
+            onClick={() => onRerun(nodeName)}
+            className="mt-1.5 rounded-lg border border-accent/50 px-2 py-0.5 text-[11px] font-medium text-accent transition hover:bg-accent/10"
+          >
+            ↻ 重跑此节点
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /** 系统状态行：居中灰字。 */
 export function SystemLine({ text }: { text: string }) {
   return (

@@ -1,0 +1,48 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 8,
+    "narrative": "开场建立沙漠落日与飞天舞者的宏大场景，奠定史诗氛围",
+    "shotType": "wide full shot",
+    "dialogue": [],
+    "sfx": [
+      "soft desert wind",
+      "fabric flapping",
+      "tinkling bells"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 8,
+    "narrative": "舞者开始展现飞天舞姿，动态美感与逆光剪影融为一体",
+    "shotType": "medium shot",
+    "dialogue": [],
+    "sfx": [
+      "whoosh",
+      "silk ribbon cracking",
+      "sand rustling"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 7,
+    "narrative": "以仰拍定格舞者如雕塑般的轮廓，突出神圣感与超现实光影",
+    "shotType": "medium close-up",
+    "dialogue": [],
+    "sfx": [
+      "swirling wind",
+      "ethereal shimmer"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 7,
+    "narrative": "镜头回正拉远，以壮阔沙丘与晚霞收尾，余韵悠长",
+    "shotType": "extreme wide shot",
+    "dialogue": [],
+    "sfx": [
+      "wind fading",
+      "distant chime"
+    ]
+  }
+]

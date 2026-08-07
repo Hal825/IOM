@@ -1,0 +1,82 @@
+[
+  {
+    "gateId": "pause_gate_1",
+    "nodeName": "",
+    "userText": "继续",
+    "cardPayload": {},
+    "jobId": "38",
+    "repliedAt": "2026-08-07T07:23:03.676Z"
+  },
+  {
+    "gateId": "pause_gate_2",
+    "nodeName": "generate_proposal",
+    "userText": "继续",
+    "cardPayload": {
+      "proposal": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "飞霞",
+            "type": "protagonist",
+            "appearance": "25岁东方女性，墨黑长发高盘飞天髻，斜插一支金步摇；柳眉凤目，面容清丽；身姿修长婀娜，赤足。身穿红色渐变敦煌飞天服，束胸短襦配飘曳长裙，双臂环绕数丈红绸披帛，行动间金铃轻响。",
+            "personality": "专注而忘我的舞蹈艺术家，动作舒展大气，神态在虔诚与自由间流转；沉浸于乐舞时眼神明亮、唇角微扬，每个旋转都饱含张力与情感。",
+            "role": "以敦煌飞天舞姿诠释沙漠落日中极致东方美的主角"
+          }
+        ],
+        "blueprint": {
+          "title": "沙漠落日·敦煌飞天",
+          "totalDuration": 30,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "开阔无垠的金色沙漠，连绵沙丘呈柔缓波浪状延伸至地平线。舞者位于沙丘脊线上，半径十米内沙面平整，周围零星点缀沙棘草。夕阳低垂于舞者正后方，形成强烈逆光，光线穿过被西北风卷起的沙粒，在低空形成金色薄雾。远处沙丘脊线层层叠叠，明暗交界清晰，暖橙金与深紫暮色渐变。整体氛围空旷、神圣、具有史诗感。",
+            "visualHints": "Vast open golden desert at sunset, rolling sand dunes extending to horizon, lone dancer on a sand dune ridge, flat smooth sand surface within ten meters, scattered sparse shrubs, low sun directly behind dancer creating intense backlight silhouette, wind-blown sand particles forming golden mist near ground, layered distant dune ridges with sharp light-shadow contrast, warm orange-gold to deep purple dusk gradient, epic and sacred atmosphere, cinematic wide-angle composition, film grain, 8k resolution, shallow depth of field, Dolby Vision, surreal volumetric lighting",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "广角全景，舞者飞霞立于沙丘脊线中央，红色舞衣与飘带被风扬起，夕阳从她身后洒下金色逆光，构成醒目剪影。镜头以舞者为中心，从正面开始缓慢向右做360度环绕推进，同时焦距轻微拉伸，背景沙丘线条随之产生扭曲延伸感，低空沙粒薄雾在光线中漂浮。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 8
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "镜头环绕至舞者左侧，飞霞开始舒展双臂旋转起舞，数丈红绸披帛在空中划出流畅的S形弧线，衣袂如火焰般翻飞。夕阳逆光为她的发丝与绸带镀上金边，沙粒被风卷起形成低空薄雾。镜头继续环绕且逐渐推近，浅景深将背景沙丘虚化为绵延的色块，强调舞者身姿的动感。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 8
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "接近舞者正侧方的中近景，飞霞仰首张开双臂，裙摆与长绸在风中向后飞扬，神情专注而自由。逆光在发丝间形成炫光，金色沙粒如星尘般在镜头前景漂浮。镜头环绕至舞者侧后方并缓慢抬起，以低角度仰拍强化其雕像般的轮廓，同时焦距缓缓变化，让背景沙丘呈梦境般弯曲延伸。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 7
+              },
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "镜头完成360度环绕回到舞者正面，并逐渐拉远至大全景。飞霞的身影在落日余晖中化为小巧而庄严的剪影，红色舞衣与沙丘的金色融为一体。沙丘脊线如流动的曲线延伸至无尽远方，低空沙雾在暮色中泛着微光。画面缓慢淡出到柔和橙紫色晚霞，留下一片史诗般的宁静。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 7
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "inspirational",
+          "visualStyle": "金色逆光剪影与超现实史诗沙漠光影",
+          "suggestedBGM": "气势恢宏的管弦乐与浑厚人声，尾声渐缓"
+        }
+      }
+    },
+    "jobId": "38",
+    "repliedAt": "2026-08-07T07:25:27.666Z"
+  }
+]
