@@ -51,7 +51,7 @@ OpenMontage 是一个基于 **Next.js + TypeScript** 的网页版 AI 视频自�
 **关键架构决策**：
 - LangGraph 管线在 **Worker 进程**中运行（非 API 请求内）。Worker 是**纯执行者**：用 `stream("updates")` 逐节点拿增量状态并发布原始事件（即发即弃），不负责呈现与协商。
 - **对话 agent 层（方案 B）**悬浮在图之上：API 进程的 `lib/coordinator.ts` 订阅 Redis 事件，把节点**完整输出**交给前端 agent（`lib/agent/frontend-agent.ts`）组织成自然语言并**流式**转发（SSE `agent_delta`/`agent`），决策点提问、等用户回复、记录反馈。
-- 前端：侧栏靠 3s 轮询 `GET /api/tasks` 兜底；**内容区对话时间线靠 SSE 流式推送**。
+- 前端：侧栏靠 3s 轮询 `GET /api/tasks` 兜底；**内容区对话时间线靠 SSE 流式推送**；右栏成品库由轮询任务列表派生（`status=completed`，`ProductionRail`），点击切主区详情。
 
 ### 核心流程
 
@@ -75,8 +75,10 @@ openmontage/
 │   ├── layout.tsx / globals.css  # 根布局 + Tailwind v4 主题（浅色精修色板，见 docs/design.md）
 │   ├── components/               # 前端组件（Workbench 组装五区域）
 │   │   ├── workbench.tsx         # 顶层工作台：轮询任务 + 布局组装
-│   │   ├── task-sidebar.tsx      # 侧栏：队列概况（含「＋新建任务」）+ 任务列表（琥珀底）
+│   │   ├── task-sidebar.tsx      # 左栏：队列概况（含「＋新建任务」）+ 任务列表（琥珀底；可收起为 44px 窄条）
 │   │   ├── task-item.tsx         # 侧栏任务行（含「待回复」徽标）
+│   │   ├── production-rail.tsx   # 右栏成品库：已完成任务成片清单（#id+标题+时长+下载，点击切主区；可收起为窄条）
+│   │   ├── rail-collapse.tsx     # 收起态窄条（RailCollapseStrip：桌面竖排展开按钮+旋转标签 / 移动端横排全宽）
 │   │   ├── task-detail.tsx       # 旧节点成果卡（已被 ChatTimeline 取代，暂留）
 │   │   ├── chat-timeline.tsx     # 内容区对话时间线（任务头 + 节点卡 + 流水线 + 决策点回复框；busy 无成果时显示思考卡片）
 │   │   ├── bubbles.tsx           # 用户气泡 / 决策点提问气泡 / 系统状态行
@@ -101,6 +103,7 @@ openmontage/
 │           ├── download/route.ts # GET 流式下载 MP4
 │           ├── stream/route.ts   # GET SSE 流式（节点卡/决策点/状态）
 │           ├── reply/route.ts    # POST 回复决策点（追加消息+反馈落盘+放行）
+│           ├── claude-release/route.ts  # POST 方案 B 放行：清 paused/awaiting + 追加系统消息 + 广播 proceed
 │           ├── rerun/route.ts    # POST 重跑节点（updateData+retry 原地重入队，携带 rerunFrom+resumeState）
 │           └── conversation/route.ts # GET 对话历史（初始加载）
 ├── workers/
@@ -154,6 +157,7 @@ openmontage/
 │   ├── verify-graph-full.ts      # 跑完整图（到最终拼接）的验证脚本
 │   ├── test-video-gen.ts         # 精简测试：2 镜头/15s/480p 真实视频生成+拼接
 │   ├── retry-jobs.ts             # BullMQ 一键查询/重试失败任务
+│   ├── claude-video-gen.ts       # 方案 B：用套餐 API 逐场景生成视频 + 放行 worker（AI_VIDEO_MODE=claude 配套）
 │   ├── check-job-34.ts / fix-job-34.ts  # 任务 #34 排查 / 修复脚本
 │   └── diag-visualhints.ts       # 视觉提示词诊断
 ├── storage/                      # 输出产物 (gitignored)
@@ -391,7 +395,7 @@ pacing    → { transitionIn, transitionOut, keyMoments }
 | 属性 | 值 |
 |------|-----|
 | 工具 | `generateSceneVideo()`（模型无关抽象层 `lib/tools/video-generation/`） |
-| 适配器 | `happyhorse-1.1-r2v`（DashScope 异步：创建→轮询→下载） |
+| 适配器 | `happyhorse-1.1-r2v`（DashScope 视频生成；**默认同步**：POST 不带 async 头阻塞到成片、响应直接含 video_url；`AI_VIDEO_ASYNC=on` 切回异步 创建→轮询→下载） |
 | 并发 | `AI_VIDEO_CONCURRENCY`（默认 2）窗口内逐镜头并行 |
 | 校验 | 每个镜头写出后 **ffprobe** 校验真实生成成功并取实际时长 |
 
@@ -404,6 +408,8 @@ pacing    → { transitionIn, transitionOut, keyMoments }
 2. 首帧硬依赖：`sceneImageUrl` 必须为公网 http(s) URL，缺失直接抛错
 3. 时长钳制 [3,15]；`spec.resolution`（宽x高）经 `resolutionToTier` 映射为档位（854x480→480P）
 4. 任一镜头失败 → 整体失败（零容错），失败后不再排新任务
+
+**Claude 手动生成模式（方案 B，`AI_VIDEO_MODE=claude`）**：套餐视频 key 仅 Claude 可用、项目调用 403 → 本节点**不调视频 API**，写 scene-specs 后暂停在 `pause_gate_video` 门（新增决策点）；`scripts/claude-video-gen.ts` 用套餐 API 逐场景生成（**r2v 带场景参考图优先**：`sceneImageUrl`+角色图 → `media.reference_image`；无公网图回退 t2v；480P，`--t2v` 强制 t2v）→ 写 `storage/scenes/{jobId}/{sceneId}.mp4` → 调 `POST /api/tasks/[id]/claude-release` 放行；节点恢复后扫描文件 + ffprobe 出 `sceneVideos`，`video_merge` 照常拼接。
 
 ---
 
@@ -594,8 +600,11 @@ return {
 | 变量 | 说明 |
 |------|------|
 | `AI_ASSET_API_KEY` / `AI_ASSET_BASE_URL` / `AI_ASSET_MODEL` | 图片生成（素材） |
-| `AI_VIDEO_API_KEY` / `AI_VIDEO_BASE_URL` / `AI_VIDEO_MODEL` | 视频生成（happyhorse-r2v 适配器，预留，当前节点不调用） |
-| `AI_VIDEO_RESOLUTION` / `AI_VIDEO_CONCURRENCY` / `AI_VIDEO_STYLE_STRENGTH` | 视频分辨率档位 / 并发窗口（默认 2）/ 风格强度（默认 0.85），预留 |
+| `AI_VIDEO_API_KEY` / `AI_VIDEO_BASE_URL` / `AI_VIDEO_MODEL` | 视频生成（happyhorse-r2v 适配器） |
+| `AI_VIDEO_RESOLUTION` / `AI_VIDEO_CONCURRENCY` / `AI_VIDEO_STYLE_STRENGTH` | 视频分辨率档位 / 并发窗口（默认 2）/ 风格强度（默认 0.85） |
+| `AI_VIDEO_ASYNC` | 视频生成模式：`on` = 异步（创建任务→轮询），缺省/其他 = **同步**（POST 阻塞到成片；适配不支持异步的 token plan） |
+| `AI_VIDEO_MODE=claude` | **方案 B** 全局兜底：`shot_video_gen` 不调视频 API，暂停等 Claude 生成（配套 `scripts/claude-video-gen.ts` + `claude-release` 端点）。**优先看每任务 `job.data.videoMode`**（前端创建任务时选 `auto`/`claude`，缺省 auto），env 仅当 job 未带该字段时生效 |
+| `ANTHROPIC_AUTH_TOKEN` | 套餐 API key（`sk-sp-`，仅 Claude 环境可用；生成脚本鉴权用） |
 | `AI_TTS_API_KEY` / `AI_TTS_BASE_URL` / `AI_TTS_MODEL` / `AI_TTS_VOICE` / `AI_TTS_SPEED` | TTS |
 
 ### OSS（公网 URL，视频生成硬依赖）

@@ -157,6 +157,7 @@ npm test                  # vitest run
 - 图片素材：`AI_ASSET_*`；TTS：`AI_TTS_*`（qwen3-tts-flash，SSML）。
 - 视频：`AI_VIDEO_*`。**新增视频模型** = 实现 `VideoModelAdapter`（模板 `happyhorse-r2v.ts`）→ 注册 `createVideoAdapter(model)`。未知模型零容错抛错。
 - 视频参数：`AI_VIDEO_RESOLUTION` / `AI_VIDEO_CONCURRENCY`（默认 2）/ `AI_VIDEO_STYLE_STRENGTH`（默认 0.85）。
+- **同步/异步模式**：`happyhorse-r2v` 默认**同步**（POST 不带 `X-DashScope-Async` 头，阻塞到成片、响应直接含 `video_url`，单次超时 10 分钟）——适配不支持异步任务/配额受限的 token plan；需要异步时 `AI_VIDEO_ASYNC=on`（创建任务→轮询→下载）。改动 `happyhorse-r2v.ts` 时保持两分支一致（成功响应结构相同，见 `extractVideoUrl`）。
 
 **换模型的自检清单**
 - [ ] 新模型输出结构与 `lib/types.ts` 一致（尤其 research 的 `user_demand`、proposal 的 `sceneVisuals`、script 的四子脚本）。
@@ -179,6 +180,8 @@ npm test                  # vitest run
 8. **Docker 起 Redis**：`docker compose up -d`；docker daemon 可能未运行（npipe 连接失败）。若本机已有 Redis 在 6379 则直接用。
 9. **OSS 公网 URL 硬依赖**：`sceneImageUrl` 必须是公网 http(s)，否则视频节点直接抛错。
 10. **无头 Chrome 验证的 Windows 细节**：截图落 `/tmp` 后 Read 工具解析不了 Git Bash 路径——先 `cp` 进项目内；`--dump-dom` 核对渲染；几何用 CDP `getBoundingClientRect` 分层测量。
+11. **grid 子项 min-content 撑破列**：grid 无列模板时自动列按 max-content 定宽，长任务文本（`truncate` 的 nowrap）会把列撑到 1000px+ 横向溢出。桌面用固定列宽（280/260px）不触发；**移动端单列必须 `grid-cols-1`（`repeat(1,minmax(0,1fr))`）+ grid 子项 `min-w-0`**（workbench 中部 grid 已如此）。右栏收起/展开见 `docs/design.md §1`。
+12. **SSR hydration 时读 localStorage 会 mismatch**：`useState(() => readLocalStorage(...))` 在服务端预渲染恒返回默认值、客户端读到持久化值 → 首帧 HTML 不一致，React 报 `Hydration failed`。**一律首帧默认，mount 后 `useEffect` 再恢复偏好**；写回 effect 用 `restored` state 门控，避免恢复前把默认值写回覆盖持久化值（workbench 两栏收起态已如此）。
 
 ---
 
@@ -195,7 +198,7 @@ npm test                  # vitest run
 
 ## 8. 对话 agent 层（方案 B）速查
 
-**架构**：Worker 是纯执行者（`videoGraph.stream("updates")` 逐节点发布原始事件到 Redis `om:events:<jobId>`）；`lib/coordinator.ts`（API 进程）订阅 → 节点**完整输出**交给前端 agent（`frontend-agent.ts`）组织成自然语言并**流式**转发（SSE `agent_delta`/`agent`）→ 决策点提问 → 用户回复放行。4 个暂停门升级为决策点。
+**架构**：Worker 是纯执行者（`videoGraph.stream("updates")` 逐节点发布原始事件到 Redis `om:events:<jobId>`）；`lib/coordinator.ts`（API 进程）订阅 → 节点**完整输出**交给前端 agent（`frontend-agent.ts`）组织成自然语言并**流式**转发（SSE `agent_delta`/`agent`）→ 决策点提问 → 用户回复放行。4 个暂停门升级为决策点（**另有方案 B 视频门 `pause_gate_video`**：`AI_VIDEO_MODE=claude` 时 `shot_video_gen` 不调视频 API，暂停等 `scripts/claude-video-gen.ts` 生成场景视频 + `POST /api/tasks/[id]/claude-release` 放行）。
 
 **关键文件**：`lib/agent/events.ts`（事件类型 + `nodeToCardType` + `GATE_QUESTIONS`）、`lib/agent/frontend-agent.ts`（前端 agent：完整输出→自然语言流式，`streamChatCompletion` 在 `lib/tools/llm.ts`）、`lib/coordinator.ts`、`lib/conversations/`（消息模型 `card/agent/gate/text/status` + JSON 存储）、`lib/sse/hub.ts`、`lib/events/bus.ts`、`lib/log/feedback.ts`、`lib/pause.ts`（`beginDecision`）。
 
@@ -203,7 +206,7 @@ npm test                  # vitest run
 
 **SSE 事件协议**（`/api/tasks/[id]/stream`）：`hello`（重放）/ `card`（旧）/ `agent_delta`（前端 agent 流式增量）/ `agent`（前端 agent 消息完成）/ `gate` / `user` / `proceed` / `status` / `rerun`（重跑标记）；心跳 25s；headers 需 `Cache-Control: no-cache` + `X-Accel-Buffering: no` + `dynamic='force-dynamic'`。
 
-**human-in-loop 流程**：图内门 → `beginDecision` 幂等置暂停标志 + 发 `gate` 事件 → 阻塞；协调器置 `om:awaiting:<jobId>` + 追加提问 → 前端 `等待回复` 徽标 + 回复框；`POST reply` → 追加用户消息 + 反馈落盘（`storage/feedback/{jobId}.json`）+ 清标志 → 放行。
+**human-in-loop 流程**：图内门 → `beginDecision` 幂等置暂停标志 + 发 `gate` 事件 → 阻塞；协调器置 `om:awaiting:<jobId>` + 追加提问 → 前端 `等待回复` 徽标 + 回复框；`POST reply` → 追加用户消息 + 反馈落盘（`storage/feedback/{jobId}.json`）+ 清标志 → 放行。**回复框带「继续 →」主按钮**（2026-08-08，无输入直接发 `继续` 放行，不必打字）+ 文本框（可选写反馈）+「发送」。**视频生成方式 per-task**：`POST /api/tasks { text, videoMode }`，`job.data.videoMode`（auto/claude）→ `shot_video_gen` 优先读它、env `AI_VIDEO_MODE` 兜底。
 
 **重跑节点**（`POST /api/tasks/[id]/rerun { nodeName }`，`lib/agent/rerun.ts`）：X 及之后全部重新生成、上游保留。机制 = `job.updateData(rerunFrom + resumeState)` + `job.retry(state)` **原地**重入队 —— 保留同一 jobId（绕开 BullMQ「Custom Id cannot be integers」限制），`resumeState` 从对话卡 payload 重建；Worker 以该初始状态跑同一张全图，8 节点顶部按「输出通道已有值」跳过，门按位置 `shouldFireGate` 决定是否提问（上游门跳过）。暂停在门上的任务：`markJobDeleted` 触发旧跑中止 → 轮询至 failed → updateData+retry → 清 `om:paused`/`om:awaiting`/决策点幂等键。对话线程保留旧卡 + 追加新结果（`rerun` SSE 事件插标记行）。
 

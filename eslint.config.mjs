@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // NEXT_DIST_DIR 指定的非默认产物目录（审计/CI 构建）
+    ".next-audit/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

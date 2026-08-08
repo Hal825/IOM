@@ -16,8 +16,12 @@
   --color-warning: #f59e0b;
   --color-info: #0891b2;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* 系统字体栈：中文 UI 零下载、零构建期外网依赖（原 Geist 仅 latin 子集） */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
 
   /* 轻抬升的卡片阴影 */
   --shadow-card: 0 1px 3px rgb(15 23 42 / 0.06), 0 4px 16px rgb(15 23 42 / 0.05);
@@ -68,19 +72,44 @@ body {
   background: rgba(99, 102, 241, 0.16);
 }
 
+/* 键盘焦点环：所有交互元素统一 accent 描边（仅键盘 Tab 触发，鼠标点击不显示）。
+   输入框用 outline-none + 父容器 focus-within 描边的，不受影响。 */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 尊重减少动态偏好：关掉所有循环/过渡动画（旋转、呼吸、滚动进度条、淡入） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* 细滚动条，融进浅色面板 */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
 }
 
-/* 任务列表底部虚化：sticky 贴住滚动区底部，提示「还有更多任务可滚」 */
+/* 滚动列表底部虚化：sticky 贴住滚动区底部，提示「还有更多可滚」。
+   底色由 --rail-fade 决定（任务栏琥珀 / 成品库浅绿），默认页面底色。 */
 .rail-list::after {
   content: "";
   display: block;
   position: sticky;
   bottom: -1px;
   height: 22px;
-  background: linear-gradient(to bottom, rgba(255, 251, 235, 0), #fffbeb);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--rail-fade, var(--color-background))
+  );
   pointer-events: none;
 }

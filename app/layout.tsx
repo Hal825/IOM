@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// 字体说明：本项目为中文界面，曾用 next/font/google 加载 Geist（仅 latin 子集，
+// 中文仍走系统字体），但构建期需访问 fonts.googleapis.com —— 离线/国内构建机
+// 会直接 build 失败。已改为 globals.css 中的系统字体栈（--font-sans / --font-mono），
+// 零网络依赖、零字体下载，视觉对中文 UI 无差异。
 
 export const metadata: Metadata = {
   title: "OpenMontage — 文本生成视频",
@@ -23,10 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
       </body>

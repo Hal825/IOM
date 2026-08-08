@@ -87,20 +87,23 @@ export function nodeToCardType(nodeName: string): CardType | null {
   return NODE_CARD_MAP[nodeName] ?? null;
 }
 
-/** 4 个决策点暂停门 → 人类可读阶段名 */
+/** 决策点暂停门 → 人类可读阶段名（4 个普通门 + 视频门 = Claude 手动生成，方案 B） */
 export const GATE_STAGES: Record<string, string> = {
   pause_gate_1: '调研完成',
   pause_gate_2: '脚本就绪',
   pause_gate_3: '场景规格已组装',
   pause_gate_4: '镜头已生成',
+  pause_gate_video: '视频生成',
 };
 
-/** 4 个决策点暂停门 → 提问文案（M2 模板，M3 可 LLM 润色） */
+/** 决策点暂停门 → 提问文案（M2 模板，M3 可 LLM 润色） */
 export const GATE_QUESTIONS: Record<string, string> = {
   pause_gate_1: '已确认需求，开始设计提案？',
   pause_gate_2: '提案与脚本就绪，开始生成素材与配音？',
   pause_gate_3: '场景规格已组装，开始逐镜头生成视频？',
   pause_gate_4: '镜头已全部生成，确认开始拼接？',
+  // 方案 B：套餐 key 仅 Claude 可用 → worker 不调视频 API，暂停等 Claude 生成场景视频后放行
+  pause_gate_video: '视频生成：等待 Claude 用套餐视频模型生成各场景视频（跳过视频 API）。',
 };
 
 /** 流水线节点顺序（前端 pipeline 组件按真实节点事件逐节点着色） */

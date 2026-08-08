@@ -1,0 +1,54 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 5,
+    "narrative": "建立创作者灵感枯竭的困境，引发观众共鸣",
+    "shotType": "extreme close-up",
+    "dialogue": [],
+    "sfx": [
+      "keyboard clicks",
+      "heartbeat",
+      "room tone"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 7,
+    "narrative": "AI正式接管想象力，呈现无限创意可能",
+    "shotType": "macro close-up",
+    "dialogue": [
+      "让AI，接管你的想象力。"
+    ],
+    "sfx": [
+      "electronic start-up",
+      "epic orchestral swells",
+      "particle whoosh"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "narrative": "展示AI创作的可控性与专业级输出品质",
+    "shotType": "medium shot",
+    "dialogue": [
+      "从文字到视界，只需一次呼吸。"
+    ],
+    "sfx": [
+      "soft UI tap",
+      "real-time transform whoosh",
+      "data pulse"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 6,
+    "narrative": "升华主题，完成从困境到宏大愿景的情绪释放",
+    "shotType": "wide panoramic shot",
+    "dialogue": [],
+    "sfx": [
+      "ambient virtual world hum",
+      "camera freeze click",
+      "logo particle chime"
+    ]
+  }
+]

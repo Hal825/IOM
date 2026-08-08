@@ -2,6 +2,7 @@
 
 import type { NodeCardMessage } from '@/lib/conversations/types';
 import { formatClock } from '../format';
+import { IconRerun } from '../icons';
 import { CARD_LABELS, NodeCardBody } from './registry';
 
 /**
@@ -29,9 +30,9 @@ export function NodeCard({
               type="button"
               onClick={() => onRerun(message.nodeName)}
               title="重新生成此节点及之后"
-              className="rounded-lg border border-accent/50 px-2.5 py-0.5 text-[11px] font-medium text-accent transition hover:bg-accent/10"
+              className="inline-flex items-center gap-1 rounded-lg border border-accent/50 px-2.5 py-1.5 text-[11px] font-medium text-accent transition hover:bg-accent/10 md:py-0.5"
             >
-              ↻ 重跑
+              <IconRerun className="h-3 w-3" /> 重跑
             </button>
           ) : null}
           <span className="font-mono text-[10px] text-muted">

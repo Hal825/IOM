@@ -1,0 +1,591 @@
+[
+  {
+    "gateId": "pause_gate_1",
+    "nodeName": "",
+    "userText": "继续",
+    "cardPayload": {},
+    "jobId": "44",
+    "repliedAt": "2026-08-08T07:51:56.580Z"
+  },
+  {
+    "gateId": "pause_gate_2",
+    "nodeName": "generate_proposal",
+    "userText": "继续",
+    "cardPayload": {
+      "proposal": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "林墨",
+            "type": "protagonist",
+            "appearance": "28岁男性,黑发微乱略显疲态,戴银框半框眼镜,五官清秀,双眼疲惫但有神,身形清瘦挺拔.穿黑色连帽衫配深灰休闲裤,手腕戴智能手环.",
+            "personality": "专注内向,习惯性皱眉思考,语速平缓,遇惊喜时眼神发亮并微微扬眉,动作细腻沉稳.",
+            "role": "深夜灵感枯竭的创作者,体验AI唤起想象力的完整历程."
+          }
+        ],
+        "blueprint": {
+          "title": "重塑想象:让AI接管想象力",
+          "totalDuration": 28,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "约20平米深夜工作间,左侧靠墙一张深木色长桌,桌上放着27寸显示器(亮着空白文档),一盏暖黄台灯,桌旁散落速写本和模型;右侧墙是现代收纳架,堆满资料和创意摆件;窗帘紧闭,只透出远处城市零星灯光.整体暗灰色调,天花板主灯关闭,仅屏幕、台灯和显示器余光照明,氛围压抑、沉静,地面堆着纸团和能量饮料罐.",
+            "visualHints": "Dim cluttered creative studio at night, 25 square meters, large wooden desk on left with desktop monitor showing blank white document, warm desk lamp glow, shelves with books and toy models, dark curtain against window, faint city lights behind, cool blue-grey palette, crumpled papers and energy drink cans scattered on floor, deep shadows, cinematic moody lighting, intimate late-night atmosphere, realistic 480p",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "特写:林墨一双疲惫的眼睛紧盯着空白文档,眼角充血,眉头微蹙;光标有节奏地闪烁.镜头缓慢拉远,展示深夜杂乱的桌面,桌面上散落纸团与能量饮料罐.林墨收回视线,双手揉按太阳穴.画面冷灰压抑,屏幕中央浮现字幕'灵感枯竭?'.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 5
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "数字粒子虚拟空间,无实体边界,只有中央悬浮的亮蓝发光屏幕作为介质.手指触碰屏幕时,彩色粒子从屏幕平面炸开,向四周无限扩散并重组为奇幻城市、机械生物、水墨山水等视觉片段.底色为暗夜蓝紫渐变,四周漂浮半透明数据流光束,霓虹橙、品红、青蓝粒子交替闪烁,明暗对比强烈,形成不断流转的梦幻光场.",
+            "visualHints": "Infinite digital particle void, a floating central screen plane mid-air, fingertip touching the screen sparks streaming colorful particles, particles rapidly recombining into fantastical city skyline, mechanical creature silhouette, ink-wash mountain landscape, quick crossfades, dark blue-purple gradient background, neon orange magenta and cyan particles, floating luminous data streams, dreamlike ethereal atmosphere, seamless cinematic transition",
+            "scenes": [
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "镜头切换至林墨指尖特写,指尖触碰发光屏幕,瞬间无数彩色粒子从屏幕涌出,充满画面.粒子在空中重组为奇幻城市轮廓、机械生物剪影、水墨山水波纹,三组画面快速衔接,色调转为霓虹暖光.飘浮的数据流随音乐律动,字幕'一键生成·无限可能'从右侧弹出,画面卡点切换.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 7
+              }
+            ]
+          },
+          {
+            "visualId": "visual-3",
+            "description": "明亮现代创意工作室,约25平米,中央为白色升降工作台,台面上放有27寸曲面显示器和小型平板;左侧墙面为浅灰色展板,贴满数字插画与概念图,右侧为落地玻璃窗,自然光充足;天花板为白色网格造型,嵌入LED平板灯,配色以白、浅木色为主,辅以蓝紫氛围光带,整体简洁高效,透着专业创作气息.",
+            "visualHints": "Bright modern creative studio, central white standing desk, 27-inch curved monitor with split screen, left panel showing parameter sliders, right screen showing 4K digital artwork evolving, grey walls with framed posters, white grid suspended ceiling with LED panels, natural sunlight from side window, white and light wood color palette, blue-purple ambient accent lighting, clean productivity workspace, professional creative atmosphere",
+            "scenes": [
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "中景:林墨站在白色工作台前,戴着眼镜,嘴角带自信微笑,右手拖动平板上的参数滑块;右侧显示器中奇幻场景实时变形、细化.画面切换为分屏:左侧为文字输入框,右侧为4K成品图动态演化,全景前后景有浅景深效果.林墨指尖划过平板时,界面元素发出蓝色流光.屏幕下方浮现字幕'精准可控·专业级输出'.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 10
+              }
+            ]
+          },
+          {
+            "visualId": "visual-4",
+            "description": "宏大的虚拟世界空间,纵向广袤无垠.林墨所在处是通向空中的半透明数据悬崖,脚下延伸出玻璃质感的观景栈道;四周悬浮全息山脉、数据瀑布、机械飞鸟和发光植物,远景悬挂发光恒星核心与轨道环.整体色调为暗紫、靛蓝,荧光青点缀,空气中漂浮细碎数字粒子,有一种史诗般深邃的沉浸感.",
+            "visualHints": "Epic virtual landscape, creator stands on high data cliff edge with translucent glass path, floating holographic mountains, waterfall made of cascading data, mechanical birds and glowing plants, great star core with orbit rings far away, dark purple indigo palette, glowing cyan accents, floating digital particles, wide cinematic shot, grand scale world, inspiring futuristic scenery",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "全景:林墨站在宏大的虚拟世界中央,展开双臂感受数据光粒洒落,随后缓缓转身面向镜头,露出释然而坚定的微笑.画面定格,四周粒子逐渐聚合成产品logo与slogan,底部浮现字幕'重塑想象,由你定义'.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 6
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "inspirational",
+          "visualStyle": "冷灰压抑转霓虹暖光,未来主义粒子与数字艺术",
+          "suggestedBGM": "电子启动音+恢弘弦乐,后段轻快科技感"
+        }
+      }
+    },
+    "jobId": "44",
+    "repliedAt": "2026-08-08T07:54:32.263Z"
+  },
+  {
+    "gateId": "pause_gate_3",
+    "nodeName": "tts",
+    "userText": "����",
+    "cardPayload": {
+      "audioSegments": [
+        {
+          "sceneId": "scene-1",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-1_aligned.mp3",
+          "durationSec": 5
+        },
+        {
+          "sceneId": "scene-2",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-2_aligned.mp3",
+          "durationSec": 7
+        },
+        {
+          "sceneId": "scene-3",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-3_aligned.mp3",
+          "durationSec": 10
+        },
+        {
+          "sceneId": "scene-4",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-4_aligned.mp3",
+          "durationSec": 6
+        }
+      ]
+    },
+    "jobId": "44",
+    "repliedAt": "2026-08-08T07:56:32.618Z"
+  },
+  {
+    "gateId": "pause_gate_4",
+    "nodeName": "scene_json_assembler",
+    "userText": "继续",
+    "cardPayload": {
+      "sceneSpecs": [
+        {
+          "sceneId": "scene-1",
+          "duration": 5,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-1.png",
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-1_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "特写：林墨一双疲惫的眼睛紧盯着空白文档，光标有节奏地闪烁。镜头缓慢拉远，展示深夜杂乱的桌面，桌面上散落纸团与能量饮料罐。林墨收回视线，双手揉按太阳穴。画面冷灰压抑，屏幕中央浮现字幕'灵感枯竭?'。",
+            "narrative": "建立创作者灵感枯竭的困境，引发观众共鸣",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "紧盯着空白文档，光标闪烁",
+                  "收回视线，双手揉按太阳穴"
+                ],
+                "emotions": [
+                  "疲惫",
+                  "压抑"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "extreme close-up",
+              "angle": "eye-level",
+              "movement": "slow pull back to wide shot",
+              "focus": "Lin Mo's tired eyes and the blank document cursor"
+            },
+            "composition": "centered on eye, expanding to reveal cluttered desk, rule of thirds with desk on left",
+            "lighting": "dim cold grey ambient, monitor glow illuminating face, low-key lighting",
+            "visualElements": [
+              "blank document",
+              "blinking cursor",
+              "crumpled papers",
+              "energy drink cans",
+              "subtitle text '灵感枯竭?'"
+            ],
+            "atmosphere": "isolated, exhausted, moody, cinematic, shallow depth of field, high detail",
+            "motionLevel": 2,
+            "negativePrompt": "extra fingers, distorted face, blurry, low quality, watermark, text artifacts, lens flare, bright colors"
+          },
+          "audio": {
+            "dialogue": null,
+            "sfx": [
+              {
+                "type": "keyboard clicks",
+                "timing": "at start, fading out over 2s"
+              },
+              {
+                "type": "heartbeat",
+                "timing": "starts at 3s, low volume, grows slightly"
+              },
+              {
+                "type": "room tone",
+                "timing": "throughout"
+              }
+            ],
+            "bgm": {
+              "style": "minimal dark ambient",
+              "mood": "tense, subdued, with faint pulse",
+              "timing": "starts at 0.5s, low volume, ends before scene transition"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "fade-in",
+              "durationSec": 1
+            },
+            "transitionOut": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "keyMoments": [
+              {
+                "time": 0,
+                "event": "字幕'灵感枯竭?'浮现"
+              },
+              {
+                "time": 2,
+                "event": "镜头开始拉远，展示杂乱桌面"
+              },
+              {
+                "time": 4,
+                "event": "林墨揉按太阳穴"
+              }
+            ]
+          }
+        },
+        {
+          "sceneId": "scene-2",
+          "duration": 7,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-2.png",
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-2_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "镜头切换至林墨指尖特写，指尖触碰发光屏幕，瞬间无数彩色粒子从屏幕涌出，充满画面。粒子在空中重组为奇幻城市轮廓、机械生物剪影、水墨山水波纹，三组画面快速衔接，色调转为霓虹暖光。飘浮的数据流随音乐律动，字幕'一键生成·无限可能'从右侧弹出，画面卡点切换。",
+            "narrative": "AI正式接管想象力，呈现无限创意可能",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "指尖触碰发光屏幕",
+                  "注视着从屏幕涌出的彩色粒子"
+                ],
+                "emotions": [
+                  "从疲惫转为惊喜",
+                  "惊叹与好奇"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "macro close-up",
+              "angle": "eye-level",
+              "movement": "dynamic handheld with quick jump cuts",
+              "focus": "fingertip touching glowing screen, particles bursting outward"
+            },
+            "composition": "centered on fingertip, particles filling frame, three quick-cut sequences following rule of thirds",
+            "lighting": "neon magenta/orange/cyan glow, high contrast, dark blue-purple base",
+            "visualElements": [
+              "glowing screen plane",
+              "colorful particles",
+              "fantasy city silhouette",
+              "mechanical creature",
+              "ink-wash landscape",
+              "subtitle '一键生成·无限可能'"
+            ],
+            "atmosphere": "energetic, magical, futuristic, surreal, cinematic vfx, 8k",
+            "motionLevel": 4,
+            "negativePrompt": "blurry, low quality, watermark, deformed shapes, text errors, flickering"
+          },
+          "audio": {
+            "dialogue": [
+              {
+                "characterId": "char-1",
+                "text": "让AI，接管你的想象力。",
+                "emotion": "inspiring, mysterious"
+              }
+            ],
+            "sfx": [
+              {
+                "type": "electronic start-up",
+                "timing": "at 0s when fingertip touches screen"
+              },
+              {
+                "type": "epic orchestral swells",
+                "timing": "aligned with visual cuts at 1.5s, 4s, 6s"
+              },
+              {
+                "type": "particle whoosh",
+                "timing": "during each particle recombination sequence"
+              }
+            ],
+            "bgm": {
+              "style": "epic cinematic electronic",
+              "mood": "grand, uplifting, rhythmic",
+              "timing": "starts with start-up sound, increases in intensity"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "dissolve",
+              "durationSec": 0.5
+            },
+            "transitionOut": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "keyMoments": [
+              {
+                "time": 0,
+                "event": "指尖触碰发光屏幕，粒子涌出"
+              },
+              {
+                "time": 1.5,
+                "event": "旁白'让AI，接管你的想象力'开始"
+              },
+              {
+                "time": 2.5,
+                "event": "第一组快切：奇幻城市"
+              },
+              {
+                "time": 4,
+                "event": "第二组快切：机械生物"
+              },
+              {
+                "time": 5.5,
+                "event": "第三组快切：水墨山水"
+              },
+              {
+                "time": 6.5,
+                "event": "字幕'一键生成·无限可能'弹出"
+              }
+            ]
+          }
+        },
+        {
+          "sceneId": "scene-3",
+          "duration": 10,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-3.png",
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-3_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "中景：林墨站在白色工作台前，戴着眼镜，嘴角带自信微笑，右手拖动平板上的参数滑块；右侧显示器中奇幻场景实时变形、细化。画面切换为分屏：左侧为文字输入框，右侧为4K成品图动态演化，全景前后景有浅景深效果。林墨指尖划过平板时，界面元素发出蓝色流光。屏幕下方浮现字幕'精准可控·专业级输出'。",
+            "narrative": "展示AI创作的可控性与专业级输出品质",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "站在工作台前拖动参数滑块",
+                  "观察奇幻场景实时演化"
+                ],
+                "emotions": [
+                  "自信",
+                  "从容掌控"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "medium shot",
+              "angle": "eye-level",
+              "movement": "static with subtle dolly-in",
+              "focus": "Lin Mo's face and the split-screen evolving 4K artwork"
+            },
+            "composition": "subject center-left, split screen occupying right side, rule of thirds",
+            "lighting": "bright natural daylight from left, white LED ceiling panels, soft shadows, blue ambient accents",
+            "visualElements": [
+              "white standing desk",
+              "tablet with parameter sliders",
+              "left text input box",
+              "right 4K artwork evolution",
+              "blue light streams",
+              "subtitle '精准可控·专业级输出'"
+            ],
+            "atmosphere": "clean, modern, confident, productive, shallow depth of field, 8k",
+            "motionLevel": 2,
+            "negativePrompt": "extra fingers, distorted hands, blurry, low quality, watermark, text artifacts, dark environment, messy background"
+          },
+          "audio": {
+            "dialogue": [
+              {
+                "characterId": "char-1",
+                "text": "从文字到视界，只需一次呼吸。",
+                "emotion": "calm, confident, slightly warm"
+              }
+            ],
+            "sfx": [
+              {
+                "type": "soft UI tap",
+                "timing": "at 1s when adjusting parameters"
+              },
+              {
+                "type": "real-time transform whoosh",
+                "timing": "throughout, subtle"
+              },
+              {
+                "type": "data pulse",
+                "timing": "as the 4K image evolves"
+              }
+            ],
+            "bgm": {
+              "style": "light tech beat",
+              "mood": "energetic, smooth, controlled",
+              "timing": "continues from scene-2, mixing into upbeat version"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "dissolve",
+              "durationSec": 0.5
+            },
+            "transitionOut": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "keyMoments": [
+              {
+                "time": 0,
+                "event": "分屏展示：左输入框，右4K成品图"
+              },
+              {
+                "time": 1,
+                "event": "旁白'从文字到视界，只需一次呼吸'开始"
+              },
+              {
+                "time": 2,
+                "event": "奇幻场景实时变形细化"
+              },
+              {
+                "time": 4,
+                "event": "界面元素发出蓝色流光"
+              },
+              {
+                "time": 7,
+                "event": "字幕'精准可控·专业级输出'浮现"
+              }
+            ]
+          }
+        },
+        {
+          "sceneId": "scene-4",
+          "duration": 6,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-4.png",
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-4_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "全景：林墨站在宏大的虚拟世界中央，展开双臂感受数据光粒洒落，随后缓缓转身面向镜头，露出释然而坚定的微笑。画面定格，四周粒子逐渐聚合成产品logo与slogan，底部浮现字幕'重塑想象，由你定义'。",
+            "narrative": "升华主题，完成从困境到宏大愿景的情绪释放",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "展开双臂感受数据光粒",
+                  "转身面向镜头微笑"
+                ],
+                "emotions": [
+                  "释然",
+                  "坚定",
+                  "成就感"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "wide panoramic shot",
+              "angle": "low angle",
+              "movement": "slow orbit around character, then freeze frame",
+              "focus": "Lin Mo facing camera, surrounded by virtual world and converging particles"
+            },
+            "composition": "centered hero shot, symmetrical, expansive background filling frame",
+            "lighting": "epic purple/indigo palette with glowing cyan particle light, strong rim light",
+            "visualElements": [
+              "data cliff edge",
+              "floating holographic mountains",
+              "data waterfall",
+              "mechanical birds",
+              "glowing plants",
+              "star core with orbit rings",
+              "particles converging into logo",
+              "subtitle '重塑想象，由你定义'"
+            ],
+            "atmosphere": "epic, awe-inspiring, dreamlike, cinematic, 8k",
+            "motionLevel": 3,
+            "negativePrompt": "people in background, watermark, blurry, low quality, deformed structures, unnatural shadows"
+          },
+          "audio": {
+            "dialogue": null,
+            "sfx": [
+              {
+                "type": "ambient virtual world hum",
+                "timing": "throughout"
+              },
+              {
+                "type": "camera freeze click",
+                "timing": "when frame freezes at 4s"
+              },
+              {
+                "type": "logo particle chime",
+                "timing": "when particles converge into logo"
+              }
+            ],
+            "bgm": {
+              "style": "epic ambient",
+              "mood": "inspiring, resolution",
+              "timing": "swells then fades out during final freeze frame"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "transitionOut": {
+              "type": "fade-out",
+              "durationSec": 1.5
+            },
+            "keyMoments": [
+              {
+                "time": 0,
+                "event": "林墨展开双臂感受数据光粒"
+              },
+              {
+                "time": 2,
+                "event": "转身面向镜头，露出释然微笑"
+              },
+              {
+                "time": 4,
+                "event": "画面定格，粒子聚合成logo与slogan"
+              },
+              {
+                "time": 5,
+                "event": "底部字幕'重塑想象，由你定义'浮现"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "jobId": "44",
+    "repliedAt": "2026-08-08T08:13:11.723Z"
+  }
+]

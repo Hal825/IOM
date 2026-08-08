@@ -1,0 +1,657 @@
+[
+  {
+    "gateId": "pause_gate_1",
+    "nodeName": "",
+    "userText": "继续",
+    "cardPayload": {},
+    "jobId": "43",
+    "repliedAt": "2026-08-08T07:39:52.427Z"
+  },
+  {
+    "gateId": "pause_gate_2",
+    "nodeName": "generate_proposal",
+    "userText": "继续",
+    "cardPayload": {
+      "proposal": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "阿哲",
+            "type": "protagonist",
+            "appearance": "26岁左右男性创作者,黑色微卷短发略显凌乱,戴银色细框眼镜,面容清秀有熬夜倦意,身形偏瘦.身穿深灰色连帽卫衣和黑色休闲裤,手腕上戴着智能手环,手指修长.",
+            "personality": "沉默专注,面对空白文档时眉头紧锁,指尖习惯性敲击桌面;见证AI生成奇迹时眼神变得明亮,嘴角微扬,动作果断而从容.",
+            "role": "视频主角,展示从灵感枯竭到借助AI创作惊人作品的转变"
+          }
+        ],
+        "blueprint": {
+          "title": "重塑想象",
+          "totalDuration": 28,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "约10平米的深夜私人书房,空间逼仄昏暗.中央一张堆满书籍、手稿和杂物的木质书桌,桌上放着一台发着冷白光的笔记本电脑,屏幕显示空白文档,光标闪烁.桌角散落着咖啡杯、耳机和便签纸.窗帘拉紧,仅有一盏台灯提供微弱暖光,整体色调冷灰压抑,营造疲惫孤独的氛围.",
+            "visualHints": "cluttered private study room at night, wooden desk piled with books and scattered notes, laptop computer with blank white document glowing on screen, dim ambient light from small desk lamp, cold grey-blue color grading, young creator with tired eyes, hoodie, coffee cup, wired earphones, messy sticky notes, cinematic close-up, shallow depth of field, melancholic mood",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "特写阿哲疲惫的双眼,盯着笔记本屏幕上的空白文档,光标不断闪烁.镜头缓慢拉远,露出杂乱的书桌和深夜房间,冷白屏幕光映射在阿哲脸上.画面右上角浮现冷色字幕'灵感枯竭?'.键盘敲击声渐弱,心跳声效衬托压抑感.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 5
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "一个无边界的奇幻数字空间,黑暗背景中悬浮着一块巨大的半透明发光屏幕,屏幕散发蓝紫色光晕,周围弥漫着密集的彩色粒子.光线从屏幕向外扩散,色彩由冷蓝逐渐过渡到霓虹暖光.空间内没有实体边界,粒子随空气流动,充满未来感和动态张力.",
+            "visualHints": "dark void space with glowing translucent screen in center, massive interactive display emitting blue-purple light, colorful digital particles flying and forming fantasy city, mechanical creature, ink-wash landscape, neon warm light gradually replacing cool tones, futuristic digital art, vibrant particles, volumetric lighting, dynamic motion, 3D abstract space, high contrast, cinematic",
+            "scenes": [
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "中景,阿哲的指尖触碰发光屏幕,瞬间无数彩色粒子从屏幕涌出,在空中快速重组为奇幻城市、机械生物、水墨山水三组画面快切.色调由冷灰转为霓虹暖光,粒子光影映照在阿哲专注的侧脸.镜头跟随粒子流动,画面卡点切换.字幕'一键生成·无限可能'浮现.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 7
+              }
+            ]
+          },
+          {
+            "visualId": "visual-3",
+            "description": "约15平米的现代创意工作室,宽阔的白色工作台中央嵌有触控面板,左侧显示器展示文字输入框,右侧显示器展示生成画面.背景墙布满霓虹灯带和概念设计图,暖色灯光贯穿空间.整体明亮通透,科技感与艺术感融合,营造高效专业的创作环境.",
+            "visualHints": "modern creative studio, white desk with touch panel, dual monitors showing text input and generated 4K artwork, neon light strips on wall, concept art posters, warm industrial lighting, futuristic UI, real-time digital drawing evolution, close-up of hands adjusting parameters, professional workspace atmosphere, clean design, subtle reflections",
+            "scenes": [
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "中景,阿哲坐在工作台前,微笑着用双手在触控面板上调整参数,右侧显示器上的奇幻场景实时变形、细化.画面分屏展示:左侧是输入框,右侧是4K成品图动态演化.阿哲时而滑动滑块,时而轻点屏幕,动作流畅自信.镜头在阿哲和屏幕之间缓慢横移,字幕'精准可控·专业级输出'持续显示.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 10
+              }
+            ]
+          },
+          {
+            "visualId": "visual-4",
+            "description": "广袤的虚拟数字世界,悬浮的空中岛屿与流动的光带交织,巨型几何结构在远处耸立,地平线上浮现发光的未来城市轮廓.深邃蓝紫色与金色辉光融合,空间极其开阔,充满史诗般的未来感.整体场景宏大而精致,是主角AI创作的终极成果.",
+            "visualHints": "vast virtual digital world, floating islands, glowing light ribbons, giant geometric structures, distant futuristic city skyline, deep blue and purple palette with golden rim light, epic scale, cinematic wide shot, character standing at center looking back, triumphant atmosphere, volumetric fog, ethereal glow, high detail, 3D render style",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "全景,阿哲站在虚拟世界的中央,周围是流光溢彩的宏大建筑与光带.他回头看向镜头,眼神坚定而自豪.画面缓缓定格,浮现产品logo与slogan.镜头轻微推近后停住,全片结束.",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 6
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "inspirational",
+          "visualStyle": "冷灰压抑转霓虹暖光,虚实结合的未来感视觉",
+          "suggestedBGM": "电子启动音转恢弘弦乐,氛围渐强"
+        }
+      }
+    },
+    "jobId": "43",
+    "repliedAt": "2026-08-08T07:41:25.890Z"
+  },
+  {
+    "gateId": "pause_gate_3",
+    "nodeName": "tts",
+    "userText": "����",
+    "cardPayload": {
+      "audioSegments": [
+        {
+          "sceneId": "scene-1",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-1_aligned.mp3",
+          "durationSec": 5
+        },
+        {
+          "sceneId": "scene-2",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-2_aligned.mp3",
+          "durationSec": 7
+        },
+        {
+          "sceneId": "scene-3",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-3_aligned.mp3",
+          "durationSec": 10
+        },
+        {
+          "sceneId": "scene-4",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-4_aligned.mp3",
+          "durationSec": 6
+        }
+      ]
+    },
+    "jobId": "43",
+    "repliedAt": "2026-08-08T07:44:19.007Z"
+  },
+  {
+    "gateId": "pause_gate_1",
+    "nodeName": "scene_json_assembler",
+    "userText": "继续",
+    "cardPayload": {
+      "sceneSpecs": [
+        {
+          "sceneId": "scene-1",
+          "duration": 5,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/43/scenes/scene_visual-1.png",
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-1_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "特写阿哲疲惫的双眼,盯着笔记本屏幕上的空白文档,光标不断闪烁.镜头缓慢拉远,露出杂乱的书桌和深夜房间,冷白屏幕光映射在阿哲脸上.画面右上角浮现冷色字幕'灵感枯竭?'.键盘敲击声渐弱,心跳声效衬托压抑感.",
+            "narrative": "建立创意枯竭的深夜困境,为AI激发想象力做铺垫",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "疲惫地盯住空白文档",
+                  "呆坐在杂乱书桌前",
+                  "被冷白屏幕光映照"
+                ],
+                "emotions": [
+                  "疲惫",
+                  "压抑",
+                  "焦虑"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "extreme close-up pulling back to medium shot",
+              "angle": "eye-level",
+              "movement": "slow pull-back",
+              "focus": "protagonist's tired eyes and glowing blank document on laptop"
+            },
+            "composition": "centered on face in close-up, gradually revealing cluttered desk with books and notes, cold screen light as main illumination",
+            "lighting": "cold white laptop glow on face, dim warm desk lamp, overall desaturated blue-grey palette, high contrast shadows",
+            "visualElements": [
+              "blank white document with blinking cursor",
+              "cluttered wooden desk with coffee cup and sticky notes",
+              "cold subtitle '灵感枯竭?' in upper right"
+            ],
+            "atmosphere": "melancholic, intimate, cinematic, shallow depth of field, 8k",
+            "motionLevel": 2,
+            "negativePrompt": "deformed face, extra fingers, distorted hands, blurry, low quality, watermark, unintended text"
+          },
+          "audio": {
+            "dialogue": null,
+            "sfx": [
+              {
+                "type": "keyboard clicks fading out",
+                "timing": "at start"
+              },
+              {
+                "type": "subtle heartbeat pulse",
+                "timing": "throughout, low volume"
+              }
+            ],
+            "bgm": {
+              "style": "minimal ambient electronic",
+              "mood": "tense, melancholic, isolated",
+              "timing": "starts with low drone, sustains through scene"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "fade-in",
+              "durationSec": 1
+            },
+            "transitionOut": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "keyMoments": [
+              {
+                "time": 0,
+                "event": "字幕'灵感枯竭?'浮现"
+              },
+              {
+                "time": 2,
+                "event": "镜头拉远,展示杂乱桌面与深夜书房的压抑氛围"
+              }
+            ]
+          }
+        },
+        {
+          "sceneId": "scene-2",
+          "duration": 7,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/43/scenes/scene_visual-2.png",
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-2_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "中景,阿哲的指尖触碰发光屏幕,瞬间无数彩色粒子从屏幕涌出,在空中快速重组为奇幻城市、机械生物、水墨山水三组画面快切.色调由冷灰转为霓虹暖光,粒子光影映照在阿哲专注的侧脸.镜头跟随粒子流动,画面卡点切换.字幕'一键生成·无限可能'浮现.",
+            "narrative": "呈现AI激活想象力的一瞬间,用视觉奇观制造震撼",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "指尖触碰发光屏幕",
+                  "注视粒子流在空中重组",
+                  "神色专注地见证画面快切"
+                ],
+                "emotions": [
+                  "惊奇",
+                  "专注",
+                  "振奋"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "medium shot",
+              "angle": "eye-level",
+              "movement": "dynamic orbital pan with rapid cuts",
+              "focus": "fingertip touching glowing screen and colorful particle burst"
+            },
+            "composition": "subject centered, glowing screen as dominant light source, particles fill surrounding space",
+            "lighting": "cool blue screen glow transitioning to neon warm light, particles acting as volumetric light sources",
+            "visualElements": [
+              "giant glowing translucent screen",
+              "explosion of colorful digital particles",
+              "rapid sequences of fantasy city, mechanical creature, ink-wash landscape",
+              "subtitle '一键生成·无限可能'"
+            ],
+            "atmosphere": "dynamic, futuristic, awe-inspiring, high energy, cinematic, 8k",
+            "motionLevel": 4,
+            "negativePrompt": "deformed face, extra fingers, distortion, blurry, low quality, watermark, chaotic unreadable text"
+          },
+          "audio": {
+            "dialogue": [
+              {
+                "characterId": "char-1",
+                "text": "让AI，接管你的想象力。",
+                "emotion": "inspiring, visionary"
+              }
+            ],
+            "sfx": [
+              {
+                "type": "electronic startup sound",
+                "timing": "as fingertip touches screen"
+              },
+              {
+                "type": "whoosh",
+                "timing": "when particle burst occurs"
+              },
+              {
+                "type": "sync hit",
+                "timing": "on each rapid visual cut"
+              }
+            ],
+            "bgm": {
+              "style": "epic orchestral electronic",
+              "mood": "powerful, awe-inspiring",
+              "timing": "swells with particle surge, builds through scene"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "transitionOut": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "keyMoments": [
+              {
+                "time": 1,
+                "event": "指尖触碰屏幕,彩色粒子涌出"
+              },
+              {
+                "time": 2,
+                "event": "奇幻城市快切"
+              },
+              {
+                "time": 4,
+                "event": "机械生物与水墨山水快切"
+              },
+              {
+                "time": 6,
+                "event": "字幕'一键生成·无限可能'浮现"
+              }
+            ]
+          }
+        },
+        {
+          "sceneId": "scene-3",
+          "duration": 10,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": null,
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-3_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "中景,阿哲坐在工作台前,微笑着用双手在触控面板上调整参数,右侧显示器上的奇幻场景实时变形、细化.画面分屏展示:左侧是输入框,右侧是4K成品图动态演化.阿哲时而滑动滑块,时而轻点屏幕,动作流畅自信.镜头在阿哲和屏幕之间缓慢横移,字幕'精准可控·专业级输出'持续显示.",
+            "narrative": "展示AI生成内容的精准可控与专业级输出,建立产品信任感",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "坐在工作台前微笑",
+                  "在触控面板上调整参数",
+                  "滑动滑块并轻点屏幕",
+                  "观察成品图实时演化"
+                ],
+                "emotions": [
+                  "自信",
+                  "愉悦",
+                  "从容"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "medium shot",
+              "angle": "slightly high angle",
+              "movement": "slow lateral tracking",
+              "focus": "hands on touch panel and right monitor showing real-time 4K artwork evolution"
+            },
+            "composition": "split-screen framing with left monitor showing input box, right monitor showing generated art, protagonist between them",
+            "lighting": "bright clean studio lighting with warm neon strips on walls, monitor glow mixing cool and warm tones",
+            "visualElements": [
+              "dual monitors with text input and evolving fantasy artwork",
+              "touch control panel with sliders and buttons",
+              "subtitle '精准可控·专业级输出'"
+            ],
+            "atmosphere": "efficient, futuristic creative studio, crisp, professional, 8k",
+            "motionLevel": 3,
+            "negativePrompt": "distorted hands, extra fingers, watermark, blurry, low quality, deformed UI, unintended text"
+          },
+          "audio": {
+            "dialogue": [
+              {
+                "characterId": "char-1",
+                "text": "从文字到视界，只需一次呼吸。",
+                "emotion": "smooth, confident"
+              }
+            ],
+            "sfx": [
+              {
+                "type": "light UI clicks and bleeps",
+                "timing": "while adjusting parameters"
+              },
+              {
+                "type": "soft whoosh",
+                "timing": "when artwork evolves in real-time"
+              }
+            ],
+            "bgm": {
+              "style": "upbeat tech pop",
+              "mood": "playful, energetic but lightweight",
+              "timing": "keeps rhythm, supports creative flow"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "cut",
+              "durationSec": 0
+            },
+            "transitionOut": {
+              "type": "dissolve",
+              "durationSec": 0.5
+            },
+            "keyMoments": [
+              {
+                "time": 1,
+                "event": "分屏展示左侧输入框与右侧4K成品图"
+              },
+              {
+                "time": 5,
+                "event": "画面实时变形细化,参数调整"
+              },
+              {
+                "time": 8,
+                "event": "字幕'精准可控·专业级输出'持续显示"
+              }
+            ]
+          }
+        },
+        {
+          "sceneId": "scene-4",
+          "duration": 6,
+          "engine": "happyhorse-1.1-r2v",
+          "mode": "text-to-video",
+          "resolution": "1920x1080",
+          "fps": 24,
+          "assets": {
+            "sceneImageUrl": null,
+            "characterImageUrls": [
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+              "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+            ],
+            "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-4_aligned.mp3"
+          },
+          "story": {
+            "sceneDescription": "全景,阿哲站在虚拟世界的中央,周围是流光溢彩的宏大建筑与光带.他回头看向镜头,眼神坚定而自豪.画面缓缓定格,浮现产品logo与slogan.镜头轻微推近后停住,全片结束.",
+            "narrative": "升华全片主题,将创作者的成就与AI能力融为一体,收束于品牌展示",
+            "characters": [
+              {
+                "characterId": "char-1",
+                "actions": [
+                  "站在宏大虚拟世界中央",
+                  "回望镜头",
+                  "目视画面定格"
+                ],
+                "emotions": [
+                  "自豪",
+                  "坚定",
+                  "释然"
+                ]
+              }
+            ]
+          },
+          "storyboard": {
+            "shot": {
+              "type": "wide aerial shot to medium-wide",
+              "angle": "low angle",
+              "movement": "slow push-in then freeze frame",
+              "focus": "protagonist facing camera in vast virtual world with monumental architecture"
+            },
+            "composition": "protagonist centered lower third, huge virtual architecture and light ribbons surrounding, distant city on horizon",
+            "lighting": "deep blue-purple ambient with golden rim light on protagonist, volumetric glow and atmospheric fog",
+            "visualElements": [
+              "floating virtual islands and geometric structures",
+              "flowing light ribbons and data streams",
+              "final product logo and slogan appearing on freeze frame"
+            ],
+            "atmosphere": "epic, triumphant, awe-inspiring, cinematic, 8k",
+            "motionLevel": 3,
+            "negativePrompt": "deformed face, distorted arms, watermark, blurry, low quality, deformed buildings, unintended text"
+          },
+          "audio": {
+            "dialogue": null,
+            "sfx": [
+              {
+                "type": "virtual world ambience with soft reverb",
+                "timing": "throughout"
+              },
+              {
+                "type": "final musical hit",
+                "timing": "at freeze frame"
+              }
+            ],
+            "bgm": {
+              "style": "triumphant cinematic electronic",
+              "mood": "hopeful, monumental",
+              "timing": "builds to final swell, then fades gently to silence"
+            }
+          },
+          "pacing": {
+            "transitionIn": {
+              "type": "dissolve",
+              "durationSec": 0.5
+            },
+            "transitionOut": {
+              "type": "fade-out",
+              "durationSec": 1.5
+            },
+            "keyMoments": [
+              {
+                "time": 1,
+                "event": "阿哲转身望向镜头"
+              },
+              {
+                "time": 4,
+                "event": "画面定格,产品logo与slogan浮现"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "jobId": "43",
+    "repliedAt": "2026-08-08T07:47:51.385Z"
+  },
+  {
+    "gateId": "pause_gate_2",
+    "nodeName": "generate_proposal",
+    "userText": "继续",
+    "cardPayload": {
+      "proposal": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "创作者",
+            "type": "protagonist",
+            "appearance": "25岁左右男性，黑色微乱短发，面容清瘦，眼下略带疲惫，戴黑框眼镜，身穿深灰色连帽卫衣配黑色休闲裤，脚踩白色运动鞋，左腕佩戴黑色智能手表。",
+            "personality": "内敛专注，深夜疲惫中保持执着；作品生成时露出欣慰微笑，习惯轻敲桌面思考。语速平缓。",
+            "role": "AI创意工具的使用者，展现从灵感枯竭到AI赋能想象力的过程。"
+          }
+        ],
+        "blueprint": {
+          "title": "重塑想象——AI接管你的想象力",
+          "totalDuration": 28,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "约15平米的深夜创作工作室。空间布局：中央偏左为宽大木质书桌，桌面上散落草稿纸、咖啡杯、机械键盘和一台发光显示器；左墙整面软木板贴满灵感便签和草图，右墙为半开百叶窗，窗外城市夜景隐约；角落里有一把转椅和落地灯。整体装饰为深色工业风，冷灰压抑主导，只有显示器冷白光和台灯昏黄光作为主要照明，蓝色氛围灯带在天花板若隐若现。",
+            "visualHints": "Cozy dark creative studio at midnight, wide wooden desk center-left with scattered draft papers, coffee cup, mechanical keyboard and glowing monitor, corkboard wall filled with sticky notes and sketches on the left, half-closed blinds with blurred city night view on the right, swivel chair and floor lamp in corner, industrial dark style, cold grey dominant tone, dim cold white monitor light mixed with warm desk lamp glow, faint blue LED strip on ceiling, moody and focused atmosphere",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "特写镜头：创作者一双疲惫的眼睛紧盯着空白文档，光标闪烁。镜头缓缓拉远，展示深夜杂乱的书桌和昏暗房间。屏幕右下角叠加字幕“灵感枯竭？”。键盘敲击声渐弱，心跳声效隐约。色调冷灰压抑。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 5
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "近景转场：创作者的指尖触碰发光屏幕，无数彩色粒子从屏幕涌出，在空中快速重组为三组快切画面——奇幻城市、机械生物、水墨山水。色调瞬间转为霓虹暖光。屏幕上方浮现旁白字幕“让ai，接管你的想象力。”，下方副标“一键生成·无限可能”。电子启动音与恢弘弦乐起。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 7
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "中景：创作者微笑着在面板上调整参数，周围奇幻场景实时变形、细化。画面分屏展示：左侧为输入框，右侧为动态演化的4K成品图。旁白响起“从文字到视界，只需一次呼吸。”，画面底部字幕“精准可控·专业级输出”。轻快科技感音效，突出“实时”动态效果。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 10
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "由AI生成的宏大虚拟世界。脚下是无边镜面倒映霓虹光，头顶星河缓缓旋转；远近漂浮着发光的几何城堡、机械生物和水墨山峦，粒子不断流动。整体色调为霓虹粉、紫、蓝渐变，灿烂而震撼，充满超现实未来感。",
+            "visualHints": "Vast surreal virtual world generated by AI, boundless mirror floor reflecting neon lights, slowly rotating starry sky overhead, floating glowing geometric castles, mechanical creatures and ink-wash mountains in distance, flowing particles, neon pink purple blue gradient palette, brilliant and awe-inspiring, ultra-realistic futuristic digital art style, cinematic wide establishing shot",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "全景：创作者站在宏大虚拟世界的中央，周围奇幻场景环绕，他缓缓回头看向镜头。画面定格，浮现产品Logo与Slogan“重塑想象”。整体色调霓虹绚烂，镜头缓慢推进后定格。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 6
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "inspirational",
+          "visualStyle": "冷灰压抑到霓虹绚烂，虚拟与现实交织的超现实未来感",
+          "suggestedBGM": "电子氛围渐强，低音推进，结尾恢弘弦乐"
+        }
+      }
+    },
+    "jobId": "43",
+    "repliedAt": "2026-08-08T07:49:12.671Z"
+  },
+  {
+    "gateId": "pause_gate_3",
+    "nodeName": "tts",
+    "userText": "继续",
+    "cardPayload": {
+      "audioSegments": [
+        {
+          "sceneId": "scene-1",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-1_aligned.mp3",
+          "durationSec": 5
+        },
+        {
+          "sceneId": "scene-2",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-2_aligned.mp3",
+          "durationSec": 7
+        },
+        {
+          "sceneId": "scene-3",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-3_aligned.mp3",
+          "durationSec": 10
+        },
+        {
+          "sceneId": "scene-4",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-4_aligned.mp3",
+          "durationSec": 6
+        }
+      ]
+    },
+    "jobId": "43",
+    "repliedAt": "2026-08-08T07:49:45.836Z"
+  }
+]

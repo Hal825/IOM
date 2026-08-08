@@ -1,0 +1,39 @@
+{
+  "jobId": "44",
+  "characters": {
+    "char-1": {
+      "source": "library",
+      "sourceRef": "library/characters/char_userd_1_female",
+      "views": {
+        "front": "library/characters/char_userd_1_female/front.jpeg",
+        "back": "library/characters/char_userd_1_female/back.jpeg",
+        "left": "library/characters/char_userd_1_female/left.jpeg",
+        "right": "library/characters/char_userd_1_female/right.jpeg"
+      }
+    }
+  },
+  "scenes": {
+    "scene_visual-1": {
+      "source": "ai",
+      "image": "assets/44/scenes/scene_visual-1.png"
+    },
+    "scene_visual-2": {
+      "source": "ai",
+      "image": "assets/44/scenes/scene_visual-2.png"
+    },
+    "scene_visual-3": {
+      "source": "ai",
+      "image": "assets/44/scenes/scene_visual-3.png"
+    },
+    "scene_visual-4": {
+      "source": "ai",
+      "image": "assets/44/scenes/scene_visual-4.png"
+    }
+  },
+  "sceneRefs": {
+    "scene-1": "scene_visual-1",
+    "scene-2": "scene_visual-2",
+    "scene-3": "scene_visual-3",
+    "scene-4": "scene_visual-4"
+  }
+}

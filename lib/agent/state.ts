@@ -25,6 +25,8 @@ export const VideoGenState = Annotation.Root({
   // === 输入 ===
   userPrompt: Annotation<string>,
   style: Annotation<string>,
+  /** 视频生成方式：'auto'（项目调视频 API）/ 'claude'（暂停等 Claude 生成，方案 B） */
+  videoMode: Annotation<string | undefined>,
 
   // === 重跑 ===
   /** 重跑起点节点（如 'script_generation'）；缺省 = 正常全跑。上游节点因产出已存在而跳过。 */

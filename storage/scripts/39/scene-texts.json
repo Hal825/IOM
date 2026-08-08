@@ -1,0 +1,50 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 5,
+    "narrative": "以深夜灵感枯竭的痛点开场，建立创作者共鸣，为AI介入做情绪铺垫。",
+    "shotType": "extreme close-up",
+    "dialogue": [],
+    "sfx": [
+      "keyboard typing fading",
+      "heartbeat thump"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 7,
+    "narrative": "用视觉奇观展现AI从无到有创造想象力的震撼时刻，建立产品价值。",
+    "shotType": "medium shot",
+    "dialogue": [
+      "让AI，接管你的想象力。"
+    ],
+    "sfx": [
+      "electronic power-on sound",
+      "whoosh with hit impacts"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "narrative": "展示产品的可操控性与专业级输出，强化用户主导的创作体验。",
+    "shotType": "medium shot",
+    "dialogue": [
+      "从文字到视界，只需一次呼吸。"
+    ],
+    "sfx": [
+      "soft clicking interface sounds",
+      "light futuristic shimmer"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 6,
+    "narrative": "收束全片，将产品价值升华为对每一份想象的尊重，留下品牌印记。",
+    "shotType": "wide shot",
+    "dialogue": [],
+    "sfx": [
+      "ambient wind and distant city hum",
+      "musical resolution chord/stinger"
+    ]
+  }
+]

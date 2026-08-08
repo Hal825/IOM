@@ -1,0 +1,134 @@
+[
+  {
+    "gateId": "pause_gate_1",
+    "nodeName": "",
+    "userText": "继续",
+    "cardPayload": {},
+    "jobId": "39",
+    "repliedAt": "2026-08-08T06:38:09.893Z"
+  },
+  {
+    "gateId": "pause_gate_2",
+    "nodeName": "generate_proposal",
+    "userText": "继续",
+    "cardPayload": {
+      "proposal": {
+        "characters": [
+          {
+            "characterId": "char-1",
+            "name": "林澈",
+            "type": "protagonist",
+            "appearance": "28岁左右男性创作者，深棕色短发微凌乱，眼神专注明亮，下颌线条清晰，身穿灰色连帽卫衣搭配黑色工装裤，手腕戴黑色智能手环，整体年轻干练，充满创意工作者气质。",
+            "personality": "自信而沉着，语速平稳有力，思考时常轻敲桌面，操作界面时手指灵活迅速，微笑中透露出对AI创造的笃定与兴奋。",
+            "role": "AI创意工具的使用者与演示者，带领观众完成从灵感枯竭到宏大创作的全过程"
+          }
+        ],
+        "blueprint": {
+          "title": "重塑想象：AI创作引擎",
+          "totalDuration": 28,
+          "aspectRatio": "16:9"
+        },
+        "sceneVisuals": [
+          {
+            "visualId": "visual-1",
+            "description": "深夜杂乱的工作室一角，约15平米。中央偏左是一张深色木质电脑桌，桌面堆满草稿纸、咖啡杯、外接键盘和一台微微发光的显示器，显示器上显示空白文档和闪烁光标。背景墙壁贴满概念草图，书架和摄影器材散落四周。窗帘紧闭，只有一盏暖黄台灯提供微弱光线，整体色调冷灰压抑，空气中弥漫着疲惫感。",
+            "visualHints": "Late night messy creative studio, dark wooden desk with scattered sketch papers, coffee cup, external keyboard, glowing monitor showing blank document and blinking cursor, walls covered with concept art sketches, bookshelf and photography equipment, closed curtains, dim warm desk lamp, overall cold grey depressing mood, cinematic shallow depth of field",
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "特写镜头：一双疲惫的眼睛盯着显示器上的空白文档，光标不断闪烁。镜头缓慢拉远，露出深夜杂乱的工作台面，林澈坐在桌前，手撑着头，表情倦怠。画面色调冷灰压抑。显示器下方浮现字幕“灵感枯竭？”，键盘敲击声渐弱，心跳声效渐起。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 5
+              }
+            ]
+          },
+          {
+            "visualId": "visual-2",
+            "description": "由屏幕延展出的抽象数字空间，四周漆黑，中央悬浮着一块巨大的发光屏幕。屏幕表面仿佛液态流动，不断有彩色粒子从中涌出，在空气中重组为奇幻城市、机械生物、水墨山水等视觉碎片，然后快速切换。空间内霓虹暖光与粒子彩色光晕交织，充满未来科技感和魔法气息。",
+            "visualHints": "Abstract digital space, pitch black background, huge glowing liquid-like screen floating in center, colorful particles pouring out and reorganizing into fantasy city, mechanical creature, ink wash mountain landscape fragments, rapid transitions, neon warm lighting mixed with particle glow, futuristic fantastical atmosphere, high contrast vibrant colors",
+            "scenes": [
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "林澈指尖触碰发光屏幕，一瞬间无数彩色粒子从屏幕涌出，在空中高速重组为奇幻城市、机械生物、水墨山水三组画面快切。镜头跟随粒子运动快速平移，色调从冷灰转为霓虹暖光。旁白响起：“让ai，接管你的想象力。”屏幕上方浮现字幕“一键生成·无限可能”。电子启动音伴随恢弘弦乐起，画面卡点切换。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 7
+              }
+            ]
+          },
+          {
+            "visualId": "visual-3",
+            "description": "一个半包围式的工作台空间，正中央是一块超宽透明触控屏，左侧悬浮参数控制面板，右侧显示动态演化中的4K成品图。空间基调深灰与霓虹蓝交织，工作台本身由发光材质构成，四周悬浮多个全息数据面板，营造出“创作驾驶舱”的未来感。林澈站在触控屏前，身后是隐约的数字城市投影。",
+            "visualHints": "Semi-enclosed creative cockpit workspace, ultra-wide transparent touchscreen at center, floating parameter control panel on left, dynamically evolving 4K artwork on right, dark grey walls with neon blue ambient lighting, glowing workbench surface, holographic data panels floating around, futuristic creator cockpit vibe, digital city projection behind",
+            "scenes": [
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "中景：林澈站在触控屏前，微笑着调整左侧悬浮面板上的参数。屏幕中奇幻场景实时变形、细化，右侧4K成品图同步演化。分屏展示：左侧输入框文字跳动，右侧图像从粗略轮廓逐渐变为精细的宏大世界。镜头缓慢绕林澈旋转45度，突出实时动态。旁白：“从文字到视界，只需一次呼吸。”底部字幕浮现“精准可控·专业级输出”。轻快科技感音效伴随画面演化。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 10
+              }
+            ]
+          },
+          {
+            "visualId": "visual-4",
+            "description": "由林澈所创造的宏大虚拟世界全景，场景中心是壮丽的悬浮山脉与发光的未来城市，空中漂浮着巨大几何体、能量光流与半透明数据纹路。地面呈现液态反射材质，远处地平线逐渐融化在渐变的霓虹暮色中。整幅画面色彩丰富且带有科幻史诗感，空旷而震撼，适合作为收尾定格背景。",
+            "visualHints": "Vast virtual world panorama, majestic floating mountains and glowing futuristic city as centerpiece, massive geometric shapes and energy light streams in sky, translucent data patterns floating, liquid reflective ground, far horizon dissolving into neon dusk gradient, epic sci-fi atmosphere, breathtaking scale, saturated luminous colors, designed for final freeze-frame",
+            "scenes": [
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "全景：林澈站在自己生成的宏大虚拟世界中央，背景是悬浮山脉和发光城市。他双手自然下垂，微微转身回头看向镜头，神情平静而自信。画面逐渐定格，虚拟世界的光流在他身后继续流动。定格瞬间，产品logo从画面中心浮现，同时出现slogan字幕“让每一份想象，都有回响”。画面定格保持2秒后淡出。",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "duration": 6
+              }
+            ]
+          }
+        ],
+        "styleProfile": {
+          "tone": "inspirational",
+          "visualStyle": "冷灰压抑到霓虹暖光，虚实交融的未来科技质感",
+          "suggestedBGM": "电子氛围音叠加恢弘弦乐，尾声渐强"
+        }
+      }
+    },
+    "jobId": "39",
+    "repliedAt": "2026-08-08T06:40:14.728Z"
+  },
+  {
+    "gateId": "pause_gate_3",
+    "nodeName": "tts",
+    "userText": "继续",
+    "cardPayload": {
+      "audioSegments": [
+        {
+          "sceneId": "scene-1",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\39\\scene-1_aligned.mp3",
+          "durationSec": 5
+        },
+        {
+          "sceneId": "scene-2",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\39\\scene-2_aligned.mp3",
+          "durationSec": 7
+        },
+        {
+          "sceneId": "scene-3",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\39\\scene-3_aligned.mp3",
+          "durationSec": 10
+        },
+        {
+          "sceneId": "scene-4",
+          "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\39\\scene-4_aligned.mp3",
+          "durationSec": 6
+        }
+      ]
+    },
+    "jobId": "39",
+    "repliedAt": "2026-08-08T06:41:15.433Z"
+  }
+]

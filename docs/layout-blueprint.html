@@ -738,5 +738,94 @@ body {
   </div>
 </section>
 
+<!-- ============================================================
+     设计变更注解 v4 · 2026-08-08（右栏成品库 · 已实现）
+     主网格由「两列」扩展为「三列」：
+       任务栏（280px 琥珀） | 内容区（minmax(0,1fr)） | 成品库（260px 浅绿）
+       成品库 = 已完成任务成片清单（#id + 标题 + 时长 + 「⬇ 下载」），
+       点击整行 → 主区切到该任务对话时间线；下载按钮独立不触发选中。
+     移动端折叠顺序：页头 → 内容区 → 输入区 → 成品库 → 任务列表 → 状态栏。
+============================================================ -->
+<section class="note">
+  <span class="tag">设计变更注解 v4 · 2026-08-08 · 右栏成品库已实现</span>
+  <p class="note-title">新增第三列「成品库」：已完成任务的成片清单，点击切主区</p>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">三列布局（桌面）</p>
+    <div class="mock-queue" style="width: 100%; justify-content: space-between;">
+      <span>任务栏 280px（琥珀）</span>
+      <span>内容区 minmax(0,1fr)</span>
+      <span>成品库 260px（浅绿）</span>
+    </div>
+    <p class="hint">成品库跨 2~3 行通高，与左栏对称；行内 = #id + 标题 + 时长 + 「⬇ 下载」，点击行选中任务切主区，下载按钮 stopPropagation 不触发选中。空态：暂无已完成任务，成片会出现在这里。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">移动端折叠（≤960px）</p>
+    <ul class="mock-rule">
+      <li>顺序 = 页头 → 内容区 → 输入区 → <strong>成品库</strong> → 任务列表 → 状态栏（创作与结果优先）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     设计变更注解 v5 · 2026-08-08（栏可收起 · 已实现）
+     左右两栏各自可收起为 44px 窄条（RailCollapseStrip）：
+       - 展开态：栏头右侧 `⟨` / `⟩` 小按钮收起
+       - 收起态：窄条顶部反向图标按钮展开 + 竖排小标签
+         （桌面 md:h-full 通高，移动端横排全宽）
+       - grid 列宽在 280/44 × 260/44 四种组合切换
+       - 偏好 localStorage 记住（om:rail-left-collapsed / om:rail-right-collapsed）
+============================================================ -->
+<section class="note">
+  <span class="tag">设计变更注解 v5 · 2026-08-08 · 栏收起/展开已实现</span>
+  <p class="note-title">左右两栏可收起为 44px 窄条（用户自主，偏好持久化）</p>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">收起/展开示意</p>
+    <div class="mock-queue" style="width: 100%; justify-content: space-between;">
+      <span>⟨ 任务栏</span>
+      <span>内容区（变宽）</span>
+      <span>成品库 ⟩</span>
+    </div>
+    <div class="mock-queue" style="width: 100%; justify-content: space-between; margin-top: 8px;">
+      <span>⟩ 任务栏（44px 窄条）</span>
+      <span>内容区（最宽）</span>
+      <span>⟨ 成品库（44px 窄条）</span>
+    </div>
+    <p class="hint">窄条 = 顶部展开按钮 + 旋转小标签（桌面竖排 / 移动端横排全宽）；栏头右侧按钮收起。状态写 localStorage，刷新保持。</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     设计变更注解 v6 · 2026-08-08（视频生成方式可选 + 继续按钮 · 已实现）
+     ① 大输入框底部：视频生成方式分段开关「视频 API / Claude 生成」
+        （claude = 方案 B：暂停等 Claude 用套餐模型生成，需 Claude 在线）
+     ② 决策点回复框：主按钮「继续 →」无输入直接放行，文本框可选写反馈
+============================================================ -->
+<section class="note">
+  <span class="tag">设计变更注解 v6 · 2026-08-08 · 视频生成可选 + 继续按钮已实现</span>
+  <p class="note-title">视频生成方式前端可选；决策门一键「继续」</p>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">① 大输入框 · 视频生成方式切换</p>
+    <div class="mock-queue" style="width: 100%; justify-content: flex-start; gap: 8px;">
+      <span>视频生成 [视频 API|Claude 生成]</span>
+      <span class="hint" style="margin:0">（选 Claude 时显示：需 Claude 在线接管视频节点）</span>
+    </div>
+    <p class="hint">随任务提交存 job.data.videoMode；auto=项目调视频 API，claude=暂停等 Claude 生成后放行。</p>
+  </div>
+
+  <div class="sub note-sub">
+    <p class="note-sub-title">② 决策点回复框 · 继续按钮</p>
+    <div class="mock-queue" style="width: 100%; justify-content: flex-end; gap: 8px;">
+      <span class="hint" style="margin:0">文本框（可选）</span>
+      <span class="q-btn">继续 →</span>
+      <span class="hint" style="margin:0">发送</span>
+    </div>
+    <p class="hint">「继续 →」主按钮无输入直接放行；文本框可写修改意见（任意文本 = 继续 + 记录反馈）。</p>
+  </div>
+</section>
+
 </body>
 </html>

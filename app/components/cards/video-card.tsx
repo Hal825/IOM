@@ -1,6 +1,7 @@
 'use client';
 
 import { VideoPlayer } from '../video-player';
+import { IconDownload } from '../icons';
 import type { CardBodyProps } from './registry';
 
 /** 成片卡：最终视频播放器 + 时长 + 下载。 */
@@ -20,9 +21,9 @@ export function VideoCard({ payload, jobId }: CardBodyProps) {
         <a
           href={`/api/tasks/${jobId}/download`}
           download
-          className="ml-auto rounded-lg border border-accent/50 px-3 py-1 text-xs font-medium text-accent transition hover:bg-accent/10"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-accent/50 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/10 md:py-1"
         >
-          ⬇ 下载 MP4
+          <IconDownload /> 下载 MP4
         </a>
       </div>
       {mergeLog ? <p className="font-mono text-[10px] text-muted">{mergeLog}</p> : null}

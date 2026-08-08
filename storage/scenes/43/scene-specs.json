@@ -1,0 +1,416 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 5,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/43/scenes/scene_visual-1.png",
+      "characterImageUrls": [
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+      ],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-1_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "特写镜头：创作者一双疲惫的眼睛紧盯着空白文档，光标闪烁。镜头缓缓拉远，展示深夜杂乱的书桌和昏暗房间。屏幕右下角叠加字幕“灵感枯竭？”。键盘敲击声渐弱，心跳声效隐约。色调冷灰压抑。",
+      "narrative": "建立痛点：深夜灵感枯竭，营造压抑氛围。",
+      "characters": [
+        {
+          "characterId": "char-1",
+          "actions": [
+            "睁着疲惫的眼睛盯着空白文档",
+            "手指停在键盘上",
+            "目光空洞地注视闪烁的光标"
+          ],
+          "emotions": [
+            "疲惫",
+            "焦虑",
+            "灵感枯竭的无力感"
+          ]
+        }
+      ]
+    },
+    "storyboard": {
+      "shot": {
+        "type": "extreme close-up to medium shot",
+        "angle": "eye-level",
+        "movement": "slow pull back from eyes to reveal desk",
+        "focus": "the creator's tired eyes and the blinking cursor on blank document"
+      },
+      "composition": "centered on face, widening to cluttered desk with rule of thirds",
+      "lighting": "dim cold grey monitor light mixed with warm desk lamp, low-key moody",
+      "visualElements": [
+        "blank document with blinking cursor",
+        "cluttered desk with coffee cup and papers",
+        "dim screen glow",
+        "subtitle text '灵感枯竭？' bottom right"
+      ],
+      "atmosphere": "oppressive, quiet, late-night creative block, cinematic, shallow depth of field, 8k",
+      "motionLevel": 2,
+      "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, glasses, bright cheerful lighting"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "keyboard typing clicks",
+          "timing": "at start, gradually fading out"
+        },
+        {
+          "type": "heartbeat pulse",
+          "timing": "2s in, faint and slow"
+        }
+      ],
+      "bgm": {
+        "style": "dark ambient with subtle drone",
+        "mood": "tense, uneasy, isolating",
+        "timing": "very quiet from start, fading to silence at scene end"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "fade-in",
+        "durationSec": 1
+      },
+      "transitionOut": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "影片开始，特写疲惫双眼"
+        },
+        {
+          "time": 2,
+          "event": "镜头拉远，字幕“灵感枯竭？”出现"
+        },
+        {
+          "time": 4,
+          "event": "键盘声渐弱，心跳声渐起，准备转场"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 7,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/43/scenes/scene_visual-1.png",
+      "characterImageUrls": [
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+      ],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-2_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "近景转场：创作者的指尖触碰发光屏幕，无数彩色粒子从屏幕涌出，在空中快速重组为三组快切画面——奇幻城市、机械生物、水墨山水。色调瞬间转为霓虹暖光。屏幕上方浮现旁白字幕“让ai，接管你的想象力。”，下方副标“一键生成·无限可能”。电子启动音与恢弘弦乐起。",
+      "narrative": "转折：AI接管想象力，画面从压抑转向绚烂，呈现无限可能。",
+      "characters": [
+        {
+          "characterId": "char-1",
+          "actions": [
+            "指尖触碰发光屏幕",
+            "注视粒子从屏幕涌出",
+            "面露讶异与惊喜"
+          ],
+          "emotions": [
+            "惊讶",
+            "被震撼",
+            "期待被点燃"
+          ]
+        }
+      ]
+    },
+    "storyboard": {
+      "shot": {
+        "type": "close-up",
+        "angle": "eye-level",
+        "movement": "slight push-in as finger touches screen",
+        "focus": "fingertip touching luminous screen and burst of colorful particles"
+      },
+      "composition": "fingertip centered, particles exploding outward on all sides",
+      "lighting": "abrupt shift to neon warm glow, screen light as main source",
+      "visualElements": [
+        "exploding colorful particles from screen",
+        "fantasy city forming in particles",
+        "mechanical creature",
+        "ink-wash mountains",
+        "subtitle '让AI，接管你的想象力' and '一键生成·无限可能'"
+      ],
+      "atmosphere": "dynamic, awe-inspiring, magical transition from dark to neon, 8k",
+      "motionLevel": 4,
+      "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, dark cold lighting"
+    },
+    "audio": {
+      "dialogue": [
+        {
+          "characterId": "char-1",
+          "text": "让AI，接管你的想象力。",
+          "emotion": "inspiring, powerful"
+        }
+      ],
+      "sfx": [
+        {
+          "type": "electronic startup surge",
+          "timing": "at the moment the finger touches screen"
+        },
+        {
+          "type": "epic orchestral swell",
+          "timing": "as particles burst and images flash past"
+        }
+      ],
+      "bgm": {
+        "style": "epic electronic hybrid with orchestral hits",
+        "mood": "grand, explosive, awe-inspiring",
+        "timing": "swells immediately at scene start, drives through the montage"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "cut",
+        "durationSec": 0
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 0,
+          "event": "指尖触碰屏幕，粒子爆发"
+        },
+        {
+          "time": 2,
+          "event": "快切画面：奇幻城市"
+        },
+        {
+          "time": 4,
+          "event": "快切画面：机械生物"
+        },
+        {
+          "time": 6,
+          "event": "快切画面：水墨山水，旁白响起"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/43/scenes/scene_visual-1.png",
+      "characterImageUrls": [
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+      ],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-3_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "中景：创作者微笑着在面板上调整参数，周围奇幻场景实时变形、细化。画面分屏展示：左侧为输入框，右侧为动态演化的4K成品图。旁白响起“从文字到视界，只需一次呼吸。”，画面底部字幕“精准可控·专业级输出”。轻快科技感音效，突出“实时”动态效果。",
+      "narrative": "展示产品能力：文字到视界的实时生成，精准可控。",
+      "characters": [
+        {
+          "characterId": "char-1",
+          "actions": [
+            "微笑着调整面板参数",
+            "观察到场景实时变化后微微点头",
+            "继续操作键盘"
+          ],
+          "emotions": [
+            "投入",
+            "自信",
+            "愉悦"
+          ]
+        }
+      ]
+    },
+    "storyboard": {
+      "shot": {
+        "type": "medium shot",
+        "angle": "eye-level",
+        "movement": "static with subtle handheld motion",
+        "focus": "creator adjusting parameters and the real-time morphing fantasy scene"
+      },
+      "composition": "split screen: left input panel, right evolving 4K artwork, creator in center",
+      "lighting": "warm neon ambient with soft glow around screens",
+      "visualElements": [
+        "creator smiling at adjustable interface",
+        "input text panel on left",
+        "4K artwork dynamically evolving on right",
+        "subtitle '从文字到视界，只需一次呼吸' and '精准可控·专业级输出'"
+      ],
+      "atmosphere": "smooth, energetic, futuristic creativity in action, cinematic, 8k",
+      "motionLevel": 3,
+      "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, static unresponsive"
+    },
+    "audio": {
+      "dialogue": [
+        {
+          "characterId": "char-1",
+          "text": "从文字到视界，只需一次呼吸。",
+          "emotion": "smooth, confident, effortless"
+        }
+      ],
+      "sfx": [
+        {
+          "type": "soft tech confirmation beep",
+          "timing": "at each parameter adjustment"
+        },
+        {
+          "type": "dynamic whoosh",
+          "timing": "as the artwork morphs in real time"
+        }
+      ],
+      "bgm": {
+        "style": "light tech electronic with crisp percussion",
+        "mood": "clever, upbeat, fluid",
+        "timing": "continuous throughout, maintaining an effortless rhythm"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "keyMoments": [
+        {
+          "time": 1,
+          "event": "分屏布局出现，左输入框右成品图"
+        },
+        {
+          "time": 4,
+          "event": "实时变形、细化效果展示"
+        },
+        {
+          "time": 7,
+          "event": "旁白“从文字到视界，只需一次呼吸”"
+        },
+        {
+          "time": 9,
+          "event": "字幕“精准可控·专业级输出”完整呈现"
+        }
+      ]
+    }
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 6,
+    "engine": "happyhorse-1.1-r2v",
+    "mode": "text-to-video",
+    "resolution": "1920x1080",
+    "fps": 24,
+    "assets": {
+      "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/43/scenes/scene_visual-2.png",
+      "characterImageUrls": [
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+        "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+      ],
+      "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\43\\scene-4_aligned.mp3"
+    },
+    "story": {
+      "sceneDescription": "全景：创作者站在宏大虚拟世界的中央，周围奇幻场景环绕，他缓缓回头看向镜头。画面定格，浮现产品Logo与Slogan“重塑想象”。整体色调霓虹绚烂，镜头缓慢推进后定格。",
+      "narrative": "高潮收尾：创作者置身于自己创造的世界，强化品牌“重塑想象”的信念。",
+      "characters": [
+        {
+          "characterId": "char-1",
+          "actions": [
+            "站在宏大虚拟世界中央",
+            "缓缓回头看向镜头",
+            "眼神坚定而从容"
+          ],
+          "emotions": [
+            "自豪",
+            "笃定",
+            "面向未来"
+          ]
+        }
+      ]
+    },
+    "storyboard": {
+      "shot": {
+        "type": "wide shot",
+        "angle": "low angle",
+        "movement": "slow push-in then freeze frame",
+        "focus": "the creator standing in the middle of the vast virtual world, turning to camera"
+      },
+      "composition": "creator centered in expansive virtual world, surrounding scenery framing subject",
+      "lighting": "brilliant neon gradients in pink, purple and blue with mirror floor reflections",
+      "visualElements": [
+        "vast virtual world with floating geometric castles",
+        "mechanical creatures and ink-wash mountains",
+        "mirror-like neon floor",
+        "creator turning to camera",
+        "logo and slogan '重塑想象' on freeze frame"
+      ],
+      "atmosphere": "epic, cinematic, triumphant, surreal future wonder, 8k",
+      "motionLevel": 3,
+      "negativePrompt": "distorted hands, extra fingers, blurry, low quality, watermark, text artifacts, deformed face, cramped space, flat lighting"
+    },
+    "audio": {
+      "dialogue": null,
+      "sfx": [
+        {
+          "type": "ethereal shimmer and wind",
+          "timing": "throughout the virtual world shot"
+        },
+        {
+          "type": "deep cinematic boom",
+          "timing": "at the logo freeze frame"
+        }
+      ],
+      "bgm": {
+        "style": "cinematic ambient with rising brass",
+        "mood": "triumphant, expansive, hopeful",
+        "timing": "builds to a peak as the creator turns, holds at logo reveal, then fades to silence"
+      }
+    },
+    "pacing": {
+      "transitionIn": {
+        "type": "dissolve",
+        "durationSec": 0.5
+      },
+      "transitionOut": {
+        "type": "fade-out",
+        "durationSec": 1.5
+      },
+      "keyMoments": [
+        {
+          "time": 1,
+          "event": "创作者置身虚拟世界中央，转身看向镜头"
+        },
+        {
+          "time": 3,
+          "event": "镜头推进，画面定格"
+        },
+        {
+          "time": 5,
+          "event": "浮现Logo与Slogan“重塑想象”，音效收束"
+        }
+      ]
+    }
+  }
+]

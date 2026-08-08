@@ -462,6 +462,34 @@ export async function shotVideoGenNode(state: VideoGenStateType): Promise<Partia
   const specPath = path.join(scenesDir, 'scene-specs.json');
   fs.writeFileSync(specPath, JSON.stringify(sceneSpecs, null, 2), 'utf-8');
 
+  // ── 方案 B · Claude 手动生成模式：不调视频 API ──
+  // 触发：state.videoMode === 'claude'（前端创建任务时选择，auto/claude 两者其一，per-task 优先）；
+  // env AI_VIDEO_MODE=claude 仅作为「未带 videoMode 的任务」的兜底（如 API 直建）。
+  // 套餐 key 仅 Claude 可用（项目调用 403）→ 暂停在视频门，等 Claude 生成各场景视频后放行。
+  // 放行后扫描 storage/scenes/{jobId}/{sceneId}.mp4（Claude 产物），ffprobe 校验 + 取时长。
+  if ((state.videoMode ?? process.env.AI_VIDEO_MODE) === 'claude') {
+    console.log(
+      '[shot_video_gen] AI_VIDEO_MODE=claude：跳过视频 API，暂停等待 Claude 生成场景视频'
+    );
+    await beginDecision(jobId, 'pause_gate_video');
+    const sceneVideos: SceneVideoResult[] = [];
+    for (const spec of sceneSpecs) {
+      const file = path.join(scenesDir, `${spec.sceneId}.mp4`);
+      if (!fs.existsSync(file)) {
+        throw new Error(`缺少 Claude 生成的场景视频: ${spec.sceneId}（${file}）`);
+      }
+      const actualDuration = await probeVideoDuration(file);
+      sceneVideos.push({
+        sceneId: spec.sceneId,
+        videoUrl: file,
+        durationSec: actualDuration,
+        status: 'done',
+      });
+    }
+    console.log(`[shot_video_gen/claude] 完成 ${sceneVideos.length} 个镜头（Claude 生成）→ ${scenesDir}`);
+    return { sceneVideos };
+  }
+
   const concurrency = Number(process.env.AI_VIDEO_CONCURRENCY ?? '2') || 2;
   const fallbackModel = process.env.AI_VIDEO_MODEL ?? '';
   const defaultResolution = process.env.AI_VIDEO_RESOLUTION ?? '720P';

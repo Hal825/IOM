@@ -33,14 +33,15 @@ export async function listTasks(): Promise<TaskSummary[]> {
   return data.tasks;
 }
 
-/** 提交文本创建视频生成任务，返回队列分配的 jobId。 */
+/** 提交文本创建视频生成任务（videoMode: auto=项目调视频 API / claude=Claude 用套餐模型生成）。 */
 export async function createTask(
-  text: string
+  text: string,
+  videoMode: 'auto' | 'claude' = 'auto'
 ): Promise<{ id: string; status: string }> {
   const res = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, videoMode }),
   });
   if (!res.ok) throw await toError(res, '提交失败');
   return (await res.json()) as { id: string; status: string };

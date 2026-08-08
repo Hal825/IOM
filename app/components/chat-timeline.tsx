@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TaskSummary } from '@/lib/types';
 import type { ConversationMessage, AgentMessage, SystemMessage } from '@/lib/conversations/types';
 import { openTaskStream, replyToTask, rerunTask } from '@/lib/api';
 import { formatRelativeTime } from './format';
 import { Pipeline } from './pipeline';
 import { StatusBadge } from './status-badge';
+import { IconBrand, IconDownload, IconPause, IconPlay, IconTrash } from './icons';
 import { NodeCard } from './cards/node-card';
 import { UserBubble, QuestionBubble, SystemLine, AgentBubble } from './bubbles';
 import { ThinkingCard } from './thinking-card';
@@ -17,7 +18,8 @@ interface ChatTimelineProps {
   onDelete?: (id: string) => Promise<void>;
 }
 
-function MessageItem({
+// memo：流式 token 高频 setState 时，历史消息 props 未变即可跳过重渲染
+const MessageItem = memo(function MessageItem({
   message,
   onRerun,
 }: {
@@ -40,7 +42,7 @@ function MessageItem({
     default:
       return null;
   }
-}
+});
 
 /**
  * 内容区「对话时间线」——方案 B 的前端呈现：
@@ -60,6 +62,11 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
   // 前端 agent 流式：正在生成的文本（打字机效果），agent 完成事件后用全文替换
   const [streaming, setStreaming] = useState<{ nodeName: string; text: string } | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  // 流式增量缓冲：delta 先入 ref，按动画帧合并 flush，避免每 token 一次全树渲染
+  const streamBufRef = useRef<{ nodeName: string; text: string } | null>(null);
+  const streamRafRef = useRef<number | null>(null);
+  // 删除确认按钮的还原定时器（卸载时需清理）
+  const confirmTimerRef = useRef<number | null>(null);
 
   const taskId = task?.id ?? null;
 
@@ -101,68 +108,116 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
         ]);
       },
       onAgentDelta(d) {
-        setStreaming((s) =>
-          s?.nodeName === d.nodeName
-            ? { ...s, text: s.text + d.delta }
-            : { nodeName: d.nodeName, text: d.delta }
-        );
+        // 增量先合入缓冲，下一动画帧统一 setState（高频 token → 每帧最多一次渲染）
+        const buf = streamBufRef.current;
+        streamBufRef.current =
+          buf?.nodeName === d.nodeName
+            ? { nodeName: buf.nodeName, text: buf.text + d.delta }
+            : { nodeName: d.nodeName, text: d.delta };
+        if (streamRafRef.current === null) {
+          streamRafRef.current = requestAnimationFrame(() => {
+            streamRafRef.current = null;
+            if (streamBufRef.current) setStreaming(streamBufRef.current);
+          });
+        }
       },
       onAgent(m: AgentMessage) {
+        streamBufRef.current = null; // 全文到达，丢弃缓冲
         setMessages((prev) => [...prev, m]);
         setStreaming((s) => (s?.nodeName === m.nodeName ? null : s));
       },
     });
-    return close;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      close();
+      if (streamRafRef.current !== null) {
+        cancelAnimationFrame(streamRafRef.current);
+        streamRafRef.current = null;
+      }
+      streamBufRef.current = null;
+    };
   }, [taskId]);
 
-  // 新消息自动滚动到底
+  // 新消息 / 流式增量 → 自动滚动到底。
+  // 流式期间用即时滚动（auto）：密集增量下 smooth 动画会互相打断、永远追不上内容
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages]);
+    endRef.current?.scrollIntoView({
+      behavior: streaming ? 'auto' : 'smooth',
+      block: 'end',
+    });
+  }, [messages, streaming]);
 
-  if (!task) {
-    return (
-      <section className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-panel/60 p-10 text-center">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-lg text-accent">
-          ▸
-        </span>
-        <p className="mt-3 text-sm text-muted">选择左侧任务查看对话，或先提交一段文本</p>
-      </section>
-    );
-  }
+  // 卸载时清理删除确认的还原定时器
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current !== null) {
+        window.clearTimeout(confirmTimerRef.current);
+      }
+    };
+  }, []);
 
-  const busy = task.status === 'waiting' || task.status === 'active';
+  // ── 派生数据（hooks 必须在 early return 之前；task 为空时取安全默认值）──
+  const busy = task ? task.status === 'waiting' || task.status === 'active' : false;
   // 节点事件来源：旧 card 与新 agent 消息都算（流水线着色 / 思考中判断）
-  const completedNodes = messages
-    .filter((m) => m.kind === 'card' || m.kind === 'agent')
-    .map((m) => m.nodeName);
+  // useMemo：流式 token 高频渲染时，messages 未变就不重算
+  const completedNodes = useMemo(
+    () =>
+      messages
+        .filter((m) => m.kind === 'card' || m.kind === 'agent')
+        .map((m) => m.nodeName),
+    [messages]
+  );
   // 思考中：任务在跑且还没有任何节点消息、也还没开始流式 → 显示转圈 + 趣味对话
-  const hasCards = messages.some((m) => m.kind === 'card' || m.kind === 'agent');
+  const hasCards = useMemo(
+    () => messages.some((m) => m.kind === 'card' || m.kind === 'agent'),
+    [messages]
+  );
   const thinking = busy && !hasCards && !streaming;
   // 重跑：任务非运行中时卡片显示「重跑」按钮
   const canRerun = !busy;
 
-  const runAction = async (fn: () => Promise<void>) => {
+  const runAction = useCallback(async (fn: () => Promise<void>) => {
     try {
       setActionError(null);
       await fn();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '操作失败');
     }
-  };
+  }, []);
 
-  /** 重跑节点：nodeName → 该节点及之后重新生成（上游保留） */
-  const handleRerun = (nodeName: string) => {
-    void runAction(() => rerunTask(task.id, nodeName));
-  };
+  /** 重跑节点：nodeName → 该节点及之后重新生成（上游保留）。useCallback 保持引用稳定，配合 memo(MessageItem)。 */
+  const handleRerun = useCallback(
+    (nodeName: string) => {
+      if (!taskId) return;
+      void runAction(() => rerunTask(taskId, nodeName));
+    },
+    [taskId, runAction]
+  );
+
+  if (!task) {
+    return (
+      <section className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-panel/60 p-10 text-center">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+          <IconBrand className="h-5 w-5" />
+        </span>
+        <p className="mt-3 text-sm text-muted">选择左侧任务查看对话，或先提交一段文本</p>
+      </section>
+    );
+  }
 
   const handleDelete = () => {
     if (!onDelete) return;
     if (!confirming) {
       setConfirming(true);
-      window.setTimeout(() => setConfirming(false), 3000); // 3 秒未再点 → 还原
+      if (confirmTimerRef.current !== null) window.clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = window.setTimeout(() => {
+        confirmTimerRef.current = null;
+        setConfirming(false);
+      }, 3000); // 3 秒未再点 → 还原
       return;
+    }
+    if (confirmTimerRef.current !== null) {
+      window.clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = null;
     }
     setConfirming(false);
     void runAction(() => onDelete(task.id));
@@ -177,6 +232,20 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
       await replyToTask(task.id, text);
       setReplyText('');
       // 用户消息/继续信号会经 SSE（onUser / onProceed）回流，这里不重复追加
+    } catch (err) {
+      setReplyError(err instanceof Error ? err.message : '回复失败');
+    } finally {
+      setReplying(false);
+    }
+  };
+
+  /** 「继续」按钮：无输入直接放行决策点（等价发送文本「继续」，任意文本 = 继续 + 记录反馈） */
+  const handleContinue = async () => {
+    if (replying) return;
+    setReplying(true);
+    setReplyError(null);
+    try {
+      await replyToTask(task.id, '继续');
     } catch (err) {
       setReplyError(err instanceof Error ? err.message : '回复失败');
     } finally {
@@ -209,9 +278,13 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
                 })
               }
               disabled={!onTogglePause}
-              className="rounded-lg border border-accent/50 px-3 py-1 text-xs font-medium text-accent transition hover:bg-accent/10 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-accent/50 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/10 disabled:opacity-40 md:py-1"
             >
-              {task.status === 'paused' ? '▶ 继续' : '⏸ 暂停'}
+              {task.status === 'paused' ? (
+                <><IconPlay /> 继续</>
+              ) : (
+                <><IconPause /> 暂停</>
+              )}
             </button>
           ) : null}
 
@@ -219,22 +292,22 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
             type="button"
             onClick={handleDelete}
             disabled={!onDelete}
-            className={`rounded-lg border px-3 py-1 text-xs font-medium transition disabled:opacity-40 ${
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-40 md:py-1 ${
               confirming
                 ? 'border-danger/60 bg-danger/10 text-danger'
                 : 'border-danger/50 text-danger hover:bg-danger/10'
             }`}
           >
-            {confirming ? '确认删除?' : '🗑 删除'}
+            {confirming ? '确认删除？' : (<><IconTrash /> 删除</>)}
           </button>
 
           {task.status === 'completed' ? (
             <a
               href={`/api/tasks/${task.id}/download`}
               download
-              className="rounded-lg border border-accent/50 px-3 py-1 text-xs font-medium text-accent transition hover:bg-accent/10"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-accent/50 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/10 md:py-1"
             >
-              ⬇ 下载 MP4
+              <IconDownload /> 下载 MP4
             </a>
           ) : null}
         </span>
@@ -265,7 +338,7 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
           className="rounded-xl border border-info/40 bg-panel p-3 shadow-card focus-within:border-info/60"
         >
           <label htmlFor="reply-text" className="text-xs font-medium text-info">
-            回复 agent（任意文本 = 继续 + 记录反馈）
+            回复 agent（可写修改意见，或直接点「继续」）
           </label>
           <div className="mt-2 flex gap-2">
             <textarea
@@ -278,17 +351,27 @@ export function ChatTimeline({ task, onTogglePause, onDelete }: ChatTimelineProp
                   void handleReply();
                 }
               }}
-              placeholder="例如：继续；或写修改意见（v1 仅记录，不重跑）……"
+              placeholder="例如：写修改意见；或直接点「继续」……"
               rows={2}
               className="min-h-0 flex-1 resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted/70"
             />
-            <button
-              type="submit"
-              disabled={!replyText.trim() || replying}
-              className="shrink-0 self-end rounded-lg bg-info px-4 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-info/90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {replying ? '发送中…' : '发送'}
-            </button>
+            <div className="flex shrink-0 flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void handleContinue()}
+                disabled={replying}
+                className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-40 md:py-1.5"
+              >
+                {replying ? '处理中…' : '继续 →'}
+              </button>
+              <button
+                type="submit"
+                disabled={!replyText.trim() || replying}
+                className="rounded-lg border border-info/50 px-4 py-2.5 text-sm font-medium text-info transition hover:bg-info/10 disabled:cursor-not-allowed disabled:opacity-40 md:py-1.5"
+              >
+                发送
+              </button>
+            </div>
           </div>
           {replyError ? (
             <p role="alert" className="mt-2 text-xs text-danger">

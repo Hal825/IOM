@@ -5,9 +5,9 @@ import { getCoordinator } from '@/lib/coordinator';
 
 export const dynamic = 'force-dynamic';
 
-/** 创建任务：{ text: string } → 入队 BullMQ → { id }。Worker 消费后执行完整 LangGraph 管线。 */
+/** 创建任务：{ text, videoMode? } → 入队 BullMQ → { id }。Worker 消费后执行完整 LangGraph 管线。 */
 export async function POST(request: Request) {
-  let body: { text?: unknown };
+  let body: { text?: unknown; videoMode?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -22,10 +22,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '文本过长（最多 2000 字）' }, { status: 400 });
   }
 
+  // 视频生成方式：auto（项目调视频 API）/ claude（Claude 用套餐模型生成）；非法值回退 auto
+  const videoMode = body.videoMode === 'claude' ? 'claude' : 'auto';
+
   try {
     const queue = getQueue();
-    const job = await queue.add('video-generation', { text });
-    console.log(`[api] 任务 ${job.id} 已入队: "${text.slice(0, 40)}..."`);
+    const job = await queue.add('video-generation', { text, videoMode });
+    console.log(`[api] 任务 ${job.id} 已入队 [${videoMode}]: "${text.slice(0, 40)}..."`);
 
     // 立即订阅该任务的管线事件通道，防漏收即发即弃的节点事件
     await getCoordinator().subscribe(String(job.id));

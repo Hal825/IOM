@@ -1,6 +1,7 @@
 'use client';
 
 import type { GateQuestionMessage } from '@/lib/conversations/types';
+import { IconRerun } from './icons';
 
 /** 用户气泡：右侧靛蓝；original = 任务初始描述。 */
 export function UserBubble({ text, original }: { text: string; original?: boolean }) {
@@ -58,9 +59,9 @@ export function AgentBubble({
           <button
             type="button"
             onClick={() => onRerun(nodeName)}
-            className="mt-1.5 rounded-lg border border-accent/50 px-2 py-0.5 text-[11px] font-medium text-accent transition hover:bg-accent/10"
+            className="mt-1.5 inline-flex items-center gap-1 rounded-lg border border-accent/50 px-2 py-1.5 text-[11px] font-medium text-accent transition hover:bg-accent/10 md:py-0.5"
           >
-            ↻ 重跑此节点
+            <IconRerun className="h-3 w-3" /> 重跑此节点
           </button>
         ) : null}
       </div>

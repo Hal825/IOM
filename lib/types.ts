@@ -5,10 +5,15 @@
 /** 队列名称（Queue 与 Worker 必须一致） */
 export const QUEUE_NAME = 'video-generation';
 
+/** 视频生成方式：auto = 项目调视频 API；claude = 暂停等 Claude 用套餐模型生成（方案 B） */
+export type VideoMode = 'auto' | 'claude';
+
 /** 提交到队列的任务数据 */
 export interface TaskData {
   /** 用户输入的原始文本 */
   text: string;
+  /** 视频生成方式（缺省 auto；shot_video_gen 据此决定是否 claude 模式） */
+  videoMode?: VideoMode;
   /** 重跑起点节点（如 'script_generation'）；缺省 = 正常全跑 */
   rerunFrom?: string;
   /** 重跑时的上游产出（来自对话卡 payload，重跑时恢复用） */

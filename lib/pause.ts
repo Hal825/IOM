@@ -81,7 +81,7 @@ export async function clearJobDeleted(jobId: string): Promise<void> {
 /** 清除该任务全部决策点幂等键（重跑时让 X 及之后的门能重新提问） */
 export async function clearJobDecisions(jobId: string): Promise<void> {
   const redis = getRedisConnection();
-  const gates = ['pause_gate_1', 'pause_gate_2', 'pause_gate_3', 'pause_gate_4'];
+  const gates = ['pause_gate_1', 'pause_gate_2', 'pause_gate_3', 'pause_gate_4', 'pause_gate_video'];
   await redis.del(...gates.map((g) => decisionKey(jobId, g)));
 }
 

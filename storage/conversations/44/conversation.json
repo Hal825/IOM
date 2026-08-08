@@ -1,0 +1,1365 @@
+{
+  "jobId": "44",
+  "createdAt": "2026-08-08T07:51:30.244Z",
+  "updatedAt": "2026-08-08T08:13:17.967Z",
+  "messages": [
+    {
+      "id": "4480c643-801d-4e2d-9f12-69f29b25fca7",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_1",
+      "stage": "调研完成",
+      "question": "已确认需求，开始设计提案？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-08T07:51:30.243Z"
+    },
+    {
+      "id": "24e04392-6e57-481d-b94a-35c962b76eb6",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "research",
+      "text": "调研节点已经完成，以下是核心结论：\n\n**🎬 脚本概要**\n- 视频主题《重塑想象》，总时长 **28秒**，画质 480p\n- 核心调性：未来感、震撼、高效\n- 适用场景：AI产品发布、创意工作室宣传、科技博主种草\n\n**📋 脚本结构**\n分为四个段落，叙事完整：从深夜灵感枯竭的压抑开场 → 触碰屏幕、AI粒子迸发的奇幻转场 → 实时调参、分屏展示动态演化 → 最终站在自己生成的宏大虚拟世界中定格，浮现产品logo。\n\n**✅ 内容就绪度评估：92分（可直接进入生成）**\n\n各项维度表现：\n- 视觉可转化性 **98分**：画面描述非常具体，包含特写/转场/中景/全景、色调变化、粒子特效、分屏展示，AI可以直接按提示词生成\n- 信息充分性 **95分**：时间轴、画面、旁白、字幕、音效全部齐备，无需补充\n- 逻辑流畅度 **92分**：从用户痛点 → AI赋能 → 能力展示 → 成果升华，递进自然\n- 情感清晰度 **88分**：从压抑疲惫到惊喜震撼再到自信掌控，情绪弧线完整\n- 创意丰富度 **92分**：粒子重组为奇幻城市/机械生物/水墨山水、分屏演化等构思很有冲击力\n\n**💡 下一步建议**\n\n评估结果为 **ready**，没有需要补强的短板。你可以直接拿着这份脚本案去开始视频画面的生成，每个时间段的提示词已经足够精细，按 0-5s、5-12s、12-22s、22-28s 分段生成素材即可。需要我帮你开始推进下一步吗？",
+      "payload": {
+        "researchReport": {
+          "user_text": "🎬 ai视频脚本：《重塑想象》\n总时长：28秒\n核心调性：未来感、震撼、高效\n画质:480p\n适用场景：ai产品发布、创意工作室宣传、科技博主种草\n时间\t画面提示词（供ai生成参考）\t旁白/字幕文案\t音效/备注\n0-5s\t特写：一双疲惫的眼睛盯着空白文档，光标闪烁。镜头拉远，显示深夜杂乱的桌面。色调冷灰压抑。\t（无旁白）\n字幕：灵感枯竭？\t键盘敲击声渐弱\n心跳声效\n5-12s\t转场：指尖触碰发光屏幕，无数彩色粒子从屏幕涌出，在空中重组为奇幻城市/机械生物/水墨山水（三组快切）。色调转为霓虹暖光。\t旁白：“让ai，接管你的想象力。”\n字幕：一键生成·无限可能\t电子启动音+恢弘弦乐起\n画面卡点切换\n12-22s\t中景：创作者微笑着调整参数，画面中的奇幻场景实时变形、细化。分屏展示：左侧输入框，右侧4k成品图动态演化。\t旁白：“从文字到视界，只需一次呼吸。”\n字幕：精准可控·专业级输出\t轻快科技感音效\n突出“实时”动态效果\n22-28s\t全景：创作者站在自己生成的宏大虚拟世界中，回头看向镜头。画面定格，浮现产品logo与slogan。",
+          "user_demand": {
+            "hasExplicitDemand": true,
+            "demands": [
+              {
+                "category": "duration",
+                "description": "视频总时长28秒",
+                "originalPhrase": "总时长：28秒"
+              },
+              {
+                "category": "style",
+                "description": "核心调性为未来感、震撼、高效",
+                "originalPhrase": "核心调性：未来感、震撼、高效"
+              },
+              {
+                "category": "format",
+                "description": "画质为480p",
+                "originalPhrase": "画质:480p"
+              },
+              {
+                "category": "other",
+                "description": "适用场景为AI产品发布、创意工作室宣传、科技博主种草",
+                "originalPhrase": "适用场景：ai产品发布、创意工作室宣传、科技博主种草"
+              },
+              {
+                "category": "content",
+                "description": "分四个时间段设计画面、旁白字幕和音效，包含从灵感枯竭到AI生成奇幻世界的完整叙事",
+                "originalPhrase": "0-5s...5-12s...12-22s...22-28s（时间轴内容）"
+              }
+            ],
+            "summary": "用户要求制作一个28秒、480p、未来感震撼高效的AI产品宣传视频脚本，包含完整的时间轴画面提示词、旁白字幕和音效设计。"
+          },
+          "content_readiness_assessment": {
+            "overallScore": 92,
+            "level": "ready",
+            "dimensions": {
+              "information_sufficiency": {
+                "score": 95,
+                "comment": "文本提供了完整的视频脚本所需信息，包含时间分段、画面提示词、旁白字幕和音效备注，无需额外补充。"
+              },
+              "visual_convertibility": {
+                "score": 98,
+                "comment": "画面描述极其具体，包含特写、转场、中景、全景、色调变化、粒子特效、分屏展示等，AI可准确生成相应画面。"
+              },
+              "structural_integrity": {
+                "score": 90,
+                "comment": "具有清晰的起承转合：从问题引入激发共鸣，到AI介入创造奇迹，再到展示可控性与最终宏大呈现，结构完整。"
+              },
+              "logical_fluency": {
+                "score": 92,
+                "comment": "叙事流程流畅自然：从用户痛点出发，经AI赋能到展示能力，最后升华至创作者身处虚拟世界的成果，逻辑连贯。"
+              },
+              "emotional_clarity": {
+                "score": 88,
+                "comment": "情感递进明确：从压抑疲惫到惊喜震撼，再到自信掌控，最后具有未来感和成就感，情绪脉络清晰。"
+              },
+              "creativity_richness": {
+                "score": 92,
+                "comment": "充满视觉创意：粒子重组为奇幻城市/机械生物/水墨山水、分屏动态演化、宏大虚拟世界等构思新颖富有冲击力。"
+              }
+            },
+            "strengths": [
+              "画面提示词极其具体，可直接用于AI视频生成",
+              "音效与画面卡点设计专业，增强视听节奏",
+              "叙事结构完整，情感层次丰富",
+              "创意表现力强，视觉元素兼具未来感与艺术性"
+            ],
+            "weaknesses": [],
+            "recommendation": "ready"
+          }
+        }
+      },
+      "createdAt": "2026-08-08T07:51:35.199Z"
+    },
+    {
+      "id": "898b0bac-6183-4a35-a99e-3fc962648df6",
+      "jobId": "44",
+      "role": "user",
+      "kind": "text",
+      "text": "继续",
+      "feedback": {
+        "gateId": "pause_gate_1",
+        "nodeName": ""
+      },
+      "createdAt": "2026-08-08T07:51:56.577Z"
+    },
+    {
+      "id": "eca9c851-7a5d-4002-99eb-ff04e7e0e946",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "generate_proposal",
+      "text": "这一阶段的创意提案已经成型，整体方向清晰，可以直接进入下一步制作。\n\n**项目基本信息**\n- **片名**：《重塑想象：让AI接管想象力》\n- **时长**：28 秒，16:9 横屏\n- **基调**：从压抑灰暗到霓虹暖光的情绪递进，走未来主义粒子与数字艺术风格\n\n**主角设定**\n\n林墨，28 岁男性创作者。深夜灵感枯竭、眼神疲惫但带着不甘，穿黑色连帽衫、戴银框眼镜，桌上堆着纸团和能量饮料罐。他是观众代入的“把手”——从创作者困境出发，体验 AI 带来的想象力解放。\n\n**四个段落的设计**\n\n1. **困局（5 秒）**：深夜工作间，林墨盯着空白文档，冷灰色调、压抑氛围。字幕点出“灵感枯竭？”——直接抛出观众痛点。\n2. **震撼（7 秒）**：指尖触碰发光屏幕，彩色粒子炸开，重组为奇幻城市、机械生物、水墨山水。色调转入霓虹暖光，字幕“一键生成·无限可能”。这是全片的高潮引爆点。\n3. **掌控（10 秒）**：场景转入明亮现代的工作",
+      "payload": {
+        "proposal": {
+          "characters": [
+            {
+              "characterId": "char-1",
+              "name": "林墨",
+              "type": "protagonist",
+              "appearance": "28岁男性,黑发微乱略显疲态,戴银框半框眼镜,五官清秀,双眼疲惫但有神,身形清瘦挺拔.穿黑色连帽衫配深灰休闲裤,手腕戴智能手环.",
+              "personality": "专注内向,习惯性皱眉思考,语速平缓,遇惊喜时眼神发亮并微微扬眉,动作细腻沉稳.",
+              "role": "深夜灵感枯竭的创作者,体验AI唤起想象力的完整历程."
+            }
+          ],
+          "blueprint": {
+            "title": "重塑想象:让AI接管想象力",
+            "totalDuration": 28,
+            "aspectRatio": "16:9"
+          },
+          "sceneVisuals": [
+            {
+              "visualId": "visual-1",
+              "description": "约20平米深夜工作间,左侧靠墙一张深木色长桌,桌上放着27寸显示器(亮着空白文档),一盏暖黄台灯,桌旁散落速写本和模型;右侧墙是现代收纳架,堆满资料和创意摆件;窗帘紧闭,只透出远处城市零星灯光.整体暗灰色调,天花板主灯关闭,仅屏幕、台灯和显示器余光照明,氛围压抑、沉静,地面堆着纸团和能量饮料罐.",
+              "visualHints": "Dim cluttered creative studio at night, 25 square meters, large wooden desk on left with desktop monitor showing blank white document, warm desk lamp glow, shelves with books and toy models, dark curtain against window, faint city lights behind, cool blue-grey palette, crumpled papers and energy drink cans scattered on floor, deep shadows, cinematic moody lighting, intimate late-night atmosphere, realistic 480p",
+              "scenes": [
+                {
+                  "sceneId": "scene-1",
+                  "sceneDescription": "特写:林墨一双疲惫的眼睛紧盯着空白文档,眼角充血,眉头微蹙;光标有节奏地闪烁.镜头缓慢拉远,展示深夜杂乱的桌面,桌面上散落纸团与能量饮料罐.林墨收回视线,双手揉按太阳穴.画面冷灰压抑,屏幕中央浮现字幕'灵感枯竭?'.",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 5
+                }
+              ]
+            },
+            {
+              "visualId": "visual-2",
+              "description": "数字粒子虚拟空间,无实体边界,只有中央悬浮的亮蓝发光屏幕作为介质.手指触碰屏幕时,彩色粒子从屏幕平面炸开,向四周无限扩散并重组为奇幻城市、机械生物、水墨山水等视觉片段.底色为暗夜蓝紫渐变,四周漂浮半透明数据流光束,霓虹橙、品红、青蓝粒子交替闪烁,明暗对比强烈,形成不断流转的梦幻光场.",
+              "visualHints": "Infinite digital particle void, a floating central screen plane mid-air, fingertip touching the screen sparks streaming colorful particles, particles rapidly recombining into fantastical city skyline, mechanical creature silhouette, ink-wash mountain landscape, quick crossfades, dark blue-purple gradient background, neon orange magenta and cyan particles, floating luminous data streams, dreamlike ethereal atmosphere, seamless cinematic transition",
+              "scenes": [
+                {
+                  "sceneId": "scene-2",
+                  "sceneDescription": "镜头切换至林墨指尖特写,指尖触碰发光屏幕,瞬间无数彩色粒子从屏幕涌出,充满画面.粒子在空中重组为奇幻城市轮廓、机械生物剪影、水墨山水波纹,三组画面快速衔接,色调转为霓虹暖光.飘浮的数据流随音乐律动,字幕'一键生成·无限可能'从右侧弹出,画面卡点切换.",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 7
+                }
+              ]
+            },
+            {
+              "visualId": "visual-3",
+              "description": "明亮现代创意工作室,约25平米,中央为白色升降工作台,台面上放有27寸曲面显示器和小型平板;左侧墙面为浅灰色展板,贴满数字插画与概念图,右侧为落地玻璃窗,自然光充足;天花板为白色网格造型,嵌入LED平板灯,配色以白、浅木色为主,辅以蓝紫氛围光带,整体简洁高效,透着专业创作气息.",
+              "visualHints": "Bright modern creative studio, central white standing desk, 27-inch curved monitor with split screen, left panel showing parameter sliders, right screen showing 4K digital artwork evolving, grey walls with framed posters, white grid suspended ceiling with LED panels, natural sunlight from side window, white and light wood color palette, blue-purple ambient accent lighting, clean productivity workspace, professional creative atmosphere",
+              "scenes": [
+                {
+                  "sceneId": "scene-3",
+                  "sceneDescription": "中景:林墨站在白色工作台前,戴着眼镜,嘴角带自信微笑,右手拖动平板上的参数滑块;右侧显示器中奇幻场景实时变形、细化.画面切换为分屏:左侧为文字输入框,右侧为4K成品图动态演化,全景前后景有浅景深效果.林墨指尖划过平板时,界面元素发出蓝色流光.屏幕下方浮现字幕'精准可控·专业级输出'.",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 10
+                }
+              ]
+            },
+            {
+              "visualId": "visual-4",
+              "description": "宏大的虚拟世界空间,纵向广袤无垠.林墨所在处是通向空中的半透明数据悬崖,脚下延伸出玻璃质感的观景栈道;四周悬浮全息山脉、数据瀑布、机械飞鸟和发光植物,远景悬挂发光恒星核心与轨道环.整体色调为暗紫、靛蓝,荧光青点缀,空气中漂浮细碎数字粒子,有一种史诗般深邃的沉浸感.",
+              "visualHints": "Epic virtual landscape, creator stands on high data cliff edge with translucent glass path, floating holographic mountains, waterfall made of cascading data, mechanical birds and glowing plants, great star core with orbit rings far away, dark purple indigo palette, glowing cyan accents, floating digital particles, wide cinematic shot, grand scale world, inspiring futuristic scenery",
+              "scenes": [
+                {
+                  "sceneId": "scene-4",
+                  "sceneDescription": "全景:林墨站在宏大的虚拟世界中央,展开双臂感受数据光粒洒落,随后缓缓转身面向镜头,露出释然而坚定的微笑.画面定格,四周粒子逐渐聚合成产品logo与slogan,底部浮现字幕'重塑想象,由你定义'.",
+                  "appearCharId": [
+                    "char-1"
+                  ],
+                  "duration": 6
+                }
+              ]
+            }
+          ],
+          "styleProfile": {
+            "tone": "inspirational",
+            "visualStyle": "冷灰压抑转霓虹暖光,未来主义粒子与数字艺术",
+            "suggestedBGM": "电子启动音+恢弘弦乐,后段轻快科技感"
+          }
+        }
+      },
+      "createdAt": "2026-08-08T07:53:17.749Z"
+    },
+    {
+      "id": "99256d9f-a93b-4f69-abb7-ab288be1695c",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_2",
+      "stage": "脚本就绪",
+      "question": "提案与脚本就绪，开始生成素材与配音？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-08T07:54:13.879Z"
+    },
+    {
+      "id": "ec8d2828-d969-4f7b-a5c9-4809f0969187",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "script_generation",
+      "text": "脚本已经全部生成完毕！这次共有 **4个场景、总时长28秒**，主角林墨贯穿全片，完成了一条「灵感枯竭→AI唤醒→可控创作→宏大愿景」的完整情绪线。\n\n**故事概览**\n1. 深夜敲字卡壳，",
+      "payload": {
+        "videoScript": {
+          "storyScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "sceneDescription": "特写：林墨一双疲惫的眼睛紧盯着空白文档，光标有节奏地闪烁。镜头缓慢拉远，展示深夜杂乱的桌面，桌面上散落纸团与能量饮料罐。林墨收回视线，双手揉按太阳穴。画面冷灰压抑，屏幕中央浮现字幕'灵感枯竭?'。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "紧盯着空白文档，光标闪烁",
+                      "收回视线，双手揉按太阳穴"
+                    ],
+                    "emotions": [
+                      "疲惫",
+                      "压抑"
+                    ]
+                  }
+                ],
+                "narrative": "建立创作者灵感枯竭的困境，引发观众共鸣"
+              },
+              {
+                "sceneId": "scene-2",
+                "sceneDescription": "镜头切换至林墨指尖特写，指尖触碰发光屏幕，瞬间无数彩色粒子从屏幕涌出，充满画面。粒子在空中重组为奇幻城市轮廓、机械生物剪影、水墨山水波纹，三组画面快速衔接，色调转为霓虹暖光。飘浮的数据流随音乐律动，字幕'一键生成·无限可能'从右侧弹出，画面卡点切换。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "指尖触碰发光屏幕",
+                      "注视着从屏幕涌出的彩色粒子"
+                    ],
+                    "emotions": [
+                      "从疲惫转为惊喜",
+                      "惊叹与好奇"
+                    ]
+                  }
+                ],
+                "narrative": "AI正式接管想象力，呈现无限创意可能"
+              },
+              {
+                "sceneId": "scene-3",
+                "sceneDescription": "中景：林墨站在白色工作台前，戴着眼镜，嘴角带自信微笑，右手拖动平板上的参数滑块；右侧显示器中奇幻场景实时变形、细化。画面切换为分屏：左侧为文字输入框，右侧为4K成品图动态演化，全景前后景有浅景深效果。林墨指尖划过平板时，界面元素发出蓝色流光。屏幕下方浮现字幕'精准可控·专业级输出'。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "站在工作台前拖动参数滑块",
+                      "观察奇幻场景实时演化"
+                    ],
+                    "emotions": [
+                      "自信",
+                      "从容掌控"
+                    ]
+                  }
+                ],
+                "narrative": "展示AI创作的可控性与专业级输出品质"
+              },
+              {
+                "sceneId": "scene-4",
+                "sceneDescription": "全景：林墨站在宏大的虚拟世界中央，展开双臂感受数据光粒洒落，随后缓缓转身面向镜头，露出释然而坚定的微笑。画面定格，四周粒子逐渐聚合成产品logo与slogan，底部浮现字幕'重塑想象，由你定义'。",
+                "characters": [
+                  {
+                    "characterId": "char-1",
+                    "actions": [
+                      "展开双臂感受数据光粒",
+                      "转身面向镜头微笑"
+                    ],
+                    "emotions": [
+                      "释然",
+                      "坚定",
+                      "成就感"
+                    ]
+                  }
+                ],
+                "narrative": "升华主题，完成从困境到宏大愿景的情绪释放"
+              }
+            ]
+          },
+          "storyboardScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "visualSource": "visual-1",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-1"
+                },
+                "shot": {
+                  "type": "extreme close-up",
+                  "angle": "eye-level",
+                  "movement": "slow pull back to wide shot",
+                  "focus": "Lin Mo's tired eyes and the blank document cursor"
+                },
+                "composition": "centered on eye, expanding to reveal cluttered desk, rule of thirds with desk on left",
+                "lighting": "dim cold grey ambient, monitor glow illuminating face, low-key lighting",
+                "visualElements": [
+                  "blank document",
+                  "blinking cursor",
+                  "crumpled papers",
+                  "energy drink cans",
+                  "subtitle text '灵感枯竭?'"
+                ],
+                "atmosphere": "isolated, exhausted, moody, cinematic, shallow depth of field, high detail",
+                "motionLevel": 2,
+                "negativePrompt": "extra fingers, distorted face, blurry, low quality, watermark, text artifacts, lens flare, bright colors",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              },
+              {
+                "sceneId": "scene-2",
+                "visualSource": "visual-2",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-2"
+                },
+                "shot": {
+                  "type": "macro close-up",
+                  "angle": "eye-level",
+                  "movement": "dynamic handheld with quick jump cuts",
+                  "focus": "fingertip touching glowing screen, particles bursting outward"
+                },
+                "composition": "centered on fingertip, particles filling frame, three quick-cut sequences following rule of thirds",
+                "lighting": "neon magenta/orange/cyan glow, high contrast, dark blue-purple base",
+                "visualElements": [
+                  "glowing screen plane",
+                  "colorful particles",
+                  "fantasy city silhouette",
+                  "mechanical creature",
+                  "ink-wash landscape",
+                  "subtitle '一键生成·无限可能'"
+                ],
+                "atmosphere": "energetic, magical, futuristic, surreal, cinematic vfx, 8k",
+                "motionLevel": 4,
+                "negativePrompt": "blurry, low quality, watermark, deformed shapes, text errors, flickering",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              },
+              {
+                "sceneId": "scene-3",
+                "visualSource": "visual-3",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-3"
+                },
+                "shot": {
+                  "type": "medium shot",
+                  "angle": "eye-level",
+                  "movement": "static with subtle dolly-in",
+                  "focus": "Lin Mo's face and the split-screen evolving 4K artwork"
+                },
+                "composition": "subject center-left, split screen occupying right side, rule of thirds",
+                "lighting": "bright natural daylight from left, white LED ceiling panels, soft shadows, blue ambient accents",
+                "visualElements": [
+                  "white standing desk",
+                  "tablet with parameter sliders",
+                  "left text input box",
+                  "right 4K artwork evolution",
+                  "blue light streams",
+                  "subtitle '精准可控·专业级输出'"
+                ],
+                "atmosphere": "clean, modern, confident, productive, shallow depth of field, 8k",
+                "motionLevel": 2,
+                "negativePrompt": "extra fingers, distorted hands, blurry, low quality, watermark, text artifacts, dark environment, messy background",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              },
+              {
+                "sceneId": "scene-4",
+                "visualSource": "visual-4",
+                "appearCharId": [
+                  "char-1"
+                ],
+                "resourceRefs": {
+                  "sceneImageRef": "scene_visual-4"
+                },
+                "shot": {
+                  "type": "wide panoramic shot",
+                  "angle": "low angle",
+                  "movement": "slow orbit around character, then freeze frame",
+                  "focus": "Lin Mo facing camera, surrounded by virtual world and converging particles"
+                },
+                "composition": "centered hero shot, symmetrical, expansive background filling frame",
+                "lighting": "epic purple/indigo palette with glowing cyan particle light, strong rim light",
+                "visualElements": [
+                  "data cliff edge",
+                  "floating holographic mountains",
+                  "data waterfall",
+                  "mechanical birds",
+                  "glowing plants",
+                  "star core with orbit rings",
+                  "particles converging into logo",
+                  "subtitle '重塑想象，由你定义'"
+                ],
+                "atmosphere": "epic, awe-inspiring, dreamlike, cinematic, 8k",
+                "motionLevel": 3,
+                "negativePrompt": "people in background, watermark, blurry, low quality, deformed structures, unnatural shadows",
+                "resolution": "1920x1080",
+                "fps": 24,
+                "engine": "happyhorse-1.1-r2v",
+                "mode": "text-to-video"
+              }
+            ]
+          },
+          "audioScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "dialogue": null,
+                "sfx": [
+                  {
+                    "type": "keyboard clicks",
+                    "timing": "at start, fading out over 2s"
+                  },
+                  {
+                    "type": "heartbeat",
+                    "timing": "starts at 3s, low volume, grows slightly"
+                  },
+                  {
+                    "type": "room tone",
+                    "timing": "throughout"
+                  }
+                ],
+                "bgm": {
+                  "style": "minimal dark ambient",
+                  "mood": "tense, subdued, with faint pulse",
+                  "timing": "starts at 0.5s, low volume, ends before scene transition"
+                }
+              },
+              {
+                "sceneId": "scene-2",
+                "dialogue": [
+                  {
+                    "characterId": "char-1",
+                    "text": "让AI，接管你的想象力。",
+                    "emotion": "inspiring, mysterious"
+                  }
+                ],
+                "sfx": [
+                  {
+                    "type": "electronic start-up",
+                    "timing": "at 0s when fingertip touches screen"
+                  },
+                  {
+                    "type": "epic orchestral swells",
+                    "timing": "aligned with visual cuts at 1.5s, 4s, 6s"
+                  },
+                  {
+                    "type": "particle whoosh",
+                    "timing": "during each particle recombination sequence"
+                  }
+                ],
+                "bgm": {
+                  "style": "epic cinematic electronic",
+                  "mood": "grand, uplifting, rhythmic",
+                  "timing": "starts with start-up sound, increases in intensity"
+                }
+              },
+              {
+                "sceneId": "scene-3",
+                "dialogue": [
+                  {
+                    "characterId": "char-1",
+                    "text": "从文字到视界，只需一次呼吸。",
+                    "emotion": "calm, confident, slightly warm"
+                  }
+                ],
+                "sfx": [
+                  {
+                    "type": "soft UI tap",
+                    "timing": "at 1s when adjusting parameters"
+                  },
+                  {
+                    "type": "real-time transform whoosh",
+                    "timing": "throughout, subtle"
+                  },
+                  {
+                    "type": "data pulse",
+                    "timing": "as the 4K image evolves"
+                  }
+                ],
+                "bgm": {
+                  "style": "light tech beat",
+                  "mood": "energetic, smooth, controlled",
+                  "timing": "continues from scene-2, mixing into upbeat version"
+                }
+              },
+              {
+                "sceneId": "scene-4",
+                "dialogue": null,
+                "sfx": [
+                  {
+                    "type": "ambient virtual world hum",
+                    "timing": "throughout"
+                  },
+                  {
+                    "type": "camera freeze click",
+                    "timing": "when frame freezes at 4s"
+                  },
+                  {
+                    "type": "logo particle chime",
+                    "timing": "when particles converge into logo"
+                  }
+                ],
+                "bgm": {
+                  "style": "epic ambient",
+                  "mood": "inspiring, resolution",
+                  "timing": "swells then fades out during final freeze frame"
+                }
+              }
+            ]
+          },
+          "pacingScript": {
+            "scenes": [
+              {
+                "sceneId": "scene-1",
+                "duration": 5,
+                "transitionIn": {
+                  "type": "fade-in",
+                  "durationSec": 1
+                },
+                "transitionOut": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "keyMoments": [
+                  {
+                    "time": 0,
+                    "event": "字幕'灵感枯竭?'浮现"
+                  },
+                  {
+                    "time": 2,
+                    "event": "镜头开始拉远，展示杂乱桌面"
+                  },
+                  {
+                    "time": 4,
+                    "event": "林墨揉按太阳穴"
+                  }
+                ]
+              },
+              {
+                "sceneId": "scene-2",
+                "duration": 7,
+                "transitionIn": {
+                  "type": "dissolve",
+                  "durationSec": 0.5
+                },
+                "transitionOut": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "keyMoments": [
+                  {
+                    "time": 0,
+                    "event": "指尖触碰发光屏幕，粒子涌出"
+                  },
+                  {
+                    "time": 1.5,
+                    "event": "旁白'让AI，接管你的想象力'开始"
+                  },
+                  {
+                    "time": 2.5,
+                    "event": "第一组快切：奇幻城市"
+                  },
+                  {
+                    "time": 4,
+                    "event": "第二组快切：机械生物"
+                  },
+                  {
+                    "time": 5.5,
+                    "event": "第三组快切：水墨山水"
+                  },
+                  {
+                    "time": 6.5,
+                    "event": "字幕'一键生成·无限可能'弹出"
+                  }
+                ]
+              },
+              {
+                "sceneId": "scene-3",
+                "duration": 10,
+                "transitionIn": {
+                  "type": "dissolve",
+                  "durationSec": 0.5
+                },
+                "transitionOut": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "keyMoments": [
+                  {
+                    "time": 0,
+                    "event": "分屏展示：左输入框，右4K成品图"
+                  },
+                  {
+                    "time": 1,
+                    "event": "旁白'从文字到视界，只需一次呼吸'开始"
+                  },
+                  {
+                    "time": 2,
+                    "event": "奇幻场景实时变形细化"
+                  },
+                  {
+                    "time": 4,
+                    "event": "界面元素发出蓝色流光"
+                  },
+                  {
+                    "time": 7,
+                    "event": "字幕'精准可控·专业级输出'浮现"
+                  }
+                ]
+              },
+              {
+                "sceneId": "scene-4",
+                "duration": 6,
+                "transitionIn": {
+                  "type": "cut",
+                  "durationSec": 0
+                },
+                "transitionOut": {
+                  "type": "fade-out",
+                  "durationSec": 1.5
+                },
+                "keyMoments": [
+                  {
+                    "time": 0,
+                    "event": "林墨展开双臂感受数据光粒"
+                  },
+                  {
+                    "time": 2,
+                    "event": "转身面向镜头，露出释然微笑"
+                  },
+                  {
+                    "time": 4,
+                    "event": "画面定格，粒子聚合成logo与slogan"
+                  },
+                  {
+                    "time": 5,
+                    "event": "底部字幕'重塑想象，由你定义'浮现"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "scriptTextSnapshot": "[{\"sceneId\":\"scene-1\",\"duration\":5,\"narrative\":\"建立创作者灵感枯竭的困境，引发观众共鸣\",\"shotType\":\"extreme close-up\",\"dialogue\":[],\"sfx\":[\"keyboard clicks\",\"heartbeat\",\"room tone\"]},{\"sceneId\":\"scene-2\",\"duration\":7,\"narrative\":\"AI正式接管想象力，呈现无限创意可能\",\"shotType\":\"macro close-up\",\"dialogue\":[\"让AI，接管你的想象力。\"],\"sfx\":[\"electronic start-up\",\"epic orchestral swells\",\"particle whoosh\"]},{\"sceneId\":\"scene-3\",\"duration\":10,\"narrative\":\"展示AI创作的可控性与专业级输出品质\",\"shotType\":\"medium shot\",\"dialogue\":[\"从文字到视界，只需一次呼吸。\"],\"sfx\":[\"soft UI tap\",\"real-time transform whoosh\",\"data pulse\"]},{\"sceneId\":\"scene-4\",\"duration\":6,\"narrative\":\"升华主题，完成从困境到宏大愿景的情绪释放\",\"shotType\":\"wide panoramic shot\",\"dialogue\":[],\"sfx\":[\"ambient virtual world hum\",\"camera freeze click\",\"logo particle chime\"]}]"
+      },
+      "createdAt": "2026-08-08T07:54:19.182Z"
+    },
+    {
+      "id": "568a69b8-1dce-4d76-a367-5c5be7833db0",
+      "jobId": "44",
+      "role": "user",
+      "kind": "text",
+      "text": "继续",
+      "feedback": {
+        "gateId": "pause_gate_2",
+        "nodeName": "generate_proposal"
+      },
+      "createdAt": "2026-08-08T07:54:32.259Z"
+    },
+    {
+      "id": "cb40ddf7-86da-4c07-b661-a844a65e96b8",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "tts",
+      "text": "语音合成已完成，共生成 4 段与场景对齐的音频：\n\n- 场景 1：5 秒\n- 场景 2：7 秒\n- 场景 3：10 秒\n- 场景 4：6 秒\n\n总时长 28 秒，所有音频均已对齐并保存，可以直接进入下一步的合成或预览环节。",
+      "payload": {
+        "audioSegments": [
+          {
+            "sceneId": "scene-1",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-1_aligned.mp3",
+            "durationSec": 5
+          },
+          {
+            "sceneId": "scene-2",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-2_aligned.mp3",
+            "durationSec": 7
+          },
+          {
+            "sceneId": "scene-3",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-3_aligned.mp3",
+            "durationSec": 10
+          },
+          {
+            "sceneId": "scene-4",
+            "audioUrl": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-4_aligned.mp3",
+            "durationSec": 6
+          }
+        ]
+      },
+      "createdAt": "2026-08-08T07:54:42.821Z"
+    },
+    {
+      "id": "7bbb5b10-d216-4304-ad83-230bfc117be0",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_3",
+      "stage": "场景规格已组装",
+      "question": "场景规格已组装，开始逐镜头生成视频？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-08T07:55:43.741Z"
+    },
+    {
+      "id": "eebe457e-09da-4f26-8834-4f5d6ffde4b2",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "asset_gen",
+      "text": "资产节点已完成，整理结果如下：\n\n- 任务编号：44\n- 角色：1 位女性角色，取自素材库，",
+      "payload": {
+        "assetManifest": {
+          "jobId": "44",
+          "characters": {
+            "char-1": {
+              "source": "library",
+              "sourceRef": "library/characters/char_userd_1_female",
+              "views": {
+                "front": "library/characters/char_userd_1_female/front.jpeg",
+                "back": "library/characters/char_userd_1_female/back.jpeg",
+                "left": "library/characters/char_userd_1_female/left.jpeg",
+                "right": "library/characters/char_userd_1_female/right.jpeg"
+              }
+            }
+          },
+          "scenes": {
+            "scene_visual-1": {
+              "source": "ai",
+              "image": "assets/44/scenes/scene_visual-1.png"
+            },
+            "scene_visual-2": {
+              "source": "ai",
+              "image": "assets/44/scenes/scene_visual-2.png"
+            },
+            "scene_visual-3": {
+              "source": "ai",
+              "image": "assets/44/scenes/scene_visual-3.png"
+            },
+            "scene_visual-4": {
+              "source": "ai",
+              "image": "assets/44/scenes/scene_visual-4.png"
+            }
+          },
+          "sceneRefs": {
+            "scene-1": "scene_visual-1",
+            "scene-2": "scene_visual-2",
+            "scene-3": "scene_visual-3",
+            "scene-4": "scene_visual-4"
+          }
+        }
+      },
+      "createdAt": "2026-08-08T07:55:47.696Z"
+    },
+    {
+      "id": "4ff262d2-6e15-4bcc-b9d0-6d5753979341",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "scene_json_assembler",
+      "text": "场景编排节点已经完成，4 个场景的规格全部就绪，总时长约 28 秒，统一使用 happyhorse-1.1-r2v 引擎生成 1080",
+      "payload": {
+        "sceneSpecs": [
+          {
+            "sceneId": "scene-1",
+            "duration": 5,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-1.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-1_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "特写：林墨一双疲惫的眼睛紧盯着空白文档，光标有节奏地闪烁。镜头缓慢拉远，展示深夜杂乱的桌面，桌面上散落纸团与能量饮料罐。林墨收回视线，双手揉按太阳穴。画面冷灰压抑，屏幕中央浮现字幕'灵感枯竭?'。",
+              "narrative": "建立创作者灵感枯竭的困境，引发观众共鸣",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "紧盯着空白文档，光标闪烁",
+                    "收回视线，双手揉按太阳穴"
+                  ],
+                  "emotions": [
+                    "疲惫",
+                    "压抑"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "extreme close-up",
+                "angle": "eye-level",
+                "movement": "slow pull back to wide shot",
+                "focus": "Lin Mo's tired eyes and the blank document cursor"
+              },
+              "composition": "centered on eye, expanding to reveal cluttered desk, rule of thirds with desk on left",
+              "lighting": "dim cold grey ambient, monitor glow illuminating face, low-key lighting",
+              "visualElements": [
+                "blank document",
+                "blinking cursor",
+                "crumpled papers",
+                "energy drink cans",
+                "subtitle text '灵感枯竭?'"
+              ],
+              "atmosphere": "isolated, exhausted, moody, cinematic, shallow depth of field, high detail",
+              "motionLevel": 2,
+              "negativePrompt": "extra fingers, distorted face, blurry, low quality, watermark, text artifacts, lens flare, bright colors"
+            },
+            "audio": {
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "keyboard clicks",
+                  "timing": "at start, fading out over 2s"
+                },
+                {
+                  "type": "heartbeat",
+                  "timing": "starts at 3s, low volume, grows slightly"
+                },
+                {
+                  "type": "room tone",
+                  "timing": "throughout"
+                }
+              ],
+              "bgm": {
+                "style": "minimal dark ambient",
+                "mood": "tense, subdued, with faint pulse",
+                "timing": "starts at 0.5s, low volume, ends before scene transition"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "fade-in",
+                "durationSec": 1
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "字幕'灵感枯竭?'浮现"
+                },
+                {
+                  "time": 2,
+                  "event": "镜头开始拉远，展示杂乱桌面"
+                },
+                {
+                  "time": 4,
+                  "event": "林墨揉按太阳穴"
+                }
+              ]
+            }
+          },
+          {
+            "sceneId": "scene-2",
+            "duration": 7,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-2.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-2_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "镜头切换至林墨指尖特写，指尖触碰发光屏幕，瞬间无数彩色粒子从屏幕涌出，充满画面。粒子在空中重组为奇幻城市轮廓、机械生物剪影、水墨山水波纹，三组画面快速衔接，色调转为霓虹暖光。飘浮的数据流随音乐律动，字幕'一键生成·无限可能'从右侧弹出，画面卡点切换。",
+              "narrative": "AI正式接管想象力，呈现无限创意可能",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "指尖触碰发光屏幕",
+                    "注视着从屏幕涌出的彩色粒子"
+                  ],
+                  "emotions": [
+                    "从疲惫转为惊喜",
+                    "惊叹与好奇"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "macro close-up",
+                "angle": "eye-level",
+                "movement": "dynamic handheld with quick jump cuts",
+                "focus": "fingertip touching glowing screen, particles bursting outward"
+              },
+              "composition": "centered on fingertip, particles filling frame, three quick-cut sequences following rule of thirds",
+              "lighting": "neon magenta/orange/cyan glow, high contrast, dark blue-purple base",
+              "visualElements": [
+                "glowing screen plane",
+                "colorful particles",
+                "fantasy city silhouette",
+                "mechanical creature",
+                "ink-wash landscape",
+                "subtitle '一键生成·无限可能'"
+              ],
+              "atmosphere": "energetic, magical, futuristic, surreal, cinematic vfx, 8k",
+              "motionLevel": 4,
+              "negativePrompt": "blurry, low quality, watermark, deformed shapes, text errors, flickering"
+            },
+            "audio": {
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "让AI，接管你的想象力。",
+                  "emotion": "inspiring, mysterious"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "electronic start-up",
+                  "timing": "at 0s when fingertip touches screen"
+                },
+                {
+                  "type": "epic orchestral swells",
+                  "timing": "aligned with visual cuts at 1.5s, 4s, 6s"
+                },
+                {
+                  "type": "particle whoosh",
+                  "timing": "during each particle recombination sequence"
+                }
+              ],
+              "bgm": {
+                "style": "epic cinematic electronic",
+                "mood": "grand, uplifting, rhythmic",
+                "timing": "starts with start-up sound, increases in intensity"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "指尖触碰发光屏幕，粒子涌出"
+                },
+                {
+                  "time": 1.5,
+                  "event": "旁白'让AI，接管你的想象力'开始"
+                },
+                {
+                  "time": 2.5,
+                  "event": "第一组快切：奇幻城市"
+                },
+                {
+                  "time": 4,
+                  "event": "第二组快切：机械生物"
+                },
+                {
+                  "time": 5.5,
+                  "event": "第三组快切：水墨山水"
+                },
+                {
+                  "time": 6.5,
+                  "event": "字幕'一键生成·无限可能'弹出"
+                }
+              ]
+            }
+          },
+          {
+            "sceneId": "scene-3",
+            "duration": 10,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-3.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-3_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "中景：林墨站在白色工作台前，戴着眼镜，嘴角带自信微笑，右手拖动平板上的参数滑块；右侧显示器中奇幻场景实时变形、细化。画面切换为分屏：左侧为文字输入框，右侧为4K成品图动态演化，全景前后景有浅景深效果。林墨指尖划过平板时，界面元素发出蓝色流光。屏幕下方浮现字幕'精准可控·专业级输出'。",
+              "narrative": "展示AI创作的可控性与专业级输出品质",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "站在工作台前拖动参数滑块",
+                    "观察奇幻场景实时演化"
+                  ],
+                  "emotions": [
+                    "自信",
+                    "从容掌控"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "medium shot",
+                "angle": "eye-level",
+                "movement": "static with subtle dolly-in",
+                "focus": "Lin Mo's face and the split-screen evolving 4K artwork"
+              },
+              "composition": "subject center-left, split screen occupying right side, rule of thirds",
+              "lighting": "bright natural daylight from left, white LED ceiling panels, soft shadows, blue ambient accents",
+              "visualElements": [
+                "white standing desk",
+                "tablet with parameter sliders",
+                "left text input box",
+                "right 4K artwork evolution",
+                "blue light streams",
+                "subtitle '精准可控·专业级输出'"
+              ],
+              "atmosphere": "clean, modern, confident, productive, shallow depth of field, 8k",
+              "motionLevel": 2,
+              "negativePrompt": "extra fingers, distorted hands, blurry, low quality, watermark, text artifacts, dark environment, messy background"
+            },
+            "audio": {
+              "dialogue": [
+                {
+                  "characterId": "char-1",
+                  "text": "从文字到视界，只需一次呼吸。",
+                  "emotion": "calm, confident, slightly warm"
+                }
+              ],
+              "sfx": [
+                {
+                  "type": "soft UI tap",
+                  "timing": "at 1s when adjusting parameters"
+                },
+                {
+                  "type": "real-time transform whoosh",
+                  "timing": "throughout, subtle"
+                },
+                {
+                  "type": "data pulse",
+                  "timing": "as the 4K image evolves"
+                }
+              ],
+              "bgm": {
+                "style": "light tech beat",
+                "mood": "energetic, smooth, controlled",
+                "timing": "continues from scene-2, mixing into upbeat version"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "dissolve",
+                "durationSec": 0.5
+              },
+              "transitionOut": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "分屏展示：左输入框，右4K成品图"
+                },
+                {
+                  "time": 1,
+                  "event": "旁白'从文字到视界，只需一次呼吸'开始"
+                },
+                {
+                  "time": 2,
+                  "event": "奇幻场景实时变形细化"
+                },
+                {
+                  "time": 4,
+                  "event": "界面元素发出蓝色流光"
+                },
+                {
+                  "time": 7,
+                  "event": "字幕'精准可控·专业级输出'浮现"
+                }
+              ]
+            }
+          },
+          {
+            "sceneId": "scene-4",
+            "duration": 6,
+            "engine": "happyhorse-1.1-r2v",
+            "mode": "text-to-video",
+            "resolution": "1920x1080",
+            "fps": 24,
+            "assets": {
+              "sceneImageUrl": "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/assets/44/scenes/scene_visual-4.png",
+              "characterImageUrls": [
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/front.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/back.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/left.jpeg",
+                "https://openmontage.oss-cn-shenzhen.aliyuncs.com/openmontage/library/characters/char_userd_1_female/right.jpeg"
+              ],
+              "audioFilePath": "D:\\Code\\VScode\\openmontage\\storage\\audio\\44\\scene-4_aligned.mp3"
+            },
+            "story": {
+              "sceneDescription": "全景：林墨站在宏大的虚拟世界中央，展开双臂感受数据光粒洒落，随后缓缓转身面向镜头，露出释然而坚定的微笑。画面定格，四周粒子逐渐聚合成产品logo与slogan，底部浮现字幕'重塑想象，由你定义'。",
+              "narrative": "升华主题，完成从困境到宏大愿景的情绪释放",
+              "characters": [
+                {
+                  "characterId": "char-1",
+                  "actions": [
+                    "展开双臂感受数据光粒",
+                    "转身面向镜头微笑"
+                  ],
+                  "emotions": [
+                    "释然",
+                    "坚定",
+                    "成就感"
+                  ]
+                }
+              ]
+            },
+            "storyboard": {
+              "shot": {
+                "type": "wide panoramic shot",
+                "angle": "low angle",
+                "movement": "slow orbit around character, then freeze frame",
+                "focus": "Lin Mo facing camera, surrounded by virtual world and converging particles"
+              },
+              "composition": "centered hero shot, symmetrical, expansive background filling frame",
+              "lighting": "epic purple/indigo palette with glowing cyan particle light, strong rim light",
+              "visualElements": [
+                "data cliff edge",
+                "floating holographic mountains",
+                "data waterfall",
+                "mechanical birds",
+                "glowing plants",
+                "star core with orbit rings",
+                "particles converging into logo",
+                "subtitle '重塑想象，由你定义'"
+              ],
+              "atmosphere": "epic, awe-inspiring, dreamlike, cinematic, 8k",
+              "motionLevel": 3,
+              "negativePrompt": "people in background, watermark, blurry, low quality, deformed structures, unnatural shadows"
+            },
+            "audio": {
+              "dialogue": null,
+              "sfx": [
+                {
+                  "type": "ambient virtual world hum",
+                  "timing": "throughout"
+                },
+                {
+                  "type": "camera freeze click",
+                  "timing": "when frame freezes at 4s"
+                },
+                {
+                  "type": "logo particle chime",
+                  "timing": "when particles converge into logo"
+                }
+              ],
+              "bgm": {
+                "style": "epic ambient",
+                "mood": "inspiring, resolution",
+                "timing": "swells then fades out during final freeze frame"
+              }
+            },
+            "pacing": {
+              "transitionIn": {
+                "type": "cut",
+                "durationSec": 0
+              },
+              "transitionOut": {
+                "type": "fade-out",
+                "durationSec": 1.5
+              },
+              "keyMoments": [
+                {
+                  "time": 0,
+                  "event": "林墨展开双臂感受数据光粒"
+                },
+                {
+                  "time": 2,
+                  "event": "转身面向镜头，露出释然微笑"
+                },
+                {
+                  "time": 4,
+                  "event": "画面定格，粒子聚合成logo与slogan"
+                },
+                {
+                  "time": 5,
+                  "event": "底部字幕'重塑想象，由你定义'浮现"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "createdAt": "2026-08-08T07:55:48.946Z"
+    },
+    {
+      "id": "af313966-ac14-4f06-8cd3-ef79daf250eb",
+      "jobId": "44",
+      "role": "user",
+      "kind": "text",
+      "text": "����",
+      "feedback": {
+        "gateId": "pause_gate_3",
+        "nodeName": "tts"
+      },
+      "createdAt": "2026-08-08T07:56:32.613Z"
+    },
+    {
+      "id": "30f9976c-0f9a-477f-8aaa-0762c8ed88a1",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_video",
+      "stage": "视频生成",
+      "question": "视频生成：等待 Claude 用套餐视频模型生成各场景视频（跳过视频 API）。",
+      "awaitingReply": true,
+      "createdAt": "2026-08-08T07:56:33.156Z"
+    },
+    {
+      "id": "433050c8-cac1-4060-aebe-e68404d4f09a",
+      "jobId": "44",
+      "role": "system",
+      "kind": "status",
+      "text": "Claude 已生成各场景视频，继续拼接…",
+      "createdAt": "2026-08-08T08:11:00.395Z"
+    },
+    {
+      "id": "d912334c-0dbe-4b89-885b-56c49b4a7720",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "gate",
+      "gateId": "pause_gate_4",
+      "stage": "镜头已生成",
+      "question": "镜头已全部生成，确认开始拼接？",
+      "awaitingReply": true,
+      "createdAt": "2026-08-08T08:11:02.470Z"
+    },
+    {
+      "id": "19d8170c-39a3-4b7c-9702-73923ae1b955",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "shot_video_gen",
+      "text": "场景视频已全部生成完毕，共 **4 个镜头**，每条都是独立成片：\n\n- scene-1：5.16 秒\n- scene-2：7.16 秒\n- scene-3：10.12 秒\n- scene-4：6.12 秒\n\n合计时长约 **28.6 秒**，全部状态为已完成，已保存到对应场景目录下。\n\n可以直接进入下一步合成/预览了，需要我帮你检查画面对齐或做拼接处理吗？",
+      "payload": {
+        "sceneVideos": [
+          {
+            "sceneId": "scene-1",
+            "videoUrl": "D:\\Code\\VScode\\openmontage\\storage\\scenes\\44\\scene-1.mp4",
+            "durationSec": 5.16,
+            "status": "done"
+          },
+          {
+            "sceneId": "scene-2",
+            "videoUrl": "D:\\Code\\VScode\\openmontage\\storage\\scenes\\44\\scene-2.mp4",
+            "durationSec": 7.16,
+            "status": "done"
+          },
+          {
+            "sceneId": "scene-3",
+            "videoUrl": "D:\\Code\\VScode\\openmontage\\storage\\scenes\\44\\scene-3.mp4",
+            "durationSec": 10.12,
+            "status": "done"
+          },
+          {
+            "sceneId": "scene-4",
+            "videoUrl": "D:\\Code\\VScode\\openmontage\\storage\\scenes\\44\\scene-4.mp4",
+            "durationSec": 6.12,
+            "status": "done"
+          }
+        ]
+      },
+      "createdAt": "2026-08-08T08:11:04.935Z"
+    },
+    {
+      "id": "6b236e21-0ba7-472c-9dfc-ef8084db9f4d",
+      "jobId": "44",
+      "role": "user",
+      "kind": "text",
+      "text": "继续",
+      "feedback": {
+        "gateId": "pause_gate_4",
+        "nodeName": "scene_json_assembler"
+      },
+      "createdAt": "2026-08-08T08:13:11.703Z"
+    },
+    {
+      "id": "77a26599-1d5a-4837-a5fe-da699aea3602",
+      "jobId": "44",
+      "role": "system",
+      "kind": "status",
+      "text": "视频生成完成",
+      "createdAt": "2026-08-08T08:13:15.458Z"
+    },
+    {
+      "id": "a88f4899-ee3c-4cec-9605-14b9bd55792d",
+      "jobId": "44",
+      "role": "assistant",
+      "kind": "agent",
+      "nodeName": "video_merge",
+      "text": "视频合并完成！🎬 4 个场景已顺利合成为一个完整的视频文件，总时长约 **28.6 秒**。\n\n输出文件路径：`D:\\Code\\VScode\\openmontage\\storage\\output\\44.mp4`\n\n你可以直接打开这个文件预览最终效果，如果满意就可以进入下一步；需要调整的话也可以随时告诉我。",
+      "payload": {
+        "mergedVideoUrl": "D:\\Code\\VScode\\openmontage\\storage\\output\\44.mp4",
+        "mergeLog": "Merged 4 scenes into D:\\Code\\VScode\\openmontage\\storage\\output\\44.mp4",
+        "durationSec": 28.56
+      },
+      "createdAt": "2026-08-08T08:13:17.967Z"
+    }
+  ]
+}

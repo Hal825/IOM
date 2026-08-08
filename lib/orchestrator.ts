@@ -71,6 +71,7 @@ export async function executeTask(
       userPrompt: text,
       jobId,
       ...(job.data.resumeState ?? {}),
+      ...(job.data.videoMode ? { videoMode: job.data.videoMode } : {}),
       ...(job.data.rerunFrom ? { rerunFrom: job.data.rerunFrom } : {}),
     };
     const stream = await videoGraph.stream(initial, { streamMode: 'updates' });

@@ -1,0 +1,50 @@
+[
+  {
+    "sceneId": "scene-1",
+    "duration": 5,
+    "narrative": "建立痛点：深夜灵感枯竭，营造压抑氛围。",
+    "shotType": "extreme close-up to medium shot",
+    "dialogue": [],
+    "sfx": [
+      "keyboard typing clicks",
+      "heartbeat pulse"
+    ]
+  },
+  {
+    "sceneId": "scene-2",
+    "duration": 7,
+    "narrative": "转折：AI接管想象力，画面从压抑转向绚烂，呈现无限可能。",
+    "shotType": "close-up",
+    "dialogue": [
+      "让AI，接管你的想象力。"
+    ],
+    "sfx": [
+      "electronic startup surge",
+      "epic orchestral swell"
+    ]
+  },
+  {
+    "sceneId": "scene-3",
+    "duration": 10,
+    "narrative": "展示产品能力：文字到视界的实时生成，精准可控。",
+    "shotType": "medium shot",
+    "dialogue": [
+      "从文字到视界，只需一次呼吸。"
+    ],
+    "sfx": [
+      "soft tech confirmation beep",
+      "dynamic whoosh"
+    ]
+  },
+  {
+    "sceneId": "scene-4",
+    "duration": 6,
+    "narrative": "高潮收尾：创作者置身于自己创造的世界，强化品牌“重塑想象”的信念。",
+    "shotType": "wide shot",
+    "dialogue": [],
+    "sfx": [
+      "ethereal shimmer and wind",
+      "deep cinematic boom"
+    ]
+  }
+]

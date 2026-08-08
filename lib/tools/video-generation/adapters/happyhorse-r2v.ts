@@ -1,7 +1,11 @@
 /**
- * happyhorse-1.1-r2v 视频模型适配器 — DashScope 异步视频生成。
+ * happyhorse-1.1-r2v 视频模型适配器 — DashScope 视频生成。
  *
- * 协议：创建任务（X-DashScope-Async: enable）→ 轮询任务状态 → 下载视频。
+ * 两种模式（env AI_VIDEO_ASYNC 控制，缺省 = 同步）：
+ * - 同步（默认）：POST 不带 `X-DashScope-Async` 头，请求阻塞到成片，
+ *   响应直接含 video_url。适配不支持异步任务 / 配额受限的 token plan。
+ * - 异步：`X-DashScope-Async: enable` 创建任务 → 轮询 task_status → 下载。
+ *   需要异步能力时置 `AI_VIDEO_ASYNC=on`。
  * 输入参考图（reference_image）：场景首帧 + 角色视图（公网 http(s) URL）。
  * 零容错：配置缺失 / API 失败 / 任务失败 / 超时 直接抛错。
  */
@@ -13,9 +17,9 @@ import { fetchWithTimeout } from '../../http';
 export const MODEL = 'happyhorse-1.1-r2v';
 
 const POLL_INTERVAL_MS = 5000;
-const MAX_WAIT_MS = 600_000; // 10 分钟
+const MAX_WAIT_MS = 600_000; // 10 分钟（同步模式单次 POST 阻塞的上限）
 
-// ── 任务创建 URL ────────────────────────────────────
+// ── 任务创建 URL（异步轮询用）──────────────────────
 function getTaskUrl(baseUrl: string): string {
   try {
     const origin = new URL(baseUrl).origin;
@@ -40,6 +44,11 @@ interface TaskResultResponse {
     results?: Array<{ video_url?: string }>;
     message?: string;
   };
+}
+
+/** 从成功响应里取 video_url（sync 响应 / async 轮询响应结构一致） */
+function extractVideoUrl(data: TaskResultResponse): string | undefined {
+  return data.output?.video_url ?? data.output?.results?.[0]?.video_url;
 }
 
 export class HappyhorseR2vAdapter implements VideoModelAdapter {
@@ -86,11 +95,80 @@ export class HappyhorseR2vAdapter implements VideoModelAdapter {
       },
     };
 
+    const asyncMode = process.env.AI_VIDEO_ASYNC === 'on';
     console.log(
-      `[shot-video] 创建任务 (${media.length} 张参考图): ` +
+      `[shot-video] ${asyncMode ? '异步任务' : '同步生成'} (${media.length} 张参考图): ` +
       `"${req.motionDescription.slice(0, 60)}..."`
     );
 
+    const videoUrl = asyncMode
+      ? await this.createAsyncAndPoll(baseUrl, apiKey, body)
+      : await this.createSync(baseUrl, apiKey, body);
+
+    const buffer = await this.downloadVideo(videoUrl);
+    return { buffer, durationSec: req.durationSec };
+  }
+
+  // ── 同步模式：POST 阻塞到成片，响应即终态 ─────────────
+  private async createSync(
+    baseUrl: string,
+    apiKey: string,
+    body: Record<string, unknown>
+  ): Promise<string> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        const delay = 5000 * attempt;
+        console.log(`[shot-video] 429 重试，${delay / 1000}s 后重试...`);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+
+      // 同步调用会阻塞整个生成过程，超时放宽到 MAX_WAIT_MS
+      const resp = await fetchWithTimeout(
+        baseUrl,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(body),
+        },
+        MAX_WAIT_MS
+      );
+
+      if (resp.status === 429) continue;
+
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => '');
+        throw new Error(`视频生成失败 ${resp.status}: ${errText.slice(0, 300)}`);
+      }
+
+      const data = (await resp.json()) as TaskResultResponse;
+      const status = data.output?.task_status;
+      console.log(`[shot-video] 同步生成 → ${status}`);
+
+      if (status === 'SUCCEEDED') {
+        const url = extractVideoUrl(data);
+        if (!url) throw new Error('任务成功但未找到 video_url');
+        return url;
+      }
+      if (status === 'FAILED') {
+        throw new Error(`任务失败: ${data.output?.message ?? '未知错误'}`);
+      }
+      // 同步响应按理即终态；遇到意外状态不静默，零容错抛错
+      throw new Error(
+        `同步视频生成未返回终态（task_status=${status ?? '无'}，响应: ${JSON.stringify(data).slice(0, 200)}）`
+      );
+    }
+    throw new Error('视频生成失败（多次 429）');
+  }
+
+  // ── 异步模式：创建任务 → 轮询 → 取 video_url ─────────
+  private async createAsyncAndPoll(
+    baseUrl: string,
+    apiKey: string,
+    body: Record<string, unknown>
+  ): Promise<string> {
     // 1. 创建异步任务（含 429 重试，间隔 5s，最多 3 次）
     let taskId: string | undefined;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -150,12 +228,9 @@ export class HappyhorseR2vAdapter implements VideoModelAdapter {
       console.log(`[shot-video] 任务 ${taskId} → ${status}`);
 
       if (status === 'SUCCEEDED') {
-        const videoUrl =
-          pollData.output?.video_url ??
-          pollData.output?.results?.[0]?.video_url;
-        if (!videoUrl) throw new Error('任务成功但未找到 video_url');
-        const buffer = await this.downloadVideo(videoUrl);
-        return { buffer, durationSec: req.durationSec };
+        const url = extractVideoUrl(pollData);
+        if (!url) throw new Error('任务成功但未找到 video_url');
+        return url;
       }
 
       if (status === 'FAILED') {
